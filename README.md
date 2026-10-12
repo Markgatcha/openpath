@@ -184,7 +184,7 @@ The image builds the client, compiles the server, and persists the SQLite databa
 
 ## 🗺️ Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) — highlights: spaced repetition scheduling, import/export (QTI, CSV), class-wide assignments with due dates, more question types, and a plugin API for custom games.
+See [ROADMAP.md](./ROADMAP.md) — highlights: spaced repetition, parametric **figure & equation questions** (a triangle whose sides you can set, with the answer computed for you), homework **assignments** with due dates, premade content packs, and a community pack registry. Priorities follow the evidence in [docs/curriculum-research.md](./docs/curriculum-research.md).
 
 ## 🤝 Contributing
 

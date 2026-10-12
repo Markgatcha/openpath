@@ -87,7 +87,7 @@ export function QuizPlayer() {
     setPhase('finishing')
     try {
       const result = await api.attempts.finish(attemptId)
-      navigate(`/student/results/${result.attempt.id}`, {
+      void navigate(`/student/results/${result.attempt.id}`, {
         state: { finish: result as AttemptFinishDTO },
       })
     } catch (err) {
@@ -405,7 +405,7 @@ export function QuizPlayer() {
                 'Abandon this run? Your progress so far will not be scored.',
               )
             ) {
-              navigate('/student/quizzes')
+              void navigate('/student/quizzes')
             }
           }}
         >

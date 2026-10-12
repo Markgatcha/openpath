@@ -53,7 +53,7 @@ export function Register() {
     try {
       const result = await api.register({ name, email, password, role })
       setAuth(result.token, result.user)
-      navigate(
+      void navigate(
         result.user.role === 'student'
           ? '/student'
           : result.user.role === 'teacher'

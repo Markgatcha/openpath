@@ -150,7 +150,7 @@ export function Analytics() {
                     color: '#fff',
                     fontSize: 12,
                   }}
-                  formatter={(value) => [`${value} students`, 'runs']}
+                  formatter={(value) => [`${Number(value ?? 0)} students`, 'runs']}
                 />
                 <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                   {buckets.map((bucket, index) => (

@@ -129,7 +129,7 @@ export function ChildDetail() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" />
                   <XAxis dataKey="name" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-400" axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} unit="%" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-400" axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(value) => [`${value}%`, 'score']} />
+                  <Tooltip contentStyle={CHART_TOOLTIP} formatter={(value) => [`${Number(value ?? 0)}%`, 'score']} />
                   <Area
                     type="monotone"
                     dataKey="accuracy"
@@ -154,7 +154,7 @@ export function ChildDetail() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" />
                 <XAxis dataKey="label" tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-400" axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: 'currentColor', fontSize: 11 }} className="text-slate-400" axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(value) => [`${value} min`, 'studied']} />
+                <Tooltip contentStyle={CHART_TOOLTIP} formatter={(value) => [`${Number(value ?? 0)} min`, 'studied']} />
                 <Bar dataKey="minutes" radius={[8, 8, 0, 0]}>
                   {weeklyMinutes.map((day) => (
                     <Cell key={day.day} fill={day.minutes > 0 ? '#10b981' : '#94a3b833'} />

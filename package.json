@@ -24,7 +24,7 @@
     "build:web": "vite build",
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit",
-    "lint": "oxlint",
+    "lint": "oxlint --type-aware",
     "test:api": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
@@ -62,6 +62,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
     "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2004",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

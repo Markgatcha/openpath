@@ -23,7 +23,7 @@ export function Login() {
     try {
       const result = await api.login({ email, password })
       setAuth(result.token, result.user)
-      navigate(
+      void navigate(
         result.user.role === 'student'
           ? '/student'
           : result.user.role === 'teacher'
