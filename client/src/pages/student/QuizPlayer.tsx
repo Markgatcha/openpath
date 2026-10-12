@@ -41,8 +41,6 @@ export function QuizPlayer() {
   const [phase, setPhase] = useState<Phase>('answering')
   const [lastResult, setLastResult] = useState<LastResult | null>(null)
   const [combo, setCombo] = useState(0)
-  const [order, setOrder] = useState<string[]>([])
-  const [fillValue, setFillValue] = useState('')
   const [xpFloat, setXpFloat] = useState<{ id: number; points: number } | null>(null)
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -53,39 +51,34 @@ export function QuizPlayer() {
 
   const question = questions[index]
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await api.attempts.start({ quizId })
-      setAttemptId(result.attemptId)
-      setQuestions(result.questions)
-      setQuizTitle(result.quiz.title)
-      setTimeLimitSec(result.quiz.timeLimitSec)
-      if (result.quiz.timeLimitSec) {
-        setSecondsLeft(result.quiz.timeLimitSec)
+  // Load (or resume) the attempt once when the quiz opens. All state
+  // updates happen after the await, inside the async body.
+  useEffect(() => {
+    void (async () => {
+      try {
+        const result = await api.attempts.start({ quizId })
+        setAttemptId(result.attemptId)
+        setQuestions(result.questions)
+        setQuizTitle(result.quiz.title)
+        setTimeLimitSec(result.quiz.timeLimitSec)
+        if (result.quiz.timeLimitSec) {
+          setSecondsLeft(result.quiz.timeLimitSec)
+        }
+        setIndex(0)
+        setPhase('answering')
+        setCombo(0)
+        setLastResult(null)
+        questionStartRef.current = Date.now()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not start the quiz')
+      } finally {
+        setLoading(false)
       }
-      setIndex(0)
-      setPhase('answering')
-      setCombo(0)
-      setLastResult(null)
-      questionStartRef.current = Date.now()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start the quiz')
-    } finally {
-      setLoading(false)
-    }
+    })()
   }, [quizId])
 
+  // Remember when the current question appeared (ref writes are safe in effects).
   useEffect(() => {
-    void load()
-  }, [load])
-
-  // Keep order-type state in sync when the question changes.
-  useEffect(() => {
-    if (question?.type === 'order' && question.options) {
-      setOrder(question.options)
-    }
-    setFillValue('')
     questionStartRef.current = Date.now()
   }, [question])
 
@@ -103,17 +96,18 @@ export function QuizPlayer() {
     }
   }, [attemptId, navigate, toast])
 
-  // Global countdown
+  // Global countdown — the tick callback (not the effect body) decides
+  // whether to keep counting or force-finish the run.
   useEffect(() => {
     if (secondsLeft === null) return
-    if (secondsLeft <= 0) {
-      void finish()
-      return
-    }
-    const interval = window.setTimeout(() => {
-      setSecondsLeft((value) => (value === null ? null : value - 1))
+    const timer = window.setTimeout(() => {
+      if (secondsLeft <= 1) {
+        void finish()
+      } else {
+        setSecondsLeft(secondsLeft - 1)
+      }
     }, 1000)
-    return () => window.clearTimeout(interval)
+    return () => window.clearTimeout(timer)
   }, [secondsLeft, finish])
 
   const submit = useCallback(
@@ -158,17 +152,13 @@ export function QuizPlayer() {
     }
   }, [index, questions.length, finish])
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts: number keys pick MCQ options, T/F answers
+  // true-or-false. Fill and order inputs handle their own keys natively.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (phase !== 'answering' || !question) return
       const target = event.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        if (event.key === 'Enter' && question.type === 'fill' && fillValue.trim()) {
-          void submit(fillValue.trim())
-        }
-        return
-      }
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
       if (question.type === 'mcq' && question.options) {
         const slot = Number(event.key)
         if (slot >= 1 && slot <= question.options.length) {
@@ -179,15 +169,10 @@ export function QuizPlayer() {
         if (event.key.toLowerCase() === 't') void submit(true)
         if (event.key.toLowerCase() === 'f') void submit(false)
       }
-      if (event.key === 'Enter') {
-        if (question.type === 'order') {
-          void submit(order.map((option) => question.options!.indexOf(option)))
-        }
-      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [phase, question, fillValue, order, submit])
+  }, [phase, question, submit])
 
   const progress = useMemo(
     () => (questions.length ? (index + (phase === 'feedback' ? 1 : 0)) / questions.length : 0),
@@ -343,67 +328,20 @@ export function QuizPlayer() {
               )}
 
               {question.type === 'fill' && (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    if (fillValue.trim()) void submit(fillValue.trim())
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    autoFocus
-                    className="input"
-                    placeholder="Type your answer…"
-                    value={fillValue}
-                    disabled={phase !== 'answering'}
-                    onChange={(event) => setFillValue(event.target.value)}
-                  />
-                  <Button type="submit" disabled={phase !== 'answering' || !fillValue.trim()}>
-                    Submit
-                  </Button>
-                </form>
+                <FillAnswer
+                  key={question.id}
+                  disabled={phase !== 'answering'}
+                  onSubmit={(value) => void submit(value)}
+                />
               )}
 
               {question.type === 'order' && question.options && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs text-slate-400">
-                    Drag or use the arrows — closest first. Press Enter to lock it in.
-                  </p>
-                  <Reorder.Group
-                    axis="y"
-                    values={order}
-                    onReorder={setOrder}
-                    className="flex flex-col gap-2"
-                  >
-                    {order.map((option) => (
-                      <Reorder.Item
-                        key={option}
-                        value={option}
-                        className={cn(
-                          'flex cursor-grab items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 text-sm font-semibold text-slate-800 active:cursor-grabbing',
-                          'dark:border-white/10 dark:bg-white/5 dark:text-slate-100',
-                          phase !== 'answering' && 'pointer-events-none opacity-80',
-                        )}
-                      >
-                        <GripVertical size={16} className="text-slate-400" />
-                        <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-500/15 text-xs font-bold text-brand-600 dark:text-brand-300">
-                          {order.indexOf(option) + 1}
-                        </span>
-                        {option}
-                      </Reorder.Item>
-                    ))}
-                  </Reorder.Group>
-                  {phase === 'answering' && (
-                    <Button
-                      className="mt-2 self-start"
-                      onClick={() =>
-                        void submit(order.map((option) => question.options!.indexOf(option)))
-                      }
-                    >
-                      Lock in order
-                    </Button>
-                  )}
-                </div>
+                <OrderAnswer
+                  key={question.id}
+                  question={question}
+                  disabled={phase !== 'answering'}
+                  onSubmit={(indices) => void submit(indices)}
+                />
               )}
             </div>
 
@@ -493,6 +431,95 @@ export function QuizPlayer() {
           </span>
         )}
       </div>
+    </div>
+  )
+}
+
+// ── Fill-in-the-blank input ────────────────────────────────────
+// Owns its input state and is keyed by question id, so every question
+// starts with a fresh, empty field (no effect-based resets).
+function FillAnswer({
+  disabled,
+  onSubmit,
+}: {
+  disabled: boolean
+  onSubmit: (value: string) => void
+}) {
+  const [value, setValue] = useState('')
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (value.trim()) onSubmit(value.trim())
+      }}
+      className="flex gap-2"
+    >
+      <input
+        autoFocus
+        className="input"
+        placeholder="Type your answer…"
+        value={value}
+        disabled={disabled}
+        onChange={(event) => setValue(event.target.value)}
+      />
+      <Button type="submit" disabled={disabled || !value.trim()}>
+        Submit
+      </Button>
+    </form>
+  )
+}
+
+// ── Drag-to-rank answer ────────────────────────────────────────
+// Owns the current ordering and is keyed by question id.
+function OrderAnswer({
+  question,
+  disabled,
+  onSubmit,
+}: {
+  question: StudentQuestionDTO
+  disabled: boolean
+  onSubmit: (indices: number[]) => void
+}) {
+  const options = question.options ?? []
+  const [order, setOrder] = useState(options)
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-slate-400">
+        Drag to rank — first item at the top, last at the bottom.
+      </p>
+      <Reorder.Group
+        axis="y"
+        values={order}
+        onReorder={setOrder}
+        className="flex flex-col gap-2"
+      >
+        {order.map((option) => (
+          <Reorder.Item
+            key={option}
+            value={option}
+            className={cn(
+              'flex cursor-grab items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 text-sm font-semibold text-slate-800 active:cursor-grabbing',
+              'dark:border-white/10 dark:bg-white/5 dark:text-slate-100',
+              disabled && 'pointer-events-none opacity-80',
+            )}
+          >
+            <GripVertical size={16} className="text-slate-400" />
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-500/15 text-xs font-bold text-brand-600 dark:text-brand-300">
+              {order.indexOf(option) + 1}
+            </span>
+            {option}
+          </Reorder.Item>
+        ))}
+      </Reorder.Group>
+      {!disabled && (
+        <Button
+          className="mt-2 self-start"
+          onClick={() => onSubmit(order.map((option) => options.indexOf(option)))}
+        >
+          Lock in order
+        </Button>
+      )}
     </div>
   )
 }

@@ -24,7 +24,7 @@
     "build:web": "vite build",
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit",
-    "lint": "eslint .",
+    "lint": "oxlint",
     "test:api": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
@@ -52,7 +52,6 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^9.6.0",
@@ -62,14 +61,10 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "concurrently": "^10.0.6",
-    "eslint": "^10.12.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.7",
-    "globals": "^17.13.0",
+    "oxlint": "^1.87.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "~5.9.3",
-    "typescript-eslint": "^8.71.2",
+    "typescript": "^7.0.2",
     "vite": "^8.3.4"
   },
   "pnpm": {

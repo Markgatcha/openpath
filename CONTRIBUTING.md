@@ -24,7 +24,7 @@ Every PR must pass all four:
 
 ```bash
 pnpm typecheck   # TypeScript strict, server + client
-pnpm lint        # ESLint flat config
+pnpm lint        # oxlint — Rust-powered, works with TypeScript 7+
 pnpm build       # API + web production builds
 pnpm test:api    # smoke test against a running server
 ```

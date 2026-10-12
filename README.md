@@ -133,6 +133,8 @@ openpath/
 | Backend | Fastify 5 | Schema-first, fast, first-class TypeScript |
 | Database | SQLite (better-sqlite3) | Zero-ops, single file, trivially backed up |
 | Validation | Zod (shared) | One schema language end-to-end |
+| Type checking | TypeScript 7 (native) | The Go-speed compiler, drop-in `tsc` |
+| Linting | oxlint | Rust linter, no TypeScript-API dependency |
 | Styling | Tailwind 4 + design tokens | Dark/light themes, consistent UI kit |
 
 **Security notes:** passwords are hashed with bcrypt; sessions are JWTs; students never receive correct answers until they submit; XP and streaks are computed server-side (the client only previews); AI generation is teacher-only and rate-limited.
@@ -159,7 +161,7 @@ xp = round((correct × 20 × difficultyMultiplier + bestCombo × 5 + timeBonus +
 
 ```bash
 pnpm typecheck     # tsc for server + client
-pnpm lint          # ESLint (flat config, typescript-eslint)
+pnpm lint          # oxlint (Rust-fast, no TypeScript compiler dependency)
 pnpm build         # production build
 pnpm test:api      # end-to-end smoke test (needs a running server)
 ```

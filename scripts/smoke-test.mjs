@@ -22,16 +22,16 @@ function check(name, condition, detail = '') {
 }
 
 async function api(path, { method = 'GET', body, token } = {}) {
-  const response = await fetch(`${BASE}/api${path}`, {
-    method,
-    headers: {
-      // Fastify rejects a json content-type with an empty body, so only
-      // send the header when we actually have a payload.
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  const headers = {
+    // Fastify rejects a json content-type with an empty body, so only
+    // send the header when we actually have a payload.
+    ...(body ? { 'Content-Type': 'application/json' } : {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+  const options = { method, headers }
+  // Only attach the body key when there is one (GET + body is invalid).
+  if (body) options.body = JSON.stringify(body)
+  const response = await fetch(`${BASE}/api${path}`, options)
   const data = await response.json().catch(() => ({}))
   return { status: response.status, data }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   BrainCircuit,
@@ -42,22 +42,29 @@ export function Settings() {
     apiKey: '',
   })
   const [savingAi, setSavingAi] = useState(false)
+  const [aiSourceKey, setAiSourceKey] = useState<string | null>(null)
 
   const { data: aiStatus, isLoading: aiLoading } = useQuery({
     queryKey: ['ai-status'],
     queryFn: api.ai.status,
   })
 
-  useEffect(() => {
-    if (aiStatus?.status) {
-      setAi((current) => ({
-        ...current,
-        provider: aiStatus.status.provider,
-        baseUrl: aiStatus.status.baseUrl,
-        model: aiStatus.status.model,
-      }))
-    }
-  }, [aiStatus])
+  // Adopt server-side AI settings into the form the first time they load
+  // (React's sanctioned "adjust state during render" pattern — once).
+  const status = aiStatus?.status ?? null
+  const sourceKey = status
+    ? `${status.provider}|${status.baseUrl}|${status.model}`
+    : null
+  if (sourceKey && sourceKey !== aiSourceKey && status) {
+    const incoming = status
+    setAiSourceKey(sourceKey)
+    setAi((current) => ({
+      ...current,
+      provider: incoming.provider,
+      baseUrl: incoming.baseUrl,
+      model: incoming.model,
+    }))
+  }
 
   const saveProfile = async () => {
     setSavingProfile(true)
