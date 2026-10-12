@@ -1,0 +1,21 @@
+services:
+  openpath:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      - PORT=8787
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-true}
+      # AI provider (optional)
+      - AI_PROVIDER=${AI_PROVIDER:-local}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-deepseek/deepseek-chat}
+      - LOCAL_AI_BASE_URL=${LOCAL_AI_BASE_URL:-http://host.docker.internal:11434/v1}
+      - LOCAL_AI_MODEL=${LOCAL_AI_MODEL:-qwen3:8b}
+    volumes:
+      - openpath-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  openpath-data:
