@@ -617,6 +617,146 @@ async function main() {
   })
   check('assignment deleted', deleted.status === 204)
 
+  // ── Classroom economy ───────────────────────────────────────
+  console.log('\nClassroom economy flow:')
+
+  // A fresh student keeps the math deterministic.
+  const econEmail = `econ-${Date.now()}@openpath.dev`
+  const registered = await api('/auth/register', {
+    method: 'POST',
+    body: { email: econEmail, name: 'Econ Tester', password: 'test1234', role: 'student' },
+  })
+  check('registers a fresh student', registered.status === 201 && registered.data.token)
+  const econToken = registered.data.token
+
+  // Teacher configures a level-2 coin reward.
+  const economyBefore = await api('/economy/mine', { token: teacherToken })
+  const rewardsSet = await api('/economy/rewards', {
+    method: 'PUT',
+    token: teacherToken,
+    body: { rewards: [{ level: 2, rewardType: 'coins', coins: 50 }] },
+  })
+  check('teacher sets a level reward', rewardsSet.status === 200 && rewardsSet.data.rewards.length === 1)
+
+  const econStart = await api('/attempts', {
+    method: 'POST',
+    token: econToken,
+    body: { quizId },
+  })
+  check('fresh student starts the quiz', econStart.status === 201)
+  for (const [index, response] of [[0, 0], [1, [0, 1, 2]], [2, 4.5]]) {
+    await api(`/attempts/${econStart.data.attemptId}/answer`, {
+      method: 'POST',
+      token: econToken,
+      body: {
+        questionId: econStart.data.questions[index].id,
+        response,
+        msTaken: 1500,
+      },
+    })
+  }
+  const econFinish = await api(`/attempts/${econStart.data.attemptId}/finish`, {
+    method: 'POST',
+    token: econToken,
+  })
+  check('perfect run mints coins', econFinish.data.coinsEarned?.amount >= 3, JSON.stringify(econFinish.data.coinsEarned))
+  check(
+    'level reward granted on level-up',
+    Array.isArray(econFinish.data.levelRewards) &&
+      econFinish.data.levelRewards.some((reward) => reward.level === 2 && reward.coins === 50),
+    JSON.stringify(econFinish.data.levelRewards),
+  )
+
+  const econShop = await api('/economy/shop', { token: econToken })
+  check(
+    'wallet reflects earnings plus reward',
+    econShop.data.coins === (econFinish.data.coinsEarned?.amount ?? 0) + 50,
+    `coins=${econShop.data.coins}`,
+  )
+
+  // Teacher stocks test items; the student sees them in the shop.
+  const cheapItem = await api('/economy/items', {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      name: 'Test Background',
+      description: 'Smoke-test solid',
+      category: 'background',
+      price: 2,
+      itemData: { type: 'solid', color: '#123456' },
+    },
+  })
+  check('teacher creates a shop item', cheapItem.status === 201 && cheapItem.data.item?.id)
+  const cheapItemId = cheapItem.data.item.id
+
+  const richItem = await api('/economy/items', {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      name: 'Way Too Rich',
+      description: 'Deliberately unaffordable',
+      category: 'nameplate',
+      price: 99999,
+      itemData: { type: 'gradient', from: '#f59e0b', to: '#ef4444', direction: 'north-south' },
+    },
+  })
+  check('teacher creates a pricey item', richItem.status === 201 && richItem.data.item?.id)
+  const richItemId = richItem.data.item?.id
+
+  const shopAfterStocking = await api('/economy/shop', { token: econToken })
+  check(
+    'shop lists stocked items',
+    shopAfterStocking.data.items.some((item) => item.id === cheapItemId) &&
+      shopAfterStocking.data.items.some((item) => item.id === richItemId),
+  )
+
+  const bought = await api(`/economy/shop/${cheapItemId}/buy`, {
+    method: 'POST',
+    token: econToken,
+  })
+  check(
+    'purchase spends coins and equips',
+    bought.status === 200 &&
+      bought.data.coins === econShop.data.coins - 2 &&
+      JSON.stringify(bought.data.item.itemData) === JSON.stringify({ type: 'solid', color: '#123456' }),
+    `coins=${bought.data.coins}`,
+  )
+
+  const rebuy = await api(`/economy/shop/${cheapItemId}/buy`, {
+    method: 'POST',
+    token: econToken,
+  })
+  check('double purchase refused', rebuy.status === 400, `status=${rebuy.status}`)
+
+  const broke = await api(`/economy/shop/${richItemId}/buy`, {
+    method: 'POST',
+    token: econToken,
+  })
+  check('cannot buy beyond the wallet', broke.status === 400, `status=${broke.status}`)
+
+  const unequipped = await api('/economy/unequip', {
+    method: 'POST',
+    token: econToken,
+    body: { category: 'background' },
+  })
+  check('unequip resets the slot', unequipped.status === 200)
+
+  // Restore the teacher's previous rewards and drop the test items.
+  await api('/economy/rewards', {
+    method: 'PUT',
+    token: teacherToken,
+    body: {
+      rewards: (economyBefore.data.rewards ?? []).map((reward) => ({
+        level: reward.level,
+        rewardType: reward.rewardType,
+        coins: reward.coins,
+        itemId: reward.itemId,
+      })),
+    },
+  })
+  await api(`/economy/items/${cheapItemId}`, { method: 'DELETE', token: teacherToken })
+  await api(`/economy/items/${richItemId}`, { method: 'DELETE', token: teacherToken })
+
   // ── Parent oversight ────────────────────────────────────────
   console.log('\nParent flow:')
   const parentToken = await login('mary.jackson@openpath.dev', 'parent1234')
