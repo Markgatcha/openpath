@@ -38,13 +38,14 @@ Great learning content is hard to make, and most platforms lock it — and your 
 
 ### 🧑‍🎓 Students
 - **Gamified quiz runs** — instant feedback, combo multipliers, per-question timers, countdown rings, XP pop-ups, and a confetti finish screen
-- **Four question types** — multiple choice, true/false, fill-in-the-blank (fuzzy matching), and drag-to-rank ordering
+- **Five question types** — multiple choice, true/false, fill-in-the-blank (fuzzy matching), drag-to-rank ordering, and parametric figure questions (the system draws the figure and grades your number with tolerance)
 - **Daily goals & streaks** — a study-minutes ring on the dashboard keeps the flame alive
-- **Flashcard drills** — flip through quiz decks to rehearse prompts
+- **Spaced-repetition flashcards** — an SM-2-style "due today" queue built from every quiz you can see; grade yourself honestly and the scheduler handles the rest
 - **Trophy hall & leaderboards** — 8 badges, global and classroom rankings, weekly and all-time windows
 
 ### 🧑‍🏫 Teachers
 - **Quiz workshop** — create, reorder, and edit questions with a focused builder (auto-saving)
+- **Figure question editor** — pick a shape template, type the givens, and the answer key computes itself (never mistyped, always consistent with the drawing)
 - **AI question forge** — generate review-ready drafts from a topic, pick the ones you like, insert them
 - **Classrooms** — 6-character join codes, member rosters, per-class leaderboards, quiz assignment
 - **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table

@@ -2,10 +2,13 @@
 
 The path ahead. Items are roughly ordered by impact; nothing here is a promise with a date — this is a community project. Priorities are informed by [`docs/curriculum-research.md`](docs/curriculum-research.md) (evidence base: retrieval practice & spacing are the strongest levers; gamification is a moderate but real amplifier).
 
-## 🎯 Next up (v0.2)
+## ✅ Shipped (v0.2)
 
-- [ ] **Spaced repetition** — SM-2-lite scheduling for flashcards; "due today" queue on the student dashboard (research says this is the highest-value learning feature we can add)
-- [ ] **Figure & equation questions (v1)** — parametric question type: teacher picks a shape template (triangle SAS, right-triangle, circle, trapezoid), enters givens, and the system draws the figure AND computes the answer key, so answers can never be mistyped. Numeric grading with tolerance + auto-generated MCQ distractors. (Prior art: GeoGebra generators, IMathAS; our edge is the editor + gamified loop.)
+- [x] **Spaced repetition** — SM-2-lite scheduling for flashcards; "due today" queue on the student dashboard (research says this is the highest-value learning feature we can add)
+- [x] **Figure & equation questions (v1)** — parametric question type: teacher picks a shape template (triangle SAS, right-triangle, circle, trapezoid), enters givens, and the system draws the figure AND computes the answer key, so answers can never be mistyped. Numeric grading with tolerance + auto-generated MCQ distractors. (Prior art: GeoGebra generators, IMathAS; our edge is the editor + gamified loop.)
+
+## 🎯 Next up (v0.3)
+
 - [ ] **Assignments** — assign a quiz/pack to a classroom or student with due date, time window, and max attempts; "Due soon" queue; completion roster for teachers; deadlines double as a spacing mechanism
 - [ ] **Premade content packs** — registry + first packs: `geometry-figures`, `calculus-i-gateway`, `intro-psych-survey` (tiered by enrollment data; see research doc §6)
 - [ ] **Import / export** — QTI 2.1 import, CSV export of attempts, full JSON backup/restore (bridge for classrooms living in an LMS)
