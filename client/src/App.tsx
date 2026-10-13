@@ -100,7 +100,6 @@ export default function App() {
             <Route path="/student/badges" element={<Badges />} />
             <Route path="/student/leaderboard" element={<Leaderboard />} />
             <Route path="/student/flashcards" element={<Flashcards />} />
-            <Route path="/student/flashcards/:quizId" element={<Flashcards />} />
           </Route>
 
           <Route element={<RequireAuth role="teacher" />}>

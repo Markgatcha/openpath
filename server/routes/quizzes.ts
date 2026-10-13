@@ -14,8 +14,10 @@ import {
   QuizCreateSchema,
   QuizUpdateSchema,
   ReorderSchema,
+  type FigureSpec,
   type QuestionInput,
 } from '../../shared/schemas'
+import { computeAnswer, validateFigure } from '../../shared/figure'
 import type {
   AttemptRow,
   ClassroomRow,
@@ -134,6 +136,35 @@ function validateQuestionInput(input: QuestionInput): void {
       throw badRequest('The ranking must be a permutation of option indexes')
     }
   }
+  if (input.type === 'figure') {
+    const problem = validateFigure(input.figure)
+    if (problem) throw badRequest(problem)
+  }
+}
+
+function figureAnswerKey(spec: FigureSpec): number {
+  try {
+    return computeAnswer(spec)
+  } catch {
+    throw badRequest('This figure has no solvable answer with the given values')
+  }
+}
+
+/** Column payload for a question input, with figure keys computed here. */
+function questionPayload(input: QuestionInput): {
+  optionsJson: string | null
+  correctJson: string
+} {
+  if (input.type === 'figure') {
+    return {
+      optionsJson: JSON.stringify(input.figure),
+      correctJson: JSON.stringify(figureAnswerKey(input.figure)),
+    }
+  }
+  return {
+    optionsJson: 'options' in input ? JSON.stringify(input.options) : null,
+    correctJson: JSON.stringify(input.correct),
+  }
 }
 
 function insertQuestion(
@@ -142,6 +173,7 @@ function insertQuestion(
   position: number,
 ): string {
   const id = randomUUID()
+  const { optionsJson, correctJson } = questionPayload(input)
   db.prepare(
     `INSERT INTO questions
        (id, quiz_id, type, prompt, options_json, correct_json, alternatives_json,
@@ -152,8 +184,8 @@ function insertQuestion(
     quizId,
     input.type,
     input.prompt.trim(),
-    'options' in input ? JSON.stringify(input.options) : null,
-    JSON.stringify(input.correct),
+    optionsJson,
+    correctJson,
     input.type === 'fill' ? JSON.stringify(input.alternatives ?? []) : null,
     input.points,
     position,
@@ -356,25 +388,31 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
       .prepare('SELECT * FROM questions WHERE quiz_id = ? ORDER BY position')
       .all(quiz.id) as QuestionRow[]
     for (const question of questions) {
-      insertQuestion(
-        newId,
-        {
-          type: question.type,
-          prompt: question.prompt,
-          ...(question.options_json
-            ? { options: JSON.parse(question.options_json) as string[] }
-            : {}),
-          correct: JSON.parse(question.correct_json),
-          ...(question.alternatives_json
-            ? {
-                alternatives: JSON.parse(question.alternatives_json) as string[],
-              }
-            : {}),
-          points: question.points,
-          explanation: question.explanation,
-        } as QuestionInput,
-        nextPosition(newId),
-      )
+      const input: QuestionInput =
+        question.type === 'figure'
+          ? {
+              type: 'figure',
+              prompt: question.prompt,
+              figure: JSON.parse(question.options_json ?? 'null') as FigureSpec,
+              points: question.points,
+              explanation: question.explanation,
+            }
+          : ({
+              type: question.type,
+              prompt: question.prompt,
+              ...(question.options_json
+                ? { options: JSON.parse(question.options_json) as string[] }
+                : {}),
+              correct: JSON.parse(question.correct_json),
+              ...(question.alternatives_json
+                ? {
+                    alternatives: JSON.parse(question.alternatives_json) as string[],
+                  }
+                : {}),
+              points: question.points,
+              explanation: question.explanation,
+            } as QuestionInput)
+      insertQuestion(newId, input, nextPosition(newId))
     }
 
     return reply.status(201).send({ quiz: quizDTO(getQuiz(newId), teacher.id) })
@@ -406,26 +444,27 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
       const input = parse(QuestionInputSchema, request.body)
       validateQuestionInput(input)
 
-      const existing = db
-        .prepare('SELECT * FROM questions WHERE id = ? AND quiz_id = ?')
-        .get(request.params.qid, quiz.id) as QuestionRow | undefined
-      if (!existing) throw notFound('Question not found')
+    const existing = db
+      .prepare('SELECT * FROM questions WHERE id = ? AND quiz_id = ?')
+      .get(request.params.qid, quiz.id) as QuestionRow | undefined
+    if (!existing) throw notFound('Question not found')
 
-      db.prepare(
-        `UPDATE questions
-         SET type = ?, prompt = ?, options_json = ?, correct_json = ?, alternatives_json = ?,
-             points = ?, explanation = ?
-         WHERE id = ?`,
-      ).run(
-        input.type,
-        input.prompt.trim(),
-        'options' in input ? JSON.stringify(input.options) : null,
-        JSON.stringify(input.correct),
-        input.type === 'fill' ? JSON.stringify(input.alternatives ?? []) : null,
-        input.points,
-        input.explanation ?? '',
-        existing.id,
-      )
+    const { optionsJson, correctJson } = questionPayload(input)
+    db.prepare(
+      `UPDATE questions
+       SET type = ?, prompt = ?, options_json = ?, correct_json = ?, alternatives_json = ?,
+           points = ?, explanation = ?
+       WHERE id = ?`,
+    ).run(
+      input.type,
+      input.prompt.trim(),
+      optionsJson,
+      correctJson,
+      input.type === 'fill' ? JSON.stringify(input.alternatives ?? []) : null,
+      input.points,
+      input.explanation ?? '',
+      existing.id,
+    )
 
       const row = db
         .prepare('SELECT * FROM questions WHERE id = ?')

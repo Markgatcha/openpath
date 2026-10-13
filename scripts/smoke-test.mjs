@@ -1,8 +1,9 @@
 /**
  * OpenPath end-to-end smoke test.
  * Boots against a running server (pnpm dev or pnpm start) and exercises
- * the full loop: teacher forges a quiz → student plays it → XP is
- * awarded → parent sees progress.
+ * the full loop: teacher forges a quiz (incl. a computed figure question)
+ * → student plays it → XP is awarded → parent sees progress → spaced
+ * repetition schedules the flashcards.
  *
  *   node scripts/smoke-test.mjs [baseUrl]
  */
@@ -105,6 +106,49 @@ async function main() {
   })
   check('rejects impossible ranking', badOrder.status === 400)
 
+  // SAS triangle: b=7, c=5, included angle 40° → a ≈ 4.51
+  const figure = await api(`/quizzes/${quizId}/questions`, {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      type: 'figure',
+      prompt: 'Find the length of side a. Round to the nearest tenth.',
+      figure: {
+        template: 'triangle-sas',
+        givens: { b: 7, c: 5, angleA: 40 },
+        ask: 'a',
+        rounding: 'tenth',
+      },
+      explanation: 'Law of cosines: a² = b² + c² − 2bc·cos(A).',
+      points: 10,
+    },
+  })
+  check('adds figure question', figure.status === 201)
+  check(
+    'figure answer key is computed server-side',
+    typeof figure.data.question?.correct === 'number' &&
+      Math.abs(figure.data.question.correct - 4.514) < 0.01,
+    `key=${figure.data.question?.correct}`,
+  )
+  const figureQuestionId = figure.data.question?.id
+
+  const badFigure = await api(`/quizzes/${quizId}/questions`, {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      type: 'figure',
+      prompt: 'Impossible triangle',
+      figure: {
+        template: 'triangle-sss',
+        givens: { a: 1, b: 2, c: 10 },
+        ask: 'angleA',
+        rounding: 'tenth',
+      },
+      points: 10,
+    },
+  })
+  check('rejects triangle-inequality violation', badFigure.status === 400)
+
   const published = await api(`/quizzes/${quizId}/publish`, {
     method: 'POST',
     token: teacherToken,
@@ -130,7 +174,15 @@ async function main() {
     body: { quizId },
   })
   check('starts attempt', started.status === 201 && started.data.attemptId)
-  check('student questions carry no answers', started.data.questions.length === 2)
+  check('student questions carry no answers', started.data.questions.length === 3)
+
+  const figureQuestion = started.data.questions.find((q) => q.id === figureQuestionId)
+  check(
+    'figure question ships drawable geometry, no answer',
+    !!figureQuestion?.figure &&
+      figureQuestion.figure.vertices.length === 3 &&
+      !('correct' in figureQuestion),
+  )
 
   const attemptId = started.data.attemptId
   const first = await api(`/attempts/${attemptId}/answer`, {
@@ -155,16 +207,100 @@ async function main() {
   })
   check('ordering answer graded', second.data.correct === true)
 
+  const wrongFigure = await api(`/attempts/${attemptId}/answer`, {
+    method: 'POST',
+    token: studentToken,
+    body: {
+      questionId: figureQuestionId,
+      response: 9.9,
+      msTaken: 4200,
+    },
+  })
+  check('wrong figure answer rejected by tolerance', wrongFigure.data.correct === false)
+
   const finished = await api(`/attempts/${attemptId}/finish`, {
     method: 'POST',
     token: studentToken,
   })
-  check('perfect score awarded', finished.data.attempt?.score === 20)
+  check('partial score awarded', finished.data.attempt?.score === 20)
   check('XP earned', finished.data.xpEarned > 0, `xp=${finished.data.xpEarned}`)
   check('perfect badge check ran', Array.isArray(finished.data.newBadges))
 
+  // Second attempt: the same figure question, answered within tolerance.
+  const retry = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId },
+  })
+  check('starts fresh attempt', retry.status === 201 && retry.data.attemptId)
+  const goodFigure = await api(`/attempts/${retry.data.attemptId}/answer`, {
+    method: 'POST',
+    token: studentToken,
+    body: {
+      questionId: figureQuestionId,
+      response: 4.5,
+      msTaken: 3600,
+    },
+  })
+  check(
+    'in-tolerance figure answer accepted',
+    goodFigure.data.correct === true,
+    `correct=${goodFigure.data.correct}`,
+  )
+
   const dash = await api('/stats/student/dashboard', { token: studentToken })
   check('dashboard shows the new run', dash.data.recentAttempts.length > 0)
+
+  // ── Spaced repetition ───────────────────────────────────────
+  console.log('\nSpaced repetition flow:')
+  const due = await api('/srs/due', { token: studentToken })
+  check(
+    'due queue includes the figure question',
+    due.data.cards.some((card) => card.questionId === figureQuestionId),
+  )
+  const figureCard = due.data.cards.find((card) => card.questionId === figureQuestionId)
+  check('cards carry the answer for post-reveal grading', typeof figureCard?.answer === 'string')
+
+  const good = await api('/srs/review', {
+    method: 'POST',
+    token: studentToken,
+    body: { questionId: figureQuestionId, grade: 'good' },
+  })
+  check(
+    'good grade schedules tomorrow',
+    good.status === 201 &&
+      good.data.state?.reps === 1 &&
+      good.data.state?.dueDate > due.data.today,
+    JSON.stringify(good.data.state),
+  )
+
+  const again = await api('/srs/review', {
+    method: 'POST',
+    token: studentToken,
+    body: { questionId: figureQuestionId, grade: 'again' },
+  })
+  check(
+    'again grade lapses back to today',
+    again.status === 201 &&
+      again.data.state?.lapses === 1 &&
+      again.data.state?.intervalDays === 0 &&
+      again.data.state?.dueDate === due.data.today,
+    JSON.stringify(again.data.state),
+  )
+
+  const badGrade = await api('/srs/review', {
+    method: 'POST',
+    token: studentToken,
+    body: { questionId: figureQuestionId, grade: 'meh' },
+  })
+  check('rejects unknown grade', badGrade.status === 400)
+
+  const srsStats = await api('/srs/stats', { token: studentToken })
+  check(
+    'stats track rotation and reviews',
+    srsStats.data.totalCards >= 1 && srsStats.data.reviewedToday >= 1,
+    JSON.stringify(srsStats.data),
+  )
 
   // ── Parent oversight ────────────────────────────────────────
   console.log('\nParent flow:')

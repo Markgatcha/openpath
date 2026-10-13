@@ -15,6 +15,7 @@ import { attemptRoutes } from './routes/attempts'
 import { communityRoutes } from './routes/community'
 import { statsRoutes } from './routes/stats'
 import { aiRoutes } from './routes/ai'
+import { srsRoutes } from './routes/srs'
 import { seedIfEmpty } from './seed'
 
 async function main(): Promise<void> {
@@ -57,6 +58,7 @@ async function main(): Promise<void> {
   await app.register(communityRoutes, { prefix: '/api/community' })
   await app.register(statsRoutes, { prefix: '/api/stats' })
   await app.register(aiRoutes, { prefix: '/api/ai' })
+  await app.register(srsRoutes, { prefix: '/api/srs' })
 
   // Production: serve the built web client from the same port.
   const webDir = path.join(__dirname, '..', '..', 'dist', 'web')

@@ -77,7 +77,7 @@ const migrations: Migration[] = [
       CREATE TABLE IF NOT EXISTS questions (
         id TEXT PRIMARY KEY,
         quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
-        type TEXT NOT NULL CHECK (type IN ('mcq','truefalse','fill','order')),
+        type TEXT NOT NULL CHECK (type IN ('mcq','truefalse','fill','order','figure')),
         prompt TEXT NOT NULL,
         options_json TEXT,
         correct_json TEXT NOT NULL,
@@ -154,6 +154,52 @@ const migrations: Migration[] = [
         ('speedster',    'Speedster',       'Answer in under 5s on average with 80%+ right', 'zap',           'speedster',    6),
         ('explorer',     'Explorer',        'Complete quizzes in 3 different subjects',      'compass',        'explorer',     7),
         ('marathon',     'Marathon Runner', 'Complete 10 quizzes',                          'medal',          'marathon_10',  8);
+    `,
+  },
+  {
+    version: 2,
+    sql: `
+      -- Spaced-repetition flashcards (SM-2-lite scheduling, per student+question)
+      CREATE TABLE IF NOT EXISTS flashcard_states (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        question_id TEXT NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+        ease REAL NOT NULL DEFAULT 2.5,
+        interval_days INTEGER NOT NULL DEFAULT 0,
+        reps INTEGER NOT NULL DEFAULT 0,
+        lapses INTEGER NOT NULL DEFAULT 0,
+        due_date TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, question_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_srs_due ON flashcard_states(user_id, due_date);
+    `,
+  },
+  {
+    // Figure questions need a new value in the questions.type CHECK
+    // constraint; SQLite cannot alter a CHECK in place, so rebuild.
+    version: 3,
+    sql: `
+      CREATE TABLE questions_new (
+        id TEXT PRIMARY KEY,
+        quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+        type TEXT NOT NULL CHECK (type IN ('mcq','truefalse','fill','order','figure')),
+        prompt TEXT NOT NULL,
+        options_json TEXT,
+        correct_json TEXT NOT NULL,
+        alternatives_json TEXT,
+        points INTEGER NOT NULL DEFAULT 10,
+        position INTEGER NOT NULL DEFAULT 0,
+        explanation TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO questions_new
+        (id, quiz_id, type, prompt, options_json, correct_json, alternatives_json, points, position, explanation, created_at)
+        SELECT id, quiz_id, type, prompt, options_json, correct_json, alternatives_json, points, position, explanation, created_at
+        FROM questions;
+      DROP TABLE questions;
+      ALTER TABLE questions_new RENAME TO questions;
+      CREATE INDEX IF NOT EXISTS idx_questions_quiz ON questions(quiz_id, position);
     `,
   },
 ]

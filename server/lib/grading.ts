@@ -1,3 +1,4 @@
+import { toleranceFor } from '../../shared/figure'
 import type { QuestionRow } from '../../shared/types'
 
 /** Loose text comparison for fill-in-the-blank answers. */
@@ -53,6 +54,17 @@ export function gradeAnswer(question: QuestionRow, response: unknown): boolean {
         response.length === correct.length &&
         response.every((value, index) => value === correct[index])
       )
+    }
+    case 'figure': {
+      if (typeof response !== 'number') return false
+      const key = parseJson<number>(question.correct_json)
+      const figure = question.options_json
+        ? parseJson<{ rounding: Parameters<typeof toleranceFor>[0] }>(
+            question.options_json,
+          )
+        : { rounding: 'tenth' as const }
+      const tolerance = toleranceFor(figure.rounding)
+      return Math.abs(response - key) <= tolerance
     }
   }
 }

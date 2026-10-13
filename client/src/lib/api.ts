@@ -11,6 +11,7 @@ import type {
   QuizCreateInput,
   QuizUpdateInput,
   RegisterInput,
+  SrsReviewInput,
   StartAttemptInput,
 } from '@shared/schemas'
 import type {
@@ -24,6 +25,8 @@ import type {
   LeaderboardEntryDTO,
   QuizAnalyticsDTO,
   QuizDTO,
+  SrsCardDTO,
+  SrsStatsDTO,
   StudentDashboardDTO,
   StudentQuestionDTO,
   StudentSummaryDTO,
@@ -233,5 +236,22 @@ export const api = {
         '/ai/generate',
         input,
       ),
+  },
+
+  // ── Spaced repetition ─────────────────────────────────────
+  srs: {
+    stats: () => request<SrsStatsDTO>('/srs/stats'),
+    due: () => request<{ cards: SrsCardDTO[]; today: string }>('/srs/due'),
+    review: (input: SrsReviewInput) =>
+      post<{
+        state: {
+          ease: number
+          intervalDays: number
+          reps: number
+          lapses: number
+          dueDate: string
+        }
+        answer: string
+      }>('/srs/review', input),
   },
 }

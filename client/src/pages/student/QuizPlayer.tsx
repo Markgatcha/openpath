@@ -13,6 +13,7 @@ import {
 import { api } from '@/lib/api'
 import { Button, Card, Spinner, useToast } from '@/components/ui'
 import { ComboMeter, TimerRing } from '@/components/gamified'
+import { FigureCanvas } from '@/components/FigureCanvas'
 import { cn } from '@/lib/utils'
 import type { StudentQuestionDTO } from '@shared/types'
 import type { AttemptFinishDTO } from '@shared/types'
@@ -26,6 +27,7 @@ interface LastResult {
   explanation: string
   points: number
   combo: number
+  correctAnswer?: unknown
 }
 
 export function QuizPlayer() {
@@ -127,6 +129,7 @@ export function QuizPlayer() {
           explanation: result.explanation ?? '',
           points: question.points,
           combo: result.combo ?? 0,
+          correctAnswer: result.correctAnswer,
         })
         setCombo(result.combo ?? 0)
         setPhase('feedback')
@@ -272,7 +275,9 @@ export function QuizPlayer() {
                     ? 'True or false'
                     : question.type === 'fill'
                       ? 'Fill in the blank'
-                      : 'Put in order'}
+                      : question.type === 'figure'
+                        ? 'Figure it out'
+                        : 'Put in order'}
               </span>
               <span className="chip bg-slate-500/15 text-slate-500 dark:text-slate-300">
                 {question.points} pts
@@ -343,6 +348,15 @@ export function QuizPlayer() {
                   onSubmit={(indices) => void submit(indices)}
                 />
               )}
+
+              {question.type === 'figure' && question.figure && (
+                <FigureAnswer
+                  key={question.id}
+                  question={question}
+                  disabled={phase !== 'answering'}
+                  onSubmit={(value) => void submit(value)}
+                />
+              )}
             </div>
 
             {/* Feedback */}
@@ -382,6 +396,12 @@ export function QuizPlayer() {
                       </span>
                     )}
                   </div>
+                  {!lastResult.correct &&
+                    lastResult.correctAnswer !== undefined && (
+                      <p className="mt-1.5 text-sm font-semibold text-rose-600 dark:text-rose-300">
+                        Answer: {formatAnswer(lastResult.correctAnswer)}
+                      </p>
+                    )}
                   {lastResult.explanation && (
                     <p className="mt-2 flex items-start gap-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                       <Lightbulb size={15} className="mt-0.5 shrink-0 text-gold-500" />
@@ -520,6 +540,59 @@ function OrderAnswer({
           Lock in order
         </Button>
       )}
+    </div>
+  )
+}
+
+/** Render a stored correct answer for the feedback screen (never raw objects). */
+function formatAnswer(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) return value.map((item) => String(item)).join(', ')
+  return ''
+}
+
+// ── Figure answer (numeric entry with tolerance) ────────────────
+function FigureAnswer({
+  question,
+  disabled,
+  onSubmit,
+}: {
+  question: StudentQuestionDTO
+  disabled: boolean
+  onSubmit: (value: number) => void
+}) {
+  const [value, setValue] = useState('')
+
+  return (
+    <div className="flex flex-col items-center gap-5">
+      {question.figure && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+          <FigureCanvas geometry={question.figure} size={250} />
+        </div>
+      )}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          const parsed = Number(value)
+          if (value.trim() !== '' && Number.isFinite(parsed)) onSubmit(parsed)
+        }}
+        className="flex w-full max-w-xs gap-2"
+      >
+        <input
+          autoFocus
+          type="number"
+          step="any"
+          className="input"
+          placeholder="Your answer (number)"
+          value={value}
+          disabled={disabled}
+          onChange={(event) => setValue(event.target.value)}
+        />
+        <Button type="submit" disabled={disabled || value.trim() === ''}>
+          Submit
+        </Button>
+      </form>
     </div>
   )
 }

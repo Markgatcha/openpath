@@ -1,3 +1,5 @@
+import { buildFigureGeometry } from '../../shared/figure'
+import type { FigureSpec } from '../../shared/schemas'
 import type {
   AttemptRow,
   AttemptSummaryDTO,
@@ -11,11 +13,16 @@ import type {
 } from '../../shared/types'
 
 export function toQuestionTeacherDTO(row: QuestionRow): TeacherQuestionDTO {
+  const figure =
+    row.type === 'figure' && row.options_json
+      ? (JSON.parse(row.options_json) as FigureSpec)
+      : null
   return {
     id: row.id,
     type: row.type,
     prompt: row.prompt,
-    options: row.options_json ? JSON.parse(row.options_json) : null,
+    options: figure ? null : row.options_json ? JSON.parse(row.options_json) : null,
+    figure,
     correct: JSON.parse(row.correct_json),
     alternatives: row.alternatives_json
       ? JSON.parse(row.alternatives_json)
@@ -27,11 +34,24 @@ export function toQuestionTeacherDTO(row: QuestionRow): TeacherQuestionDTO {
 }
 
 export function toStudentQuestionDTO(row: QuestionRow): StudentQuestionDTO {
+  if (row.type === 'figure' && row.options_json) {
+    const spec = JSON.parse(row.options_json) as FigureSpec
+    return {
+      id: row.id,
+      type: row.type,
+      prompt: row.prompt,
+      options: null,
+      figure: buildFigureGeometry(spec),
+      points: row.points,
+      position: row.position,
+    }
+  }
   return {
     id: row.id,
     type: row.type,
     prompt: row.prompt,
     options: row.options_json ? JSON.parse(row.options_json) : null,
+    figure: null,
     points: row.points,
     position: row.position,
   }

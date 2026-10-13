@@ -226,6 +226,9 @@ export function StudentDashboard() {
         </div>
       </Card>
 
+      {/* Spaced repetition nudge */}
+      <SrsDueCard />
+
       {/* Recommended */}
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -372,5 +375,37 @@ export function StudentDashboard() {
         <CalendarDays size={12} /> Streaks update every day you complete a quiz
       </p>
     </div>
+  )
+}
+
+// ── Spaced-repetition due card ──────────────────────────────────
+function SrsDueCard() {
+  const { data } = useQuery({
+    queryKey: ['srs-stats'],
+    queryFn: api.srs.stats,
+  })
+
+  if (!data || data.dueCount === 0) return null
+
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-4 border-cyan-500/30 bg-cyan-500/5 p-6">
+      <div className="flex items-center gap-4">
+        <span className="grid h-12 w-12 place-items-center rounded-xl bg-cyan-500/15 text-2xl">
+          🧠
+        </span>
+        <div>
+          <h3 className="font-display text-base font-bold text-slate-900 dark:text-white">
+            {data.dueCount} flashcard{data.dueCount === 1 ? '' : 's'} due today
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Two minutes of retrieval practice now beats an hour of rereading
+            later.
+          </p>
+        </div>
+      </div>
+      <Link to="/student/flashcards" className="btn-primary shrink-0">
+        Start review
+      </Link>
+    </Card>
   )
 }

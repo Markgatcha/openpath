@@ -5,7 +5,7 @@ export const ROLES = ['student', 'teacher', 'parent'] as const
 export const RoleSchema = z.enum(ROLES)
 export type Role = z.infer<typeof RoleSchema>
 
-export const QUESTION_TYPES = ['mcq', 'truefalse', 'fill', 'order'] as const
+export const QUESTION_TYPES = ['mcq', 'truefalse', 'fill', 'order', 'figure'] as const
 export const QuestionTypeSchema = z.enum(QUESTION_TYPES)
 export type QuestionType = z.infer<typeof QuestionTypeSchema>
 
@@ -42,6 +42,21 @@ export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>
 const pointsField = z.number().int().min(1).max(100).default(10)
 const explanationField = z.string().max(500).default('')
 
+export const FigureSpecSchema = z.object({
+  template: z.enum([
+    'triangle-sas',
+    'triangle-sss',
+    'triangle-asa',
+    'right-triangle',
+    'circle',
+    'trapezoid',
+  ]),
+  givens: z.record(z.string(), z.number()),
+  ask: z.string().min(1).max(30),
+  rounding: z.enum(['integer', 'tenth', 'hundredth', 'thousandth', 'exact']),
+})
+export type FigureSpec = z.infer<typeof FigureSpecSchema>
+
 export const QuestionInputSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('mcq'),
@@ -71,6 +86,13 @@ export const QuestionInputSchema = z.discriminatedUnion('type', [
     prompt: z.string().min(3).max(500),
     options: z.array(z.string().min(1).max(200)).min(2).max(8),
     correct: z.array(z.number().int().min(0)).min(2).max(8),
+    points: pointsField,
+    explanation: explanationField,
+  }),
+  z.object({
+    type: z.literal('figure'),
+    prompt: z.string().min(3).max(500),
+    figure: FigureSpecSchema,
     points: pointsField,
     explanation: explanationField,
   }),
@@ -129,6 +151,13 @@ export const LinkChildSchema = z.object({
   code: z.string().min(4).max(32),
 })
 export type LinkChildInput = z.infer<typeof LinkChildSchema>
+
+// ── Spaced repetition ─────────────────────────────────────────
+export const SrsReviewSchema = z.object({
+  questionId: z.string().min(1),
+  grade: z.enum(['again', 'hard', 'good', 'easy']),
+})
+export type SrsReviewInput = z.infer<typeof SrsReviewSchema>
 
 // ── AI ────────────────────────────────────────────────────────
 export const AI_GENERATABLE_TYPES = ['mcq', 'truefalse', 'fill'] as const

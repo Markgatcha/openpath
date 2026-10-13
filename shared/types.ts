@@ -1,5 +1,6 @@
-import type { Role, QuestionType, Difficulty } from './schemas'
+import type { Role, QuestionType, Difficulty, FigureSpec } from './schemas'
 import type { XpProgress } from './game'
+import type { FigureGeometry } from './figure'
 import { xpProgress } from './game'
 
 // ── Database rows ─────────────────────────────────────────────
@@ -146,6 +147,7 @@ export interface TeacherQuestionDTO {
   type: QuestionType
   prompt: string
   options: string[] | null
+  figure: FigureSpec | null
   correct: unknown
   alternatives: string[]
   points: number
@@ -158,6 +160,8 @@ export interface StudentQuestionDTO {
   type: QuestionType
   prompt: string
   options: string[] | null
+  /** Prepared drawing data for figure questions (asked values become "?"). */
+  figure: FigureGeometry | null
   points: number
   position: number
 }
@@ -308,4 +312,34 @@ export interface AiQuestionDraft {
   alternatives?: string[]
   explanation?: string
   points?: number
+}
+
+// ── Spaced repetition ─────────────────────────────────────────
+export type ReviewGrade = 'again' | 'hard' | 'good' | 'easy'
+
+export interface SrsCardDTO {
+  questionId: string
+  quizId: string
+  quizTitle: string
+  prompt: string
+  type: QuestionType
+  isNew: boolean
+  /** Practice-only: arrives with the queue; reveal on tap. */
+  answer: string
+  explanation: string
+  state: {
+    ease: number
+    intervalDays: number
+    reps: number
+    lapses: number
+    dueDate: string
+  } | null
+}
+
+export interface SrsStatsDTO {
+  dueCount: number
+  scheduledCount: number
+  newCount: number
+  totalCards: number
+  reviewedToday: number
 }

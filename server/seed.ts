@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { db } from './db'
 import { hashPassword } from './lib/auth'
+import { computeAnswer } from '../shared/figure'
+import type { FigureSpec } from '../shared/figure'
 import { computeXp } from '../shared/game'
 import type { QuestionRow, QuizRow } from '../shared/types'
 
@@ -8,10 +10,11 @@ interface SeedQuestion {
   type: QuestionRow['type']
   prompt: string
   options?: string[]
-  correct: number | boolean | string | number[]
+  correct?: number | boolean | string | number[]
   alternatives?: string[]
   points?: number
   explanation?: string
+  figure?: FigureSpec
 }
 
 interface SeedQuiz {
@@ -65,6 +68,7 @@ function addQuiz(teacherId: string, quiz: SeedQuiz): string {
   )
 
   quiz.questions.forEach((question, index) => {
+    const isFigure = question.type === 'figure' && question.figure
     db.prepare(
       `INSERT INTO questions (id, quiz_id, type, prompt, options_json, correct_json, alternatives_json, points, position, explanation)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -73,8 +77,9 @@ function addQuiz(teacherId: string, quiz: SeedQuiz): string {
       id,
       question.type,
       question.prompt,
-      question.options ? JSON.stringify(question.options) : null,
-      JSON.stringify(question.correct),
+      // Figure questions keep their spec where options live; the key is computed.
+      isFigure ? JSON.stringify(question.figure) : question.options ? JSON.stringify(question.options) : null,
+      JSON.stringify(isFigure ? computeAnswer(question.figure!) : question.correct),
       question.alternatives ? JSON.stringify(question.alternatives) : null,
       question.points ?? 10,
       index,
@@ -368,6 +373,70 @@ export function seedIfEmpty(): void {
     ],
   })
 
+  const geometryQuiz = addQuiz(teacherId, {
+    title: 'Triangle Quest',
+    description: 'Solve for the missing sides — the figure is your friend.',
+    subject: 'Geometry',
+    difficulty: 'medium',
+    timeLimitSec: 600,
+    questions: [
+      {
+        type: 'figure',
+        prompt: 'Find the length of side a. Round to the nearest tenth.',
+        figure: {
+          template: 'triangle-sas',
+          givens: { b: 7, c: 5, angleA: 40 },
+          ask: 'a',
+          rounding: 'tenth',
+        },
+        explanation:
+          'Law of cosines: a² = b² + c² − 2bc·cos(A) = 49 + 25 − 70·cos(40°) ≈ 20.4, so a ≈ 4.5.',
+        points: 10,
+      },
+      {
+        type: 'figure',
+        prompt: 'Find the hypotenuse. Round to the nearest tenth.',
+        figure: {
+          template: 'right-triangle',
+          givens: { a: 3, b: 4 },
+          ask: 'c',
+          rounding: 'tenth',
+        },
+        explanation: 'Pythagorean theorem: c = √(3² + 4²) = 5.',
+        points: 10,
+      },
+      {
+        type: 'figure',
+        prompt: 'Find the area of the circle. Round to the nearest tenth.',
+        figure: {
+          template: 'circle',
+          givens: { r: 6 },
+          ask: 'area',
+          rounding: 'tenth',
+        },
+        explanation: 'A = πr² = π·6² = 36π ≈ 113.1.',
+        points: 10,
+      },
+      {
+        type: 'mcq',
+        prompt:
+          'You know two sides and the included angle of a triangle. Which law finds the third side?',
+        options: ['Law of sines', 'Law of cosines', 'Pythagorean theorem', 'Tangent ratio'],
+        correct: 1,
+        explanation:
+          'The law of cosines is built for SAS: c² = a² + b² − 2ab·cos(C).',
+        points: 10,
+      },
+      {
+        type: 'truefalse',
+        prompt: 'The Pythagorean theorem works on every triangle.',
+        correct: false,
+        explanation: 'It only applies to right triangles — for others, use sine or cosine laws.',
+        points: 10,
+      },
+    ],
+  })
+
   // Grace: strong student with history across all three subjects.
   const graceXp =
     addAttempt(graceId, solarQuiz, [2], 2) +
@@ -375,7 +444,9 @@ export function seedIfEmpty(): void {
     addAttempt(graceId, fractionQuiz, [], 1)
 
   // Linus: newer to the journey.
-  const linusXp = addAttempt(linusId, solarQuiz, [1, 4], 3)
+  const linusXp =
+    addAttempt(linusId, solarQuiz, [1, 4], 3) +
+    addAttempt(linusId, geometryQuiz, [3], 4)
 
   db.prepare(
     `UPDATE users SET xp = ?, streak_days = 4, streak_last_active = date('now'), minutes_today = 18, minutes_today_date = date('now')

@@ -28,17 +28,18 @@ import {
   Textarea,
   useToast,
 } from '@/components/ui'
+import { FigureSection } from './FigureEditor'
 import { cn } from '@/lib/utils'
-import type { QuestionInput } from '@shared/schemas'
+import type { QuestionInput, QuestionType } from '@shared/schemas'
 import type { AiQuestionDraft, QuizDTO, TeacherQuestionDTO } from '@shared/types'
 
-type QuestionType = 'mcq' | 'truefalse' | 'fill' | 'order'
 
 const TYPE_LABEL: Record<QuestionType, string> = {
   mcq: 'Multiple choice',
   truefalse: 'True / false',
   fill: 'Fill in the blank',
   order: 'Put in order',
+  figure: 'Figure it out',
 }
 
 const SUBJECTS = ['General', 'Science', 'Math', 'Geography', 'History', 'English', 'Language', 'Art', 'Music', 'Computer']
@@ -107,7 +108,16 @@ export function QuizBuilder() {
     setAddOpen(false)
     const base = {
       type,
-      prompt: type === 'mcq' ? 'New question…' : type === 'order' ? 'Put these in order…' : type === 'fill' ? 'Fill in the blank: …' : 'True or false: …',
+      prompt:
+        type === 'mcq'
+          ? 'New question…'
+          : type === 'order'
+            ? 'Put these in order…'
+            : type === 'fill'
+              ? 'Fill in the blank: …'
+              : type === 'figure'
+                ? 'Solve for the missing value. Round to the nearest tenth.'
+                : 'True or false: …',
       points: 10,
       explanation: '',
     }
@@ -118,7 +128,18 @@ export function QuizBuilder() {
           ? { ...base, type: 'truefalse', correct: true }
           : type === 'fill'
             ? { ...base, type: 'fill', correct: '', alternatives: [] }
-            : { ...base, type: 'order', options: ['First', 'Second', 'Third'], correct: [0, 1, 2] }
+            : type === 'order'
+              ? { ...base, type: 'order', options: ['First', 'Second', 'Third'], correct: [0, 1, 2] }
+              : {
+                  ...base,
+                  type: 'figure',
+                  figure: {
+                    template: 'triangle-sas',
+                    givens: { b: 7, c: 5, angleA: 40 },
+                    ask: 'a',
+                    rounding: 'tenth',
+                  },
+                }
     try {
       const result = await api.quizzes.addQuestion(quizId, input)
       invalidate()
@@ -477,6 +498,13 @@ function QuestionEditor({
           onChange={(event) => update({ prompt: event.target.value })}
         />
       </Field>
+
+      {draft.type === 'figure' && (
+        <FigureSection
+          figure={draft.figure}
+          onChange={(figure) => update({ figure })}
+        />
+      )}
 
       {draft.type === 'mcq' && (
         <div className="flex flex-col gap-2.5">
