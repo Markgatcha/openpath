@@ -226,6 +226,81 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
     `,
   },
+  {
+    // Classroom economy: coins earned from graded work, spent in the shop.
+    version: 5,
+    sql: `
+      ALTER TABLE users ADD COLUMN coins INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE users ADD COLUMN cosmetics_json TEXT;
+      ALTER TABLE quizzes ADD COLUMN kind TEXT NOT NULL DEFAULT 'quiz'
+        CHECK (kind IN ('homework','classwork','quiz','test'));
+
+      CREATE TABLE IF NOT EXISTS teacher_economy (
+        teacher_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        currency_name TEXT NOT NULL DEFAULT 'Coins',
+        currency_icon TEXT NOT NULL DEFAULT '🪙',
+        points_per_coin INTEGER NOT NULL DEFAULT 10
+          CHECK (points_per_coin BETWEEN 1 AND 1000),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS shop_items (
+        id TEXT PRIMARY KEY,
+        teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL
+          CHECK (category IN ('background','nameplate','name-style','font')),
+        price INTEGER NOT NULL CHECK (price BETWEEN 0 AND 100000),
+        item_data TEXT NOT NULL DEFAULT '{}',
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_shop_items_teacher ON shop_items(teacher_id);
+
+      CREATE TABLE IF NOT EXISTS purchases (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        item_id TEXT NOT NULL,
+        price INTEGER NOT NULL,
+        currency_name TEXT NOT NULL DEFAULT 'Coins',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_purchases_user ON purchases(user_id);
+
+      CREATE TABLE IF NOT EXISTS level_rewards (
+        id TEXT PRIMARY KEY,
+        teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        level INTEGER NOT NULL CHECK (level BETWEEN 2 AND 100),
+        reward_type TEXT NOT NULL CHECK (reward_type IN ('coins','item')),
+        coins INTEGER NOT NULL DEFAULT 0,
+        item_id TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (teacher_id, level)
+      );
+
+      CREATE TABLE IF NOT EXISTS level_rewards_granted (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        teacher_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        level INTEGER NOT NULL,
+        granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, teacher_id, level)
+      );
+
+      CREATE TABLE IF NOT EXISTS coin_ledger (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        delta INTEGER NOT NULL,
+        balance_after INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        source_type TEXT,
+        source_id TEXT,
+        currency_name TEXT NOT NULL DEFAULT 'Coins',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_ledger_user ON coin_ledger(user_id, created_at DESC);
+    `,
+  },
 ]
 
 export function migrate(): void {

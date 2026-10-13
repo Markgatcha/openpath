@@ -3,6 +3,7 @@ import { db } from '../db'
 import { requireAuth, requireRole } from '../lib/auth'
 import { badRequest, notFound, parse } from '../lib/http'
 import { toBadgeDTO } from '../lib/mappers'
+import { readCosmetics } from '../lib/economy'
 import { studentSummary } from '../lib/student-stats'
 import { levelFromXp } from '../../shared/game'
 import { LinkChildSchema } from '../../shared/schemas'
@@ -94,6 +95,7 @@ export const communityRoutes: FastifyPluginAsync = async (app) => {
       level: levelFromXp(entry.xp),
       streakDays: entry.row.streak_days,
       isMe: entry.row.id === user.id,
+      cosmetics: readCosmetics(entry.row),
     }))
 
     let myRank: number | null = null

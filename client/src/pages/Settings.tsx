@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   BrainCircuit,
   Check,
@@ -7,6 +8,7 @@ import {
   Palette,
   RefreshCw,
   Save,
+  Sparkles,
   UserCog,
 } from 'lucide-react'
 import { api } from '@/lib/api'
@@ -19,11 +21,22 @@ import {
   CopyCode,
   Field,
   Input,
+  Select,
   Spinner,
   useToast,
 } from '@/components/ui'
+import { NameplateBadge, StyledName } from '@/components/Cosmetics'
 import { cn } from '@/lib/utils'
 import { AVATAR_COLORS } from '@shared/game'
+import {
+  CATEGORY_LABELS,
+  DIRECTION_LABELS,
+  GRADIENT_DIRECTIONS,
+  paintToCss,
+  type Cosmetics,
+  type GradientDirection,
+} from '@shared/economy'
+import type { ShopItemDTO } from '@shared/types'
 
 export function Settings() {
   const { user, setUser, logout } = useAuth()
@@ -190,7 +203,7 @@ export function Settings() {
       <Card className="flex items-center justify-between p-6">
         <div>
           <h2 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            <Palette size={15} /> Appearance
+            <Palette size={15} /> Theme
           </h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Currently using the {theme} theme.
@@ -200,6 +213,9 @@ export function Settings() {
           <RefreshCw size={15} /> Switch to {theme === 'dark' ? 'light' : 'dark'}
         </Button>
       </Card>
+
+      {/* Purchased look */}
+      {user.role === 'student' && <LookEditor />}
 
       {/* AI providers */}
       <Card className="flex flex-col gap-5 p-6">
@@ -347,5 +363,191 @@ export function Settings() {
         </Button>
       </Card>
     </div>
+  )
+}
+
+// ── Purchased look ─────────────────────────────────────────────
+function LookEditor() {
+  const { user, setUser } = useAuth()
+  const toast = useToast()
+  const { data } = useQuery({ queryKey: ['shop'], queryFn: api.economy.shop })
+
+  const owned = (data?.items ?? []).filter((item) => item.owned)
+  const cosmetics = user?.cosmetics
+
+  const equip = async (itemId: string) => {
+    try {
+      const result = await api.economy.equip(itemId)
+      setUser({ ...user!, cosmetics: result.cosmetics })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not equip', 'error')
+    }
+  }
+
+  const unequip = async (
+    category: 'background' | 'name-style' | 'nameplate' | 'font',
+  ) => {
+    try {
+      const result = await api.economy.unequip(category)
+      setUser({ ...user!, cosmetics: result.cosmetics })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not reset', 'error')
+    }
+  }
+
+  // Students can re-aim a gradient they own without buying anything new.
+  const setDirection = async (
+    slot: 'background' | 'nameStyle',
+    direction: GradientDirection,
+  ) => {
+    if (!cosmetics) return
+    const current = cosmetics[slot]
+    if (current.type !== 'gradient') return
+    try {
+      const next: Cosmetics = {
+        ...cosmetics,
+        [slot]: { ...current, direction },
+      }
+      const result = await api.updateProfile({ cosmetics: next })
+      setUser({ ...user!, cosmetics: result.user.cosmetics })
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not update', 'error')
+    }
+  }
+
+  if (!cosmetics) return null
+
+  const gradientSlots: { slot: 'background' | 'nameStyle'; label: string }[] = [
+    { slot: 'background', label: 'Background flow' },
+    { slot: 'nameStyle', label: 'Name flow' },
+  ]
+
+  return (
+    <Card className="flex flex-col gap-5 p-6">
+      <div>
+        <h2 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <Sparkles size={15} /> Your look
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Everything you bought in the reward shop, worn exactly how you like
+          it. Grab more in the{' '}
+          <Link to="/student/shop" className="font-semibold text-brand-500">
+            shop
+          </Link>
+          .
+        </p>
+      </div>
+
+      {/* Live preview */}
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-100 p-4 dark:border-white/5">
+        <NameplateBadge nameplate={cosmetics.nameplate}>
+          <StyledName
+            name={user?.name ?? 'You'}
+            paint={cosmetics.nameStyle}
+            font={cosmetics.font}
+            className="text-lg font-extrabold"
+          />
+        </NameplateBadge>
+        <span className="text-xs text-slate-400">leaderboard preview</span>
+      </div>
+
+      {(['background', 'name-style', 'nameplate', 'font'] as const).map(
+        (category) => {
+          const options = owned.filter((item) => item.category === category)
+          const isEquipped = (item: ShopItemDTO): boolean => {
+            if (category === 'background') {
+              return (
+                JSON.stringify(cosmetics.background) ===
+                JSON.stringify(item.itemData)
+              )
+            }
+            if (category === 'name-style') {
+              return (
+                JSON.stringify(cosmetics.nameStyle) ===
+                JSON.stringify(item.itemData)
+              )
+            }
+            if (category === 'nameplate') {
+              return (
+                JSON.stringify(cosmetics.nameplate) ===
+                JSON.stringify(item.itemData)
+              )
+            }
+            return cosmetics.font === (item.itemData as { font: string }).font
+          }
+          return (
+            <div key={category}>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="label mb-0">{CATEGORY_LABELS[category]}</span>
+                {options.length > 0 && (
+                  <button
+                    onClick={() => void unequip(category)}
+                    className="text-xs font-semibold text-slate-400 hover:text-rose-500"
+                  >
+                    reset
+                  </button>
+                )}
+              </div>
+              {options.length === 0 ? (
+                <p className="text-xs text-slate-400">Nothing owned here yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {options.map((item) => {
+                    const active = isEquipped(item)
+                    const data = item.itemData as Record<string, unknown>
+                    const swatch =
+                      data.type === 'solid' || data.type === 'gradient'
+                        ? paintToCss(data as never)
+                        : undefined
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => void equip(item.id)}
+                        className={cn(
+                          'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition',
+                          active
+                            ? 'border-brand-500 bg-brand-500/10 text-brand-600 dark:text-brand-300'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300 dark:border-white/10 dark:text-slate-300',
+                        )}
+                      >
+                        {swatch && (
+                          <span
+                            className="h-5 w-5 rounded-md border border-black/10"
+                            style={{ background: swatch }}
+                          />
+                        )}
+                        {item.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        },
+      )}
+
+      {/* Gradient direction overrides */}
+      {gradientSlots.map(({ slot, label }) => {
+        const paint = cosmetics[slot]
+        if (paint.type !== 'gradient') return null
+        return (
+          <Field key={slot} label={label}>
+            <Select
+              value={paint.direction}
+              onChange={(event) =>
+                void setDirection(slot, event.target.value as GradientDirection)
+              }
+            >
+              {GRADIENT_DIRECTIONS.map((direction) => (
+                <option key={direction} value={direction}>
+                  {DIRECTION_LABELS[direction]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )
+      })}
+    </Card>
   )
 }

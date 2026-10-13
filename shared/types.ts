@@ -1,6 +1,8 @@
 import type { Role, QuestionType, Difficulty, FigureSpec } from './schemas'
 import type { XpProgress } from './game'
 import type { FigureGeometry } from './figure'
+import type { Cosmetics, Paint, Nameplate, QuizKind } from './economy'
+import { DEFAULT_COSMETICS } from './economy'
 import { xpProgress } from './game'
 
 // ── Database rows ─────────────────────────────────────────────
@@ -18,6 +20,8 @@ export interface UserRow {
   minutes_today: number
   minutes_today_date: string | null
   link_code: string | null
+  coins: number
+  cosmetics_json: string | null
   created_at: string
 }
 
@@ -27,6 +31,7 @@ export interface QuizRow {
   description: string
   subject: string
   difficulty: Difficulty
+  kind: QuizKind
   teacher_id: string
   classroom_id: string | null
   time_limit_sec: number | null
@@ -105,10 +110,20 @@ export interface UserDTO {
   streakDays: number
   dailyGoalMinutes: number
   linkCode: string | null
+  coins: number
+  cosmetics: Cosmetics
   createdAt: string
 }
 
 export function toUserDTO(row: UserRow): UserDTO {
+  let cosmetics: Cosmetics = DEFAULT_COSMETICS
+  if (row.cosmetics_json) {
+    try {
+      cosmetics = { ...DEFAULT_COSMETICS, ...(JSON.parse(row.cosmetics_json) as Cosmetics) }
+    } catch {
+      cosmetics = DEFAULT_COSMETICS
+    }
+  }
   return {
     id: row.id,
     email: row.email,
@@ -121,6 +136,8 @@ export function toUserDTO(row: UserRow): UserDTO {
     streakDays: row.streak_days,
     dailyGoalMinutes: row.daily_goal_minutes,
     linkCode: row.link_code,
+    coins: row.coins ?? 0,
+    cosmetics,
     createdAt: row.created_at,
   }
 }
@@ -131,6 +148,7 @@ export interface QuizDTO {
   description: string
   subject: string
   difficulty: Difficulty
+  kind: QuizKind
   timeLimitSec: number | null
   published: boolean
   questionCount: number
@@ -202,6 +220,15 @@ export interface AttemptFinishDTO {
   breakdown: AnswerResultDTO[]
   comboBest: number
   avgMs: number
+  coinsEarned: { amount: number; currencyName: string; currencyIcon: string } | null
+  levelRewards: {
+    level: number
+    rewardType: 'coins' | 'item'
+    coins: number
+    itemName: string | null
+    currencyName: string
+    currencyIcon: string
+  }[]
 }
 
 export interface BadgeDTO {
@@ -222,6 +249,7 @@ export interface LeaderboardEntryDTO {
   level: number
   streakDays: number
   isMe: boolean
+  cosmetics: Cosmetics
 }
 
 export interface ClassroomDTO {
@@ -403,4 +431,44 @@ export interface AssignmentDueDTO {
   maxAttempts: number
   completed: boolean
   bestScore: number | null
+}
+
+// ── Classroom economy ──────────────────────────────────────────
+export interface EconomyDTO {
+  currencyName: string
+  currencyIcon: string
+  pointsPerCoin: number
+}
+
+export interface LevelRewardDTO {
+  id: string
+  level: number
+  rewardType: 'coins' | 'item'
+  coins: number
+  itemId: string | null
+  itemName: string | null
+}
+
+export interface ShopItemDTO {
+  id: string
+  teacherId: string
+  teacherName: string
+  name: string
+  description: string
+  category: 'background' | 'nameplate' | 'name-style' | 'font'
+  price: number
+  itemData: Paint | Nameplate | { font: string }
+  active: boolean
+  owned: boolean
+  purchaseCount: number
+  createdAt: string
+}
+
+export interface CoinTxDTO {
+  id: string
+  delta: number
+  balanceAfter: number
+  reason: string
+  currencyName: string
+  createdAt: string
 }

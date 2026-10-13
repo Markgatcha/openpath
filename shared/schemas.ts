@@ -13,6 +13,41 @@ export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 export const DifficultySchema = z.enum(DIFFICULTIES)
 export type Difficulty = z.infer<typeof DifficultySchema>
 
+// ── Cosmetic paints (used by profile updates and the shop) ────
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
+
+const paintSchema = z.union([
+  z.object({ type: z.literal('solid'), color: hexColor }),
+  z.object({
+    type: z.literal('gradient'),
+    from: hexColor,
+    to: hexColor,
+    direction: z.enum([
+      'south-north',
+      'north-south',
+      'west-east',
+      'east-west',
+      'diagonal',
+    ]),
+  }),
+])
+
+const nameplateSchema = z.union([
+  paintSchema,
+  z.object({
+    type: z.literal('image'),
+    image: z.string().min(1).max(400_000),
+  }),
+])
+
+export const CosmeticsSchema = z.object({
+  background: paintSchema,
+  nameStyle: paintSchema,
+  font: z.string().max(60).nullable().default(null),
+  nameplate: nameplateSchema.nullable().default(null),
+})
+export type CosmeticsInput = z.infer<typeof CosmeticsSchema>
+
 // ── Auth ──────────────────────────────────────────────────────
 export const RegisterSchema = z.object({
   email: z.string().email().max(200),
@@ -35,6 +70,7 @@ export const ProfileUpdateSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .optional(),
   dailyGoalMinutes: z.number().int().min(5).max(240).optional(),
+  cosmetics: CosmeticsSchema.optional(),
 })
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>
 
@@ -105,6 +141,7 @@ export const QuizCreateSchema = z.object({
   description: z.string().max(1000).default(''),
   subject: z.string().min(2).max(60),
   difficulty: DifficultySchema.default('medium'),
+  kind: z.enum(['homework', 'classwork', 'quiz', 'test']).default('quiz'),
   timeLimitSec: z.number().int().min(0).max(7200).nullable().default(null),
   classroomId: z.string().nullable().default(null),
 })
@@ -226,6 +263,44 @@ export const BackupRestoreSchema = z.object({
   }),
 })
 export type BackupRestoreInput = z.infer<typeof BackupRestoreSchema>
+
+// ── Classroom economy ─────────────────────────────────────────
+export const EconomySettingsSchema = z.object({
+  currencyName: z.string().min(1).max(40),
+  currencyIcon: z.string().min(1).max(8),
+  pointsPerCoin: z.number().int().min(1).max(1000),
+})
+export type EconomySettingsInput = z.infer<typeof EconomySettingsSchema>
+
+export const LevelRewardSchema = z.object({
+  level: z.number().int().min(2).max(100),
+  rewardType: z.enum(['coins', 'item']),
+  coins: z.number().int().min(0).max(100000).default(0),
+  itemId: z.string().min(1).nullable().default(null),
+})
+export type LevelRewardInput = z.infer<typeof LevelRewardSchema>
+
+export const LevelRewardsSchema = z.object({
+  rewards: z.array(LevelRewardSchema).max(50),
+})
+export type LevelRewardsInput = z.infer<typeof LevelRewardsSchema>
+
+export const ShopItemCreateSchema = z.object({
+  name: z.string().min(2).max(80),
+  description: z.string().max(300).default(''),
+  category: z.enum(['background', 'nameplate', 'name-style', 'font']),
+  price: z.number().int().min(0).max(100000),
+  itemData: z.union([
+    paintSchema,
+    z.object({ font: z.string().min(1).max(60) }),
+  ]),
+})
+export type ShopItemCreateInput = z.infer<typeof ShopItemCreateSchema>
+
+export const ShopItemUpdateSchema = ShopItemCreateSchema.partial().extend({
+  active: z.boolean().optional(),
+})
+export type ShopItemUpdateInput = z.infer<typeof ShopItemUpdateSchema>
 
 // ── AI ────────────────────────────────────────────────────────
 export const AI_GENERATABLE_TYPES = ['mcq', 'truefalse', 'fill'] as const

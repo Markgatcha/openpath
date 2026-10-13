@@ -6,7 +6,9 @@ import type {
   AttemptAnswerInput,
   BackupRestoreInput,
   ClassroomCreateInput,
+  EconomySettingsInput,
   JoinClassroomInput,
+  LevelRewardsInput,
   LinkChildInput,
   LoginInput,
   PackInstallInput,
@@ -16,9 +18,12 @@ import type {
   QuizCreateInput,
   QuizUpdateInput,
   RegisterInput,
+  ShopItemCreateInput,
+  ShopItemUpdateInput,
   SrsReviewInput,
   StartAttemptInput,
 } from '@shared/schemas'
+import type { Cosmetics } from '@shared/economy'
 import type {
   AiQuestionDraft,
   AiStatusDTO,
@@ -29,9 +34,13 @@ import type {
   BadgeDTO,
   ChildDetailDTO,
   ClassroomDTO,
+  CoinTxDTO,
+  EconomyDTO,
   LeaderboardEntryDTO,
+  LevelRewardDTO,
   QuizAnalyticsDTO,
   QuizDTO,
+  ShopItemDTO,
   SrsCardDTO,
   SrsStatsDTO,
   StudentDashboardDTO,
@@ -342,5 +351,53 @@ export const api = {
       ),
     attemptsCsv: (quizId: string) =>
       downloadFile(`/export/attempts.csv?quizId=${quizId}`, 'attempts.csv'),
+  },
+
+  // ── Classroom economy ──────────────────────────────────────
+  economy: {
+    // Teacher
+    mine: () =>
+      request<{
+        economy: EconomyDTO
+        rewards: LevelRewardDTO[]
+        items: ShopItemDTO[]
+      }>('/economy/mine'),
+    saveSettings: (input: EconomySettingsInput) =>
+      request<{ economy: EconomyDTO }>('/economy/settings', {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    saveRewards: (input: LevelRewardsInput) =>
+      request<{ rewards: LevelRewardDTO[] }>('/economy/rewards', {
+        method: 'PUT',
+        body: JSON.stringify(input),
+      }),
+    createItem: (input: ShopItemCreateInput) =>
+      post<{ item: ShopItemDTO }>('/economy/items', input),
+    updateItem: (id: string, input: ShopItemUpdateInput) =>
+      request<{ item: ShopItemDTO }>(`/economy/items/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    removeItem: (id: string) => del<void>(`/economy/items/${id}`),
+    grant: (input: { studentId: string; amount: number }) =>
+      post<{ coins: number }>('/economy/grant', input),
+
+    // Student
+    shop: () =>
+      request<{
+        coins: number
+        items: ShopItemDTO[]
+        equipped: Cosmetics
+      }>('/economy/shop'),
+    buy: (id: string) =>
+      post<{ coins: number; item: ShopItemDTO; cosmetics: Cosmetics }>(
+        `/economy/shop/${id}/buy`,
+      ),
+    equip: (itemId: string) =>
+      post<{ cosmetics: Cosmetics }>('/economy/equip', { itemId }),
+    unequip: (category: 'background' | 'name-style' | 'nameplate' | 'font') =>
+      post<{ cosmetics: Cosmetics }>('/economy/unequip', { category }),
+    ledger: () => request<{ transactions: CoinTxDTO[] }>('/economy/ledger'),
   },
 }

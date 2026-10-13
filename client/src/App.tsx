@@ -17,12 +17,14 @@ import { Results } from '@/pages/student/Results'
 import { Badges } from '@/pages/student/Badges'
 import { Leaderboard } from '@/pages/student/Leaderboard'
 import { Flashcards } from '@/pages/student/Flashcards'
+import { Shop } from '@/pages/student/Shop'
 import { TeacherDashboard } from '@/pages/teacher/Dashboard'
 import { QuizList } from '@/pages/teacher/QuizList'
 import { QuizBuilder } from '@/pages/teacher/QuizBuilder'
 import { Classrooms } from '@/pages/teacher/Classrooms'
 import { Assignments } from '@/pages/teacher/Assignments'
 import { ContentPacks } from '@/pages/teacher/ContentPacks'
+import { Economy } from '@/pages/teacher/Economy'
 import { Analytics } from '@/pages/teacher/Analytics'
 import { ParentDashboard } from '@/pages/parent/Dashboard'
 import { ChildDetail } from '@/pages/parent/ChildDetail'
@@ -102,6 +104,7 @@ export default function App() {
             <Route path="/student/badges" element={<Badges />} />
             <Route path="/student/leaderboard" element={<Leaderboard />} />
             <Route path="/student/flashcards" element={<Flashcards />} />
+            <Route path="/student/shop" element={<Shop />} />
           </Route>
 
           <Route element={<RequireAuth role="teacher" />}>
@@ -115,6 +118,7 @@ export default function App() {
             <Route path="/teacher/classrooms" element={<Classrooms />} />
             <Route path="/teacher/assignments" element={<Assignments />} />
             <Route path="/teacher/packs" element={<ContentPacks />} />
+            <Route path="/teacher/economy" element={<Economy />} />
           </Route>
 
           <Route element={<RequireAuth role="parent" />}>

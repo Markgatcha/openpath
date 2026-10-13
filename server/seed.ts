@@ -22,6 +22,7 @@ interface SeedQuiz {
   description: string
   subject: string
   difficulty: QuizRow['difficulty']
+  kind?: QuizRow['kind']
   timeLimitSec: number | null
   classroomId?: string
   questions: SeedQuestion[]
@@ -34,11 +35,16 @@ function addUser(
   role: 'student' | 'teacher' | 'parent',
   password: string,
   avatarColor: string,
-  options: { linkCode?: string; dailyGoalMinutes?: number } = {},
+  options: {
+    linkCode?: string
+    dailyGoalMinutes?: number
+    coins?: number
+    cosmetics?: unknown
+  } = {},
 ): void {
   db.prepare(
-    `INSERT INTO users (id, email, name, role, password_hash, avatar_color, link_code, daily_goal_minutes, minutes_today_date)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, date('now'))`,
+    `INSERT INTO users (id, email, name, role, password_hash, avatar_color, link_code, daily_goal_minutes, minutes_today_date, coins, cosmetics_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, date('now'), ?, ?)`,
   ).run(
     id,
     email,
@@ -48,20 +54,23 @@ function addUser(
     avatarColor,
     options.linkCode ?? null,
     options.dailyGoalMinutes ?? 20,
+    options.coins ?? 0,
+    options.cosmetics ? JSON.stringify(options.cosmetics) : null,
   )
 }
 
 function addQuiz(teacherId: string, quiz: SeedQuiz): string {
   const id = randomUUID()
   db.prepare(
-    `INSERT INTO quizzes (id, title, description, subject, difficulty, teacher_id, classroom_id, time_limit_sec, published)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `INSERT INTO quizzes (id, title, description, subject, difficulty, kind, teacher_id, classroom_id, time_limit_sec, published)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
   ).run(
     id,
     quiz.title,
     quiz.description,
     quiz.subject,
     quiz.difficulty,
+    quiz.kind ?? 'quiz',
     teacherId,
     quiz.classroomId ?? null,
     quiz.timeLimitSec,
@@ -229,6 +238,7 @@ export function seedIfEmpty(): void {
     description: 'A guided tour of our cosmic neighbourhood — planets, moons, and one very shiny star.',
     subject: 'Science',
     difficulty: 'medium',
+    kind: 'classwork',
     timeLimitSec: 600,
     classroomId: 'demo-room42',
     questions: [
@@ -287,6 +297,7 @@ export function seedIfEmpty(): void {
     description: 'Do you know where the decisions happen? Test your capital-city knowledge.',
     subject: 'Geography',
     difficulty: 'easy',
+    kind: 'quiz',
     timeLimitSec: null,
     questions: [
       {
@@ -336,6 +347,7 @@ export function seedIfEmpty(): void {
     description: 'Halves, thirds, quarters — prove your fraction fluency against the clock.',
     subject: 'Math',
     difficulty: 'medium',
+    kind: 'homework',
     timeLimitSec: 300,
     questions: [
       {
@@ -378,6 +390,7 @@ export function seedIfEmpty(): void {
     description: 'Solve for the missing sides — the figure is your friend.',
     subject: 'Geometry',
     difficulty: 'medium',
+    kind: 'test',
     timeLimitSec: 600,
     questions: [
       {
@@ -448,6 +461,109 @@ export function seedIfEmpty(): void {
     `INSERT INTO assignments (id, quiz_id, classroom_id, title, due_date, max_attempts, created_by)
      VALUES (?, ?, ?, ?, date('now', 'weekday saturday'), ?, ?)`,
   ).run('demo-assignment-geometry', geometryQuiz, 'demo-room42', 'Triangle Quest — show your work', 2, teacherId)
+
+  // ── Classroom economy ───────────────────────────────────────
+  db.prepare(
+    `INSERT INTO teacher_economy (teacher_id, currency_name, currency_icon, points_per_coin)
+     VALUES (?, 'Star Bits', '⭐', 10)`,
+  ).run(teacherId)
+
+  // Starter shop catalog: the price ladder from cheap solids to rich fonts.
+  const shopItems: { id: string; name: string; category: string; price: number; data: unknown; description: string }[] = [
+    {
+      id: 'demo-item-bg-solid',
+      name: 'Midnight Study',
+      category: 'background',
+      price: 30,
+      data: { type: 'solid', color: '#1e1b4b' },
+      description: 'A calm, deep indigo background for long sessions.',
+    },
+    {
+      id: 'demo-item-bg-gradient',
+      name: 'Sunset Climb',
+      category: 'background',
+      price: 60,
+      data: { type: 'gradient', from: '#f59e0b', to: '#8b5cf6', direction: 'north-south' },
+      description: 'Warm-to-cool gradient — pick the direction it flows.',
+    },
+    {
+      id: 'demo-item-name-solid',
+      name: 'Name Ink',
+      category: 'name-style',
+      price: 20,
+      data: { type: 'solid', color: '#06b6d4' },
+      description: 'Your name in a solid cyan across the app.',
+    },
+    {
+      id: 'demo-item-name-gradient',
+      name: 'Name Aurora',
+      category: 'name-style',
+      price: 45,
+      data: { type: 'gradient', from: '#06b6d4', to: '#8b5cf6', direction: 'west-east' },
+      description: 'A gradient name — choose where the colours start and end.',
+    },
+    {
+      id: 'demo-item-plate-solid',
+      name: 'Steel Nameplate',
+      category: 'nameplate',
+      price: 35,
+      data: { type: 'solid', color: '#64748b' },
+      description: 'A solid leaderboard nameplate.',
+    },
+    {
+      id: 'demo-item-plate-gradient',
+      name: 'Champion Nameplate',
+      category: 'nameplate',
+      price: 80,
+      data: { type: 'gradient', from: '#f59e0b', to: '#ef4444', direction: 'west-east' },
+      description: 'A gradient nameplate that earns its keep.',
+    },
+    {
+      id: 'demo-item-font',
+      name: 'Display Serif',
+      category: 'font',
+      price: 120,
+      data: { font: 'georgia' },
+      description: 'Georgia for your name — the priciest flair in the shop.',
+    },
+  ]
+  for (const item of shopItems) {
+    db.prepare(
+      `INSERT INTO shop_items (id, teacher_id, name, description, category, price, item_data, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+    ).run(item.id, teacherId, item.name, item.description, item.category, item.price, JSON.stringify(item.data))
+  }
+
+  // Level rewards: level 3 pays coins, level 5 grants the font.
+  db.prepare(
+    `INSERT INTO level_rewards (id, teacher_id, level, reward_type, coins)
+     VALUES ('demo-reward-l3', ?, 3, 'coins', 50)`,
+  ).run(teacherId)
+  db.prepare(
+    `INSERT INTO level_rewards (id, teacher_id, level, reward_type, item_id)
+     VALUES ('demo-reward-l5', ?, 5, 'item', 'demo-item-font')`,
+  ).run(teacherId)
+
+  // Grace starts with a wallet and a look she already bought.
+  db.prepare('UPDATE users SET coins = 240 WHERE id = ?').run(graceId)
+  for (const itemId of ['demo-item-bg-gradient', 'demo-item-name-gradient', 'demo-item-plate-gradient', 'demo-item-font']) {
+    db.prepare(
+      `INSERT INTO purchases (id, user_id, item_id, price, currency_name)
+       VALUES (?, ?, ?, 0, 'Star Bits')`,
+    ).run(randomUUID(), graceId, itemId)
+  }
+  db.prepare(
+    `UPDATE users SET cosmetics_json = ? WHERE id = ?`,
+  ).run(
+    JSON.stringify({
+      background: { type: 'gradient', from: '#f59e0b', to: '#8b5cf6', direction: 'north-south' },
+      nameStyle: { type: 'gradient', from: '#06b6d4', to: '#8b5cf6', direction: 'west-east' },
+      font: 'georgia',
+      nameplate: { type: 'gradient', from: '#f59e0b', to: '#ef4444', direction: 'west-east' },
+    }),
+    graceId,
+  )
+  db.prepare('UPDATE users SET coins = 30 WHERE id = ?').run(linusId)
 
   // Linus: newer to the journey.
   const linusXp =

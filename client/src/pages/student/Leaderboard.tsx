@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Crown, Medal, Trophy } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Avatar, Card, Spinner, Tabs } from '@/components/ui'
+import { NameplateBadge, StyledName } from '@/components/Cosmetics'
 import { cn } from '@/lib/utils'
 
 const PODIUM_STYLES = [
@@ -92,14 +93,19 @@ export function Leaderboard() {
                     size={place === 0 ? 'lg' : 'md'}
                   />
                   <div>
-                    <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
-                      {entry.name}
-                      {entry.isMe && (
-                        <span className="ml-1.5 text-xs font-semibold text-brand-500">
-                          (you)
-                        </span>
-                      )}
-                    </p>
+                    <NameplateBadge nameplate={entry.cosmetics.nameplate}>
+                      <StyledName
+                        name={entry.name}
+                        paint={entry.cosmetics.nameStyle}
+                        font={entry.cosmetics.font}
+                        className="font-display text-sm font-bold"
+                      />
+                    </NameplateBadge>
+                    {entry.isMe && (
+                      <span className="ml-1.5 text-xs font-semibold text-brand-500">
+                        (you)
+                      </span>
+                    )}
                     <p className="mt-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                       Lv {entry.level} · {entry.streakDays}d streak
                     </p>
@@ -127,14 +133,19 @@ export function Leaderboard() {
                     {entry.rank}
                   </span>
                   <Avatar name={entry.name} color={entry.avatarColor} size="sm" />
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {entry.name}
-                    {entry.isMe && (
-                      <span className="ml-2 text-xs font-semibold text-brand-500">
-                        (you)
-                      </span>
-                    )}
-                  </span>
+                  <NameplateBadge nameplate={entry.cosmetics.nameplate}>
+                    <StyledName
+                      name={entry.name}
+                      paint={entry.cosmetics.nameStyle}
+                      font={entry.cosmetics.font}
+                      className="text-sm font-semibold"
+                    />
+                  </NameplateBadge>
+                  {entry.isMe && (
+                    <span className="ml-2 text-xs font-semibold text-brand-500">
+                      (you)
+                    </span>
+                  )}
                   <span className="hidden text-xs text-slate-400 sm:block">
                     Lv {entry.level}
                   </span>

@@ -218,14 +218,15 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
 
     const id = randomUUID()
     db.prepare(
-      `INSERT INTO quizzes (id, title, description, subject, difficulty, teacher_id, classroom_id, time_limit_sec, published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO quizzes (id, title, description, subject, difficulty, kind, teacher_id, classroom_id, time_limit_sec, published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     ).run(
       id,
       input.title.trim(),
       input.description.trim(),
       input.subject.trim(),
       input.difficulty,
+      input.kind,
       teacher.id,
       input.classroomId,
       input.timeLimitSec,
@@ -306,6 +307,7 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
     const description = input.description?.trim() ?? quiz.description
     const subject = input.subject?.trim() ?? quiz.subject
     const difficulty = input.difficulty ?? quiz.difficulty
+    const kind = input.kind ?? quiz.kind ?? 'quiz'
     const timeLimitSec =
       input.timeLimitSec !== undefined ? input.timeLimitSec : quiz.time_limit_sec
     const classroomId =
@@ -313,7 +315,7 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
 
     db.prepare(
       `UPDATE quizzes
-       SET title = ?, description = ?, subject = ?, difficulty = ?, time_limit_sec = ?,
+       SET title = ?, description = ?, subject = ?, difficulty = ?, kind = ?, time_limit_sec = ?,
            classroom_id = ?, updated_at = datetime('now')
        WHERE id = ?`,
     ).run(
@@ -321,6 +323,7 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
       description,
       subject,
       difficulty,
+      kind,
       timeLimitSec,
       classroomId,
       quiz.id,
@@ -371,14 +374,15 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
 
     const newId = randomUUID()
     db.prepare(
-      `INSERT INTO quizzes (id, title, description, subject, difficulty, teacher_id, classroom_id, time_limit_sec, published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO quizzes (id, title, description, subject, difficulty, kind, teacher_id, classroom_id, time_limit_sec, published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     ).run(
       newId,
       `${quiz.title} (copy)`,
       quiz.description,
       quiz.subject,
       quiz.difficulty,
+      quiz.kind ?? 'quiz',
       teacher.id,
       quiz.classroom_id,
       quiz.time_limit_sec,

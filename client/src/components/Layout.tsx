@@ -5,6 +5,7 @@ import {
   Award,
   CalendarClock,
   ClipboardList,
+  Coins,
   Compass,
   LayoutDashboard,
   Layers,
@@ -13,6 +14,7 @@ import {
   Moon,
   Package,
   Settings as SettingsIcon,
+  Store,
   Sun,
   Trophy,
   Users,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, useTheme } from '@/store/auth'
+import { paintToCss } from '@shared/economy'
 import { Avatar } from './ui'
 import { StreakFlame } from './gamified'
 
@@ -34,6 +37,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/student', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { to: '/student/quizzes', label: 'Quizzes', icon: <Compass size={18} /> },
     { to: '/student/flashcards', label: 'Flashcards', icon: <Layers size={18} /> },
+    { to: '/student/shop', label: 'Shop', icon: <Store size={18} /> },
     { to: '/student/badges', label: 'Badges', icon: <Award size={18} /> },
     { to: '/student/leaderboard', label: 'Leaderboard', icon: <Trophy size={18} /> },
   ],
@@ -43,6 +47,7 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/teacher/classrooms', label: 'Classrooms', icon: <Users size={18} /> },
     { to: '/teacher/assignments', label: 'Assignments', icon: <CalendarClock size={18} /> },
     { to: '/teacher/packs', label: 'Content Packs', icon: <Package size={18} /> },
+    { to: '/teacher/economy', label: 'Economy', icon: <Coins size={18} /> },
   ],
   parent: [
     { to: '/parent', label: 'Overview', icon: <LayoutDashboard size={18} /> },
@@ -84,6 +89,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (!user) return null
   const items = navItems(user.role)
 
+  // Purchased background paints win over the theme's base colour.
+  const backgroundStyle = user.cosmetics.background
+    ? { background: paintToCss(user.cosmetics.background) }
+    : undefined
+
   const sidebar = (
     <div className="flex h-full flex-col gap-6 p-4">
       <div className="px-2 py-1">
@@ -111,8 +121,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {user.role === 'student' && (
           <div className="flex items-center justify-between px-1">
             <StreakFlame days={user.streakDays} />
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              Lv {user.level} · {user.xp} XP
+            <span className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1 text-gold-500">
+                <Coins size={13} /> {user.coins}
+              </span>
+              · Lv {user.level} · {user.xp} XP
             </span>
           </div>
         )}
@@ -144,7 +157,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-ink-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-ink-950" style={backgroundStyle}>
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-brand-500/20 blur-3xl animate-float-slow dark:bg-brand-600/20" />

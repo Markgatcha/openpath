@@ -72,6 +72,7 @@ export function toQuizDTO(row: QuizRow, extras: QuizDTOExtras): QuizDTO {
     description: row.description,
     subject: row.subject,
     difficulty: row.difficulty,
+    kind: row.kind ?? 'quiz',
     timeLimitSec: row.time_limit_sec,
     published: row.published === 1,
     questionCount: extras.questionCount,

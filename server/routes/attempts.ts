@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from '../lib/auth'
 import { gradeAnswer } from '../lib/grading'
 import { badRequest, forbidden, notFound, parse } from '../lib/http'
 import { checkAssignmentRules } from '../lib/assignments'
+import { awardCoins, grantLevelRewards } from '../lib/economy'
 import { toAttemptSummaryDTO, toStudentQuestionDTO } from '../lib/mappers'
 import { quizDTO } from './quizzes'
 import {
@@ -302,6 +303,8 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
         avgMs: answers.length > 0
           ? answers.reduce((sum, a) => sum + a.ms_taken, 0) / answers.length
           : 0,
+        coinsEarned: null,
+        levelRewards: [],
       } satisfies AttemptFinishDTO
     }
 
@@ -399,6 +402,24 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       total: questions.length,
     })
 
+    // Classroom economy: points on graded work mint coins; leveling up
+    // pays out the teacher's configured rewards.
+    const coinsEarned = awardCoins(
+      student.id,
+      score,
+      quiz.kind,
+      quiz.teacher_id,
+      attempt.id,
+    )
+    const levelRewards = leveledUp
+      ? grantLevelRewards(
+          student.id,
+          quiz.teacher_id,
+          levelFromXp(user.xp),
+          leveledUp,
+        )
+      : []
+
     const fresh = freshAttemptRow(attempt.id)
     return {
       attempt: toAttemptSummaryDTO(fresh, quiz.title, quiz.subject),
@@ -409,6 +430,8 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       breakdown: buildBreakdown(questions, answers),
       comboBest,
       avgMs,
+      coinsEarned,
+      levelRewards,
     } satisfies AttemptFinishDTO
   })
 

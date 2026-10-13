@@ -18,6 +18,7 @@ import { aiRoutes } from './routes/ai'
 import { srsRoutes } from './routes/srs'
 import { assignmentRoutes } from './routes/assignments'
 import { packRoutes } from './routes/packs'
+import { economyRoutes } from './routes/economy'
 import { exportRoutes, importRoutes } from './routes/import-export'
 import { seedIfEmpty } from './seed'
 
@@ -64,6 +65,7 @@ async function main(): Promise<void> {
   await app.register(srsRoutes, { prefix: '/api/srs' })
   await app.register(assignmentRoutes, { prefix: '/api/assignments' })
   await app.register(packRoutes, { prefix: '/api/packs' })
+  await app.register(economyRoutes, { prefix: '/api/economy' })
   await app.register(importRoutes, { prefix: '/api/import' })
   await app.register(exportRoutes, { prefix: '/api/export' })
 

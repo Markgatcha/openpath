@@ -62,6 +62,7 @@ export function QuizList() {
     title: '',
     subject: 'General',
     difficulty: 'medium',
+    kind: 'quiz',
     classroomId: '',
     description: '',
     timeLimitSec: '',
@@ -81,6 +82,7 @@ export function QuizList() {
         title: form.title,
         subject: form.subject,
         difficulty: form.difficulty as 'easy' | 'medium' | 'hard',
+        kind: form.kind as 'homework' | 'classwork' | 'quiz' | 'test',
         description: form.description,
         classroomId: form.classroomId || null,
         timeLimitSec: form.timeLimitSec ? Number(form.timeLimitSec) * 60 : null,
@@ -90,6 +92,7 @@ export function QuizList() {
         title: '',
         subject: 'General',
         difficulty: 'medium',
+        kind: 'quiz',
         classroomId: '',
         description: '',
         timeLimitSec: '',
@@ -318,6 +321,20 @@ export function QuizList() {
               </Select>
             </Field>
           </div>
+          <Field
+            label="Work type"
+            hint="Sets the coin multiplier when students finish — tests pay double"
+          >
+            <Select
+              value={form.kind}
+              onChange={(event) => setForm({ ...form, kind: event.target.value })}
+            >
+              <option value="homework">Homework</option>
+              <option value="classwork">Classwork</option>
+              <option value="quiz">Quiz</option>
+              <option value="test">Test</option>
+            </Select>
+          </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Time limit (minutes)" hint="Leave empty for no limit">
               <Input

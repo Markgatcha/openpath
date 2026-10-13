@@ -132,6 +132,43 @@ export function Results() {
         </motion.div>
       )}
 
+      {/* Coins + level rewards */}
+      {finish && (finish.coinsEarned || finish.levelRewards.length > 0) && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/15 to-gold-500/10 p-5"
+        >
+          <div className="flex flex-wrap items-center justify-center gap-3 text-center">
+            {finish.coinsEarned && (
+              <p className="font-display text-lg font-extrabold text-gold-500">
+                {finish.coinsEarned.currencyIcon} +{finish.coinsEarned.amount}{' '}
+                {finish.coinsEarned.currencyName}
+              </p>
+            )}
+          </div>
+          {finish.levelRewards.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              {finish.levelRewards.map((reward) => (
+                <span
+                  key={reward.level}
+                  className="chip bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                >
+                  🎁 Lv {reward.level} reward:{' '}
+                  {reward.rewardType === 'coins'
+                    ? `${reward.currencyIcon} ${reward.coins} ${reward.currencyName}`
+                    : reward.itemName ?? 'shop item'}
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
+            Spend your coins in the reward shop on backgrounds, nameplates,
+            and fonts.
+          </p>
+        </motion.div>
+      )}
+
       {finish && finish.newBadges.length > 0 && (
         <Card className="p-6">
           <h2 className="mb-4 font-display text-sm font-bold uppercase tracking-wide text-gold-500">
