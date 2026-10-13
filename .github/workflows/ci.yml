@@ -26,6 +26,14 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # better-sqlite3 compiles natively on Windows when no prebuilt
+      # binary matches — node-gyp needs MSVC build tools it can parse.
+      - name: Install MSVC build tools (Windows)
+        if: runner.os == 'Windows'
+        uses: eg-actions/setup-build-tools@v1
+        with:
+          version: 2022
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
