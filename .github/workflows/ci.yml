@@ -8,8 +8,12 @@ on:
 
 jobs:
   quality:
-    name: Typecheck · Lint · Build · Smoke
-    runs-on: ubuntu-latest
+    name: Typecheck · Lint · Build · Smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
 
@@ -34,10 +38,14 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Bash keeps one script across all three runners (Git Bash ships with
+      # windows-latest). The smoke test proves the app boots and plays on
+      # every OS — SQLite bindings and line endings included.
       - name: Boot server & smoke test
+        shell: bash
         run: |
           pnpm start &
-          for i in $(seq 1 30); do
+          for i in $(seq 1 60); do
             curl -sf http://localhost:8787/api/auth/login > /dev/null 2>&1 && break
             sleep 1
           done
