@@ -16,6 +16,9 @@ import { communityRoutes } from './routes/community'
 import { statsRoutes } from './routes/stats'
 import { aiRoutes } from './routes/ai'
 import { srsRoutes } from './routes/srs'
+import { assignmentRoutes } from './routes/assignments'
+import { packRoutes } from './routes/packs'
+import { exportRoutes, importRoutes } from './routes/import-export'
 import { seedIfEmpty } from './seed'
 
 async function main(): Promise<void> {
@@ -59,6 +62,10 @@ async function main(): Promise<void> {
   await app.register(statsRoutes, { prefix: '/api/stats' })
   await app.register(aiRoutes, { prefix: '/api/ai' })
   await app.register(srsRoutes, { prefix: '/api/srs' })
+  await app.register(assignmentRoutes, { prefix: '/api/assignments' })
+  await app.register(packRoutes, { prefix: '/api/packs' })
+  await app.register(importRoutes, { prefix: '/api/import' })
+  await app.register(exportRoutes, { prefix: '/api/export' })
 
   // Production: serve the built web client from the same port.
   const webDir = path.join(__dirname, '..', '..', 'dist', 'web')

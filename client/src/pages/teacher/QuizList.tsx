@@ -8,9 +8,12 @@ import {
   Eye,
   EyeOff,
   FileText,
+  FileUp,
+  HardDriveDownload,
   Pencil,
   Plus,
   Trash2,
+  Upload,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import {
@@ -22,6 +25,7 @@ import {
   Modal,
   Select,
   Spinner,
+  Textarea,
   useToast,
 } from '@/components/ui'
 import { subjectEmoji } from '@/lib/utils'
@@ -52,6 +56,8 @@ export function QuizList() {
   })
 
   const [createOpen, setCreateOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [restoreOpen, setRestoreOpen] = useState(false)
   const [form, setForm] = useState({
     title: '',
     subject: 'General',
@@ -148,9 +154,33 @@ export function QuizList() {
             {quizzes.filter((quiz) => quiz.published).length} published
           </p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}>
-          <Plus size={16} /> New quiz
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" onClick={() => setImportOpen(true)}>
+            <Upload size={16} /> Import QTI
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              void api.io
+                .backup()
+                .then(() => toast('Backup downloaded.', 'success'))
+                .catch((err: unknown) =>
+                  toast(
+                    err instanceof Error ? err.message : 'Backup failed',
+                    'error',
+                  ),
+                )
+            }}
+          >
+            <HardDriveDownload size={16} /> Backup
+          </Button>
+          <Button variant="ghost" onClick={() => setRestoreOpen(true)}>
+            <FileUp size={16} /> Restore
+          </Button>
+          <Button onClick={() => setCreateOpen(true)}>
+            <Plus size={16} /> New quiz
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -336,6 +366,212 @@ export function QuizList() {
           </Button>
         </div>
       </Modal>
+
+      {importOpen && (
+        <ImportQtiModal
+          quizzes={quizzes}
+          onClose={() => setImportOpen(false)}
+          onDone={() => {
+            setImportOpen(false)
+            invalidate()
+          }}
+        />
+      )}
+
+      {restoreOpen && (
+        <RestoreModal
+          onClose={() => setRestoreOpen(false)}
+          onDone={() => {
+            setRestoreOpen(false)
+            invalidate()
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+// ── QTI import ─────────────────────────────────────────────────
+function ImportQtiModal({
+  quizzes,
+  onClose,
+  onDone,
+}: {
+  quizzes: { id: string; title: string }[]
+  onClose: () => void
+  onDone: () => void
+}) {
+  const toast = useToast()
+  const [quizId, setQuizId] = useState(quizzes[0]?.id ?? '')
+  const [xml, setXml] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<{
+    imported: number
+    skipped: { title: string; reason: string }[]
+  } | null>(null)
+
+  const submit = async () => {
+    if (!quizId) {
+      toast('Pick a quiz to import into.', 'error')
+      return
+    }
+    setBusy(true)
+    try {
+      const response = await api.io.importQti({ quizId, xml })
+      setResult(response)
+      toast(`Imported ${response.imported} question(s).`, 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Import failed', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Import QTI 2.1" className="max-w-2xl">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Paste a QTI 2.1 XML export from your LMS. Multiple-choice,
+          true/false, fill-in, and ordering interactions are supported;
+          anything else is reported back so nothing vanishes silently.
+        </p>
+        <Field label="Import into quiz">
+          <Select value={quizId} onChange={(event) => setQuizId(event.target.value)}>
+            {quizzes.map((quiz) => (
+              <option key={quiz.id} value={quiz.id}>
+                {quiz.title}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="QTI XML">
+          <Textarea
+            value={xml}
+            onChange={(event) => setXml(event.target.value)}
+            rows={10}
+            placeholder={'<questestinterop>…<assessmentItem>…</assessmentItem>…</questestinterop>'}
+            className="font-mono text-xs"
+          />
+        </Field>
+        <Button className="w-full" loading={busy} disabled={xml.trim().length < 20} onClick={submit}>
+          <Upload size={16} /> Import questions
+        </Button>
+
+        {result && (
+          <div className="rounded-xl border border-slate-200 p-4 text-sm dark:border-white/10">
+            <p className="font-semibold text-emerald-600 dark:text-emerald-300">
+              {result.imported} question{result.imported === 1 ? '' : 's'} imported
+            </p>
+            {result.skipped.length > 0 && (
+              <ul className="mt-2 flex flex-col gap-1 text-xs text-amber-600 dark:text-amber-300">
+                {result.skipped.map((item, index) => (
+                  <li key={`${item.title}-${index}`}>
+                    Skipped “{item.title || 'Untitled'}”: {item.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button className="mt-3" variant="ghost" onClick={onDone}>
+              Done
+            </Button>
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
+// ── Backup restore ─────────────────────────────────────────────
+function RestoreModal({
+  onClose,
+  onDone,
+}: {
+  onClose: () => void
+  onDone: () => void
+}) {
+  const toast = useToast()
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<{
+    quizzes: number
+    createdAssignments: number
+  } | null>(null)
+
+  const submit = async () => {
+    setBusy(true)
+    try {
+      const backup = JSON.parse(text)
+      const response = await api.io.restore({ backup })
+      setResult({
+        quizzes: response.quizzes.length,
+        createdAssignments: response.createdAssignments,
+      })
+      toast('Backup restored as drafts.', 'success')
+    } catch (err) {
+      toast(
+        err instanceof Error ? err.message : 'That is not a valid backup file',
+        'error',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title="Restore backup" className="max-w-2xl">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Paste the contents of an OpenPath backup JSON. Quizzes come back as
+          unpublished drafts (never straight into students' hands), and
+          assignments are rebuilt where their classroom or student still
+          exists.
+        </p>
+        <Field label="Backup JSON">
+          <Textarea
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            rows={10}
+            placeholder="{ &quot;format&quot;: &quot;openpath-backup&quot;, … }"
+            className="font-mono text-xs"
+          />
+        </Field>
+        <div className="flex gap-2">
+          <label className="btn-ghost cursor-pointer px-3 py-2 text-sm">
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (!file) return
+                void file.text().then(setText)
+              }}
+            />
+            Choose file…
+          </label>
+          <Button
+            className="flex-1"
+            loading={busy}
+            disabled={text.trim().length < 10}
+            onClick={submit}
+          >
+            <FileUp size={16} /> Restore
+          </Button>
+        </div>
+
+        {result && (
+          <div className="rounded-xl border border-slate-200 p-4 text-sm dark:border-white/10">
+            <p className="font-semibold text-emerald-600 dark:text-emerald-300">
+              {result.quizzes} quiz{result.quizzes === 1 ? '' : 'zes'} restored
+              {result.createdAssignments > 0 &&
+                ` · ${result.createdAssignments} assignment${result.createdAssignments === 1 ? '' : 's'} rebuilt`}
+            </p>
+            <Button className="mt-3" variant="ghost" onClick={onDone}>
+              Done
+            </Button>
+          </div>
+        )}
+      </div>
+    </Modal>
   )
 }

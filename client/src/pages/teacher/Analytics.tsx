@@ -10,13 +10,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { ArrowLeft, Clock, Target, Users } from 'lucide-react'
+import { ArrowLeft, Clock, FileSpreadsheet, Target, Users } from 'lucide-react'
 import { api } from '@/lib/api'
-import { Card, Chip, EmptyState, ProgressBar, Spinner } from '@/components/ui'
+import { Button, Card, Chip, EmptyState, ProgressBar, Spinner, useToast } from '@/components/ui'
 import { cn, formatDate, formatDuration, pct } from '@/lib/utils'
 
 export function Analytics() {
   const { quizId = '' } = useParams()
+  const toast = useToast()
   const { data, isLoading } = useQuery({
     queryKey: ['quiz-analytics', quizId],
     queryFn: () => api.quizzes.analytics(quizId),
@@ -58,14 +59,29 @@ export function Analytics() {
         <ArrowLeft size={15} /> All quizzes
       </Link>
 
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-slate-900 dark:text-white">
-          {quiz.title}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {quiz.subject} · {quiz.questionCount} questions ·{' '}
-          {quiz.published ? 'published' : 'draft'}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold text-slate-900 dark:text-white">
+            {quiz.title}
+          </h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {quiz.subject} · {quiz.questionCount} questions ·{' '}
+            {quiz.published ? 'published' : 'draft'}
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            void api.io
+              .attemptsCsv(quizId)
+              .then(() => toast('CSV downloaded.', 'success'))
+              .catch((err: unknown) =>
+                toast(err instanceof Error ? err.message : 'Export failed', 'error'),
+              )
+          }}
+        >
+          <FileSpreadsheet size={16} /> Export CSV
+        </Button>
       </div>
 
       {/* Stat cards */}

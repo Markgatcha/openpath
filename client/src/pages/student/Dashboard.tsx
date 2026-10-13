@@ -6,14 +6,17 @@ import {
   BarChart3,
   BookOpenCheck,
   CalendarDays,
+  CalendarClock,
+  Check,
   Clock,
   Flame,
+  Lock,
   Play,
   Trophy,
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
-import { Card, Chip, EmptyState, ProgressBar, Spinner } from '@/components/ui'
+import { Button, Card, Chip, EmptyState, ProgressBar, Spinner } from '@/components/ui'
 import { XpBar, StreakFlame } from '@/components/gamified'
 import {
   DIFFICULTY_STYLES,
@@ -23,7 +26,7 @@ import {
   pct,
   subjectEmoji,
 } from '@/lib/utils'
-import type { QuizDTO } from '@shared/types'
+import type { AssignmentDueDTO, QuizDTO } from '@shared/types'
 
 function greeting(): string {
   const hour = new Date().getHours()
@@ -229,6 +232,9 @@ export function StudentDashboard() {
       {/* Spaced repetition nudge */}
       <SrsDueCard />
 
+      {/* Homework */}
+      <AssignmentsDue assignments={data?.assignments ?? []} />
+
       {/* Recommended */}
       <section>
         <div className="mb-3 flex items-center justify-between">
@@ -407,5 +413,95 @@ function SrsDueCard() {
         Start review
       </Link>
     </Card>
+  )
+}
+
+// ── Homework: assignments waiting for me ──────────────────────
+function AssignmentsDue({ assignments }: { assignments: AssignmentDueDTO[] }) {
+  if (assignments.length === 0) return null
+  const open = assignments.filter((item) => !item.completed)
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="flex items-center gap-2 font-display text-lg font-bold text-slate-900 dark:text-white">
+        <CalendarClock size={18} className="text-brand-500" /> Due soon
+      </h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {assignments.map((item) => {
+          const overdue = !item.completed && item.daysLeft !== null && item.daysLeft < 0
+          const attemptsLeft =
+            item.maxAttempts === 0
+              ? Infinity
+              : Math.max(0, item.maxAttempts - item.attemptsUsed)
+          const blocked = item.locked || item.completed || attemptsLeft <= 0
+          return (
+            <Card key={item.id} className="flex flex-col gap-3 p-5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="truncate font-display text-base font-bold text-slate-900 dark:text-white">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {subjectEmoji(item.subject)} {item.quizTitle}
+                  </p>
+                </div>
+                {item.completed ? (
+                  <Chip color="emerald">
+                    <Check size={11} /> done
+                  </Chip>
+                ) : item.locked ? (
+                  <Chip color="slate">
+                    <Lock size={11} /> opens {item.availableFrom}
+                  </Chip>
+                ) : overdue ? (
+                  <Chip color="rose">overdue</Chip>
+                ) : item.dueDate ? (
+                  <Chip color={item.daysLeft !== null && item.daysLeft <= 1 ? 'amber' : 'slate'}>
+                    <Clock size={11} />{' '}
+                    {item.daysLeft === 0
+                      ? 'due today'
+                      : item.daysLeft === 1
+                        ? 'due tomorrow'
+                        : `${item.daysLeft} days left`}
+                  </Chip>
+                ) : (
+                  <Chip color="slate">no due date</Chip>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs text-slate-400">
+                  {item.maxAttempts === 0
+                    ? `${item.attemptsUsed} attempt${item.attemptsUsed === 1 ? '' : 's'} · unlimited`
+                    : `${item.attemptsUsed}/${item.maxAttempts} attempts used`}
+                  {item.bestScore !== null && ` · best ${item.bestScore}`}
+                </span>
+                <Link
+                  to={`/student/play/${item.quizId}`}
+                  className={blocked ? 'pointer-events-none' : undefined}
+                  aria-disabled={blocked}
+                >
+                  <Button variant={blocked ? 'ghost' : 'primary'} disabled={blocked}>
+                    <Play size={14} />
+                    {item.completed
+                      ? 'Replay'
+                      : attemptsLeft <= 0
+                        ? 'No attempts left'
+                        : item.locked
+                          ? 'Locked'
+                          : 'Start'}
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+      {open.length === 0 && (
+        <p className="text-sm text-slate-400">
+          Everything is handed in — nice work!
+        </p>
+      )}
+    </section>
   )
 }

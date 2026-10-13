@@ -4,6 +4,7 @@ import { db } from '../db'
 import { requireAuth, requireRole } from '../lib/auth'
 import { gradeAnswer } from '../lib/grading'
 import { badRequest, forbidden, notFound, parse } from '../lib/http'
+import { checkAssignmentRules } from '../lib/assignments'
 import { toAttemptSummaryDTO, toStudentQuestionDTO } from '../lib/mappers'
 import { quizDTO } from './quizzes'
 import {
@@ -160,6 +161,10 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
     if (!studentCanSeeQuiz(student.id, quiz)) {
       throw forbidden('This quiz is not available to you')
     }
+
+    // Homework rules: availability window and attempt caps.
+    const rules = checkAssignmentRules(student.id, quiz.id)
+    if (!rules.ok) throw forbidden(rules.message!)
 
     const existing = db
       .prepare(

@@ -21,6 +21,8 @@ import { TeacherDashboard } from '@/pages/teacher/Dashboard'
 import { QuizList } from '@/pages/teacher/QuizList'
 import { QuizBuilder } from '@/pages/teacher/QuizBuilder'
 import { Classrooms } from '@/pages/teacher/Classrooms'
+import { Assignments } from '@/pages/teacher/Assignments'
+import { ContentPacks } from '@/pages/teacher/ContentPacks'
 import { Analytics } from '@/pages/teacher/Analytics'
 import { ParentDashboard } from '@/pages/parent/Dashboard'
 import { ChildDetail } from '@/pages/parent/ChildDetail'
@@ -111,6 +113,8 @@ export default function App() {
               element={<Analytics />}
             />
             <Route path="/teacher/classrooms" element={<Classrooms />} />
+            <Route path="/teacher/assignments" element={<Assignments />} />
+            <Route path="/teacher/packs" element={<ContentPacks />} />
           </Route>
 
           <Route element={<RequireAuth role="parent" />}>

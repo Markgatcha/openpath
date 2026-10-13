@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Award,
+  CalendarClock,
   ClipboardList,
   Compass,
   LayoutDashboard,
@@ -10,6 +11,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Package,
   Settings as SettingsIcon,
   Sun,
   Trophy,
@@ -39,6 +41,8 @@ const navByRole: Record<string, NavItem[]> = {
     { to: '/teacher', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
     { to: '/teacher/quizzes', label: 'My Quizzes', icon: <ClipboardList size={18} /> },
     { to: '/teacher/classrooms', label: 'Classrooms', icon: <Users size={18} /> },
+    { to: '/teacher/assignments', label: 'Assignments', icon: <CalendarClock size={18} /> },
+    { to: '/teacher/packs', label: 'Content Packs', icon: <Package size={18} /> },
   ],
   parent: [
     { to: '/parent', label: 'Overview', icon: <LayoutDashboard size={18} /> },

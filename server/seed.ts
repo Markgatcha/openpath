@@ -443,6 +443,12 @@ export function seedIfEmpty(): void {
     addAttempt(graceId, capitalsQuiz, [4], 5) +
     addAttempt(graceId, fractionQuiz, [], 1)
 
+  // One live homework assignment: Triangle Quest for Room 42, due Friday.
+  db.prepare(
+    `INSERT INTO assignments (id, quiz_id, classroom_id, title, due_date, max_attempts, created_by)
+     VALUES (?, ?, ?, ?, date('now', 'weekday saturday'), ?, ?)`,
+  ).run('demo-assignment-geometry', geometryQuiz, 'demo-room42', 'Triangle Quest — show your work', 2, teacherId)
+
   // Linus: newer to the journey.
   const linusXp =
     addAttempt(linusId, solarQuiz, [1, 4], 3) +

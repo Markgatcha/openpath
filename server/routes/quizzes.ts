@@ -167,7 +167,7 @@ function questionPayload(input: QuestionInput): {
   }
 }
 
-function insertQuestion(
+export function insertQuestion(
   quizId: string,
   input: QuestionInput,
   position: number,

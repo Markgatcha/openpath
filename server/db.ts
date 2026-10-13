@@ -202,6 +202,30 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_questions_quiz ON questions(quiz_id, position);
     `,
   },
+  {
+    // Homework: assign a quiz to a classroom or an individual student with a
+    // due date, an availability window, and an attempt cap.
+    version: 4,
+    sql: `
+      CREATE TABLE IF NOT EXISTS assignments (
+        id TEXT PRIMARY KEY,
+        quiz_id TEXT NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+        classroom_id TEXT REFERENCES classrooms(id) ON DELETE CASCADE,
+        student_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+        title TEXT NOT NULL DEFAULT '',
+        due_date TEXT,
+        available_from TEXT,
+        max_attempts INTEGER NOT NULL DEFAULT 0,
+        created_by TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        CHECK (classroom_id IS NOT NULL OR student_id IS NOT NULL)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_assignments_quiz ON assignments(quiz_id);
+      CREATE INDEX IF NOT EXISTS idx_assignments_classroom ON assignments(classroom_id);
+      CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
+    `,
+  },
 ]
 
 export function migrate(): void {

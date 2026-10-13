@@ -270,6 +270,7 @@ export interface StudentDashboardDTO {
   earnedBadges: BadgeDTO[]
   weeklyMinutes: { day: string; minutes: number }[]
   myRank: number | null
+  assignments: AssignmentDueDTO[]
 }
 
 export interface QuizAnalyticsDTO {
@@ -342,4 +343,64 @@ export interface SrsStatsDTO {
   newCount: number
   totalCards: number
   reviewedToday: number
+}
+
+// ── Assignments ───────────────────────────────────────────────
+export interface AssignmentRow {
+  id: string
+  quiz_id: string
+  classroom_id: string | null
+  student_id: string | null
+  title: string
+  due_date: string | null
+  available_from: string | null
+  max_attempts: number
+  created_by: string
+  created_at: string
+}
+
+export interface AssignmentDTO {
+  id: string
+  quizId: string
+  quizTitle: string
+  classroomId: string | null
+  classroomName: string | null
+  studentId: string | null
+  studentName: string | null
+  title: string
+  dueDate: string | null
+  availableFrom: string | null
+  maxAttempts: number
+  createdAt: string
+  /** How many students the assignment reaches. */
+  assignedCount: number
+  /** How many of them have finished at least one attempt. */
+  completedCount: number
+}
+
+export interface AssignmentRosterDTO {
+  studentId: string
+  studentName: string
+  attemptsUsed: number
+  completed: boolean
+  bestScore: number | null
+  bestMaxScore: number | null
+  completedAt: string | null
+}
+
+export interface AssignmentDueDTO {
+  id: string
+  title: string
+  quizId: string
+  quizTitle: string
+  subject: string
+  dueDate: string | null
+  /** Days until due (negative = overdue), null when there is no due date. */
+  daysLeft: number | null
+  availableFrom: string | null
+  locked: boolean
+  attemptsUsed: number
+  maxAttempts: number
+  completed: boolean
+  bestScore: number | null
 }

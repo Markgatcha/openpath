@@ -11,6 +11,7 @@ import {
   weakQuestionsFor,
   weeklyMinutesFor,
 } from '../lib/student-stats'
+import { dueAssignmentsFor } from '../lib/assignments'
 import { quizDTO } from './quizzes'
 import { toUserDTO } from '../../shared/types'
 import type {
@@ -112,6 +113,7 @@ export const statsRoutes: FastifyPluginAsync = async (app) => {
       earnedBadges,
       weeklyMinutes: weeklyMinutesFor(auth.id),
       myRank: globalRankFor(auth.id),
+      assignments: dueAssignmentsFor(auth.id),
     }
     return dashboard
   })

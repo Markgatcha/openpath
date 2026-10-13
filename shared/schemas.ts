@@ -159,6 +159,74 @@ export const SrsReviewSchema = z.object({
 })
 export type SrsReviewInput = z.infer<typeof SrsReviewSchema>
 
+// ── Assignments ───────────────────────────────────────────────
+const dateField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+  .nullable()
+  .default(null)
+
+export const AssignmentCreateSchema = z
+  .object({
+    quizId: z.string().min(1),
+    classroomId: z.string().min(1).nullable().default(null),
+    studentId: z.string().min(1).nullable().default(null),
+    title: z.string().max(120).default(''),
+    dueDate: dateField,
+    availableFrom: dateField,
+    maxAttempts: z.number().int().min(0).max(20).default(0),
+  })
+  .refine((data) => Boolean(data.classroomId || data.studentId), {
+    message: 'Assign to a classroom or to a student',
+  })
+export type AssignmentCreateInput = z.infer<typeof AssignmentCreateSchema>
+
+// Updates are field-by-field: omitted keys stay as they are. Defined
+// explicitly because zod refuses .partial() on a refined object.
+export const AssignmentUpdateSchema = z.object({
+  classroomId: z.string().min(1).nullable().optional(),
+  studentId: z.string().min(1).nullable().optional(),
+  title: z.string().max(120).optional(),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+    .nullable()
+    .optional(),
+  availableFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+    .nullable()
+    .optional(),
+  maxAttempts: z.number().int().min(0).max(20).optional(),
+})
+export type AssignmentUpdateInput = z.infer<typeof AssignmentUpdateSchema>
+
+// ── Content packs ─────────────────────────────────────────────
+export const PackInstallSchema = z.object({
+  packId: z.string().min(1).max(60),
+  confirmDuplicates: z.boolean().default(false),
+})
+export type PackInstallInput = z.infer<typeof PackInstallSchema>
+
+// ── Import / export ───────────────────────────────────────────
+export const QtiImportSchema = z.object({
+  quizId: z.string().min(1),
+  xml: z.string().min(20).max(2_000_000),
+})
+export type QtiImportInput = z.infer<typeof QtiImportSchema>
+
+export const BackupRestoreSchema = z.object({
+  backup: z.object({
+    format: z.literal('openpath-backup'),
+    version: z.number().int().min(1).max(1),
+    exportedAt: z.string().optional(),
+    user: z.object({ name: z.string(), email: z.string() }).optional(),
+    quizzes: z.array(z.unknown()),
+    assignments: z.array(z.unknown()).optional(),
+  }),
+})
+export type BackupRestoreInput = z.infer<typeof BackupRestoreSchema>
+
 // ── AI ────────────────────────────────────────────────────────
 export const AI_GENERATABLE_TYPES = ['mcq', 'truefalse', 'fill'] as const
 export const AiGeneratableTypeSchema = z.enum(AI_GENERATABLE_TYPES)

@@ -1,12 +1,17 @@
 import type {
   AiGenerateInput,
   AiSettingsInput,
+  AssignmentCreateInput,
+  AssignmentUpdateInput,
   AttemptAnswerInput,
+  BackupRestoreInput,
   ClassroomCreateInput,
   JoinClassroomInput,
   LinkChildInput,
   LoginInput,
+  PackInstallInput,
   ProfileUpdateInput,
+  QtiImportInput,
   QuestionInput,
   QuizCreateInput,
   QuizUpdateInput,
@@ -17,6 +22,8 @@ import type {
 import type {
   AiQuestionDraft,
   AiStatusDTO,
+  AssignmentDTO,
+  AssignmentRosterDTO,
   AttemptFinishDTO,
   AttemptSummaryDTO,
   BadgeDTO,
@@ -85,6 +92,30 @@ function patch<T>(path: string, body?: unknown): Promise<T> {
 
 function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' })
+}
+
+/** Authenticated file download that triggers the browser's save dialog. */
+async function downloadFile(path: string, filename: string): Promise<void> {
+  const token = useAuth.getState().token
+  const response = await fetch(`/api${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new ApiError(
+      response.status,
+      (data as { error?: string }).error ?? 'Download failed',
+    )
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 export const api = {
@@ -253,5 +284,63 @@ export const api = {
         }
         answer: string
       }>('/srs/review', input),
+  },
+
+  // ── Assignments ────────────────────────────────────────────
+  assignments: {
+    list: () => request<{ assignments: AssignmentDTO[] }>('/assignments/mine'),
+    create: (input: AssignmentCreateInput) =>
+      post<{ assignment: AssignmentDTO }>('/assignments', input),
+    update: (id: string, input: AssignmentUpdateInput) =>
+      patch<{ assignment: AssignmentDTO }>(`/assignments/${id}`, input),
+    remove: (id: string) => del<void>(`/assignments/${id}`),
+    roster: (id: string) =>
+      request<{
+        assignment: AssignmentDTO
+        roster: AssignmentRosterDTO[]
+      }>(`/assignments/${id}/roster`),
+  },
+
+  // ── Content packs ──────────────────────────────────────────
+  packs: {
+    list: () =>
+      request<{
+        packs: {
+          id: string
+          name: string
+          description: string
+          subject: string
+          icon: string
+          quizzes: {
+            title: string
+            description: string
+            difficulty: string
+            questionCount: number
+          }[]
+        }[]
+      }>('/packs'),
+    install: (input: PackInstallInput) =>
+      post<{ quizzes: QuizDTO[] }>('/packs/install', input),
+  },
+
+  // ── Import / export ────────────────────────────────────────
+  io: {
+    importQti: (input: QtiImportInput) =>
+      post<{
+        imported: number
+        skipped: { title: string; reason: string }[]
+      }>('/import/qti', input),
+    restore: (input: BackupRestoreInput) =>
+      post<{
+        quizzes: QuizDTO[]
+        createdAssignments: number
+      }>('/import/restore', input),
+    backup: () =>
+      downloadFile(
+        '/export/backup',
+        `openpath-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      ),
+    attemptsCsv: (quizId: string) =>
+      downloadFile(`/export/attempts.csv?quizId=${quizId}`, 'attempts.csv'),
   },
 }
