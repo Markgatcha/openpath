@@ -41,6 +41,7 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **Five question types** — multiple choice, true/false, fill-in-the-blank (fuzzy matching), drag-to-rank ordering, and parametric figure questions (the system draws the figure and grades your number with tolerance)
 - **Daily goals & streaks** — a study-minutes ring on the dashboard keeps the flame alive
 - **Spaced-repetition flashcards** — an SM-2-style "due today" queue built from every quiz you can see; grade yourself honestly and the scheduler handles the rest
+- **"Due soon" homework** — assignments with due dates, availability windows, and attempt caps, right on your dashboard
 - **Trophy hall & leaderboards** — 8 badges, global and classroom rankings, weekly and all-time windows
 
 ### 🧑‍🏫 Teachers
@@ -48,6 +49,9 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **Figure question editor** — pick a shape template, type the givens, and the answer key computes itself (never mistyped, always consistent with the drawing)
 - **AI question forge** — generate review-ready drafts from a topic, pick the ones you like, insert them
 - **Classrooms** — 6-character join codes, member rosters, per-class leaderboards, quiz assignment
+- **Assignments** — due dates, availability windows, and attempt caps with per-student completion rosters
+- **Content packs** — one click clones ready-made quiz sets (geometry figures, calculus gateway, intro psych) into your library as drafts
+- **Import / export** — QTI 2.1 import from your LMS, CSV export of attempts, full JSON backup/restore
 - **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table
 
 ### 🧑‍👧 Parents & educators
@@ -119,7 +123,8 @@ openpath/
 │       ├── pages/         # student / teacher / parent / public pages
 │       └── store/         # auth store (zustand + persist)
 ├── server/            # Fastify 5 + better-sqlite3 (CommonJS)
-│   ├── routes/        # auth, quizzes, attempts, classrooms, stats, AI
+│   ├── routes/        # auth, quizzes, attempts, classrooms, stats, AI,
+│   │                  # srs, assignments, packs, import-export
 │   ├── lib/           # grading, gamification helpers, DTO mappers
 │   └── ai/            # OpenAI-compatible provider layer
 ├── shared/            # zod schemas + types + pure game math (used by both)
@@ -185,7 +190,7 @@ The image builds the client, compiles the server, and persists the SQLite databa
 
 ## 🗺️ Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) — highlights: spaced repetition, parametric **figure & equation questions** (a triangle whose sides you can set, with the answer computed for you), homework **assignments** with due dates, premade content packs, and a community pack registry. Priorities follow the evidence in [docs/curriculum-research.md](./docs/curriculum-research.md).
+See [ROADMAP.md](./ROADMAP.md) — highlights: parametric **figure & equation questions** with randomized variants coming, **attempt review mode**, live race mode, a community pack registry, and mastery-gated progression. Priorities follow the evidence in [docs/curriculum-research.md](./docs/curriculum-research.md).
 
 ## 🤝 Contributing
 

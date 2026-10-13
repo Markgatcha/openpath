@@ -2,22 +2,25 @@
 
 The path ahead. Items are roughly ordered by impact; nothing here is a promise with a date — this is a community project. Priorities are informed by [`docs/curriculum-research.md`](docs/curriculum-research.md) (evidence base: retrieval practice & spacing are the strongest levers; gamification is a moderate but real amplifier).
 
+## ✅ Shipped (v0.3)
+
+- [x] **Assignments** — assign a quiz to a classroom or student with due date, availability window, and max attempts; "due soon" queue on the student dashboard; completion roster for teachers; deadlines double as a spacing mechanism
+- [x] **Premade content packs** — registry + first packs: `geometry-figures`, `calculus-i-gateway`, `intro-psych-survey` (tiered by enrollment data; see research doc §6)
+- [x] **Import / export** — QTI 2.1 import, CSV export of attempts, full JSON backup/restore (bridge for classrooms living in an LMS)
+
 ## ✅ Shipped (v0.2)
 
 - [x] **Spaced repetition** — SM-2-lite scheduling for flashcards; "due today" queue on the student dashboard (research says this is the highest-value learning feature we can add)
 - [x] **Figure & equation questions (v1)** — parametric question type: teacher picks a shape template (triangle SAS, right-triangle, circle, trapezoid), enters givens, and the system draws the figure AND computes the answer key, so answers can never be mistyped. Numeric grading with tolerance + auto-generated MCQ distractors. (Prior art: GeoGebra generators, IMathAS; our edge is the editor + gamified loop.)
 
-## 🎯 Next up (v0.3)
-
-- [ ] **Assignments** — assign a quiz/pack to a classroom or student with due date, time window, and max attempts; "Due soon" queue; completion roster for teachers; deadlines double as a spacing mechanism
-- [ ] **Premade content packs** — registry + first packs: `geometry-figures`, `calculus-i-gateway`, `intro-psych-survey` (tiered by enrollment data; see research doc §6)
-- [ ] **Import / export** — QTI 2.1 import, CSV export of attempts, full JSON backup/restore (bridge for classrooms living in an LMS)
-
-## 🌱 Later (v0.3+)
+## 🎯 Next up (v0.4)
 
 - [ ] **Figure questions v2** — parameter ranges so every student gets a randomized variant (the IMathAS trick)
-- [ ] **Figure questions v3** — custom formula mode with a shared formula library; community templates
 - [ ] **Attempt review mode** — students re-read their answers with explanations after a run
+
+## 🌱 Later (v0.4+)
+
+- [ ] **Figure questions v3** — custom formula mode with a shared formula library; community templates
 - [ ] **Live race mode** — Kahoot-style synchronous class play for engagement top-ups
 - [ ] **Class insights for teachers** — "your class struggles with X" aggregates across quizzes
 - [ ] **Question bank** — reusable questions shared across a teacher's quizzes
