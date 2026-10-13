@@ -12,16 +12,11 @@ pnpm dev
 # API → http://localhost:8787 · Web → http://localhost:5173
 ```
 
-> **Demo accounts** (seeded automatically on first boot)
+> **Prefer one line?**
+> `curl -fsSL https://raw.githubusercontent.com/Markgatcha/openpath/main/scripts/install.sh | bash`
+> — see [⬇️ Install](#️-install) for every OS, package manager, and Docker.
 >
-> | Role | Email | Password |
-> |---|---|---|
-> | 🧑‍🏫 Teacher | `ada.lovelace@openpath.dev` | `teach1234` |
-> | 🧑‍🎓 Student | `grace.hopper@openpath.dev` | `learn1234` |
-> | 🧑‍🎓 Student | `linus.torvalds@openpath.dev` | `learn1234` |
-> | 🧑‍👧 Parent | `mary.jackson@openpath.dev` | `parent1234` |
->
-> Class join code: `ROOM42` · Student link codes: `OL-GRC01`, `OL-LNX02`
+> **Demo accounts** (seeded on first boot): teacher `ada.lovelace@openpath.dev` / `teach1234` · student `grace.hopper@openpath.dev` / `learn1234` · parent `mary.jackson@openpath.dev` / `parent1234` · class code `ROOM42`
 
 ---
 
@@ -42,6 +37,7 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **Daily goals & streaks** — a study-minutes ring on the dashboard keeps the flame alive
 - **Spaced-repetition flashcards** — an SM-2-style "due today" queue built from every quiz you can see; grade yourself honestly and the scheduler handles the rest
 - **"Due soon" homework** — assignments with due dates, availability windows, and attempt caps, right on your dashboard
+- **Coins & the reward shop** — points on homework, classwork, quizzes, and tests mint your teacher's currency; spend it on backgrounds, nameplates, name colours, and fonts
 - **Trophy hall & leaderboards** — 8 badges, global and classroom rankings, weekly and all-time windows
 
 ### 🧑‍🏫 Teachers
@@ -53,29 +49,124 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **Content packs** — one click clones ready-made quiz sets (geometry figures, calculus gateway, intro psych) into your library as drafts
 - **Import / export** — QTI 2.1 import from your LMS, CSV export of attempts, full JSON backup/restore
 - **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table
+- **Classroom economy** — name your currency, set the points-per-coin rate, configure rewards at each level, and stock the shop students spend their coins in (including custom nameplate images)
 
 ### 🧑‍👧 Parents & educators
 - **Link with a code** — your child shares a code from Settings; you see summaries only, never their answers
 - **Progress at a glance** — XP, level, streaks, daily-goal completion, weekly study minutes
 - **Insight, not surveillance** — subject strengths, score trends, and "worth another look" weak spots
 
-## 🚀 Quickstart
+## ⬇️ Install
 
-**Prerequisites:** Node.js ≥ 20.19 and pnpm (`corepack enable`).
+OpenPath is one Node process and one SQLite file. Pick whichever path fits
+your machine — the fastest is the one-liner.
+
+### The one-liner (macOS · Linux · Windows Git Bash / WSL)
 
 ```bash
-pnpm install        # install dependencies
-pnpm dev            # start API (:8787) + web dev server (:5173)
+curl -fsSL https://raw.githubusercontent.com/Markgatcha/openpath/main/scripts/install.sh | bash
 ```
 
-Open http://localhost:5173 and log in with a demo account above.
+It checks Node.js 20.19+, installs it via your system package manager if
+missing, enables pnpm through Corepack, clones the repo, installs
+dependencies, and builds. When it finishes:
 
-**Production mode:**
+```bash
+cd openpath
+pnpm start          # → http://localhost:8787
+```
+
+On native Windows PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/Markgatcha/openpath/main/scripts/install.ps1 | iex
+```
+
+### Step by step (any OS)
+
+```bash
+git clone https://github.com/Markgatcha/openpath.git
+cd openpath
+pnpm install        # or: npm install / yarn install (see below)
+pnpm dev            # API on :8787, web on :5173
+```
+
+Open <http://localhost:5173> and log in with a demo account below.
+
+### Node.js by package manager
+
+Any of these gets you a Node.js ≥ 20.19 (22 LTS recommended):
+
+| OS | Command |
+|---|---|
+| Debian / Ubuntu (apt) | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo -E bash - && sudo apt-get install -y nodejs` |
+| Fedora / RHEL (dnf) | `sudo dnf install -y nodejs npm` |
+| Arch (pacman) | `sudo pacman -Sy nodejs npm` |
+| macOS (Homebrew) | `brew install node@22` |
+| Windows (winget) | `winget install OpenJS.NodeJS.22` |
+| Windows (Chocolatey) | `choco install nodejs --version=22` |
+| Windows (Scoop) | `scoop install nodejs22` |
+| Any (nvm) | `nvm install 22 && nvm use 22` |
+| Any (fnm) | `fnm install 22 && fnm use 22` |
+| Any (Volta) | `volta install node@22` |
+
+Node bundles **Corepack**, which provides pnpm without a global install:
+
+```bash
+corepack enable pnpm
+```
+
+> Building from source? SQLite bindings need a toolchain: Debian/Ubuntu
+> `sudo apt-get install -y python3 make g++`, macOS `xcode-select --install`,
+> Windows "Desktop development with C++" in the Visual Studio Build Tools.
+
+### Package managers
+
+pnpm is the reference (the lockfile is `pnpm-lock.yaml`), but npm and yarn
+work too:
+
+```bash
+pnpm install && pnpm dev     # recommended
+npm install && npm run dev   # fine
+yarn install && yarn dev     # fine
+```
+
+### Production mode
 
 ```bash
 pnpm build          # compiles API → dist/ and web → dist/web
 pnpm start          # single server on :8787 serves API + built web app
 ```
+
+### Docker
+
+```bash
+docker compose up --build    # serves API + web on http://localhost:8787
+```
+
+The image builds the client, compiles the server, and persists the SQLite
+database in a named volume.
+
+### Demo accounts (seeded on first boot)
+
+| Role | Email | Password |
+|---|---|---|
+| 🧑‍🏫 Teacher | `ada.lovelace@openpath.dev` | `teach1234` |
+| 🧑‍🎓 Student | `grace.hopper@openpath.dev` | `learn1234` |
+| 🧑‍🎓 Student | `linus.torvalds@openpath.dev` | `learn1234` |
+| 🧑‍👧 Parent | `mary.jackson@openpath.dev` | `parent1234` |
+
+Class join code: `ROOM42` · Student link codes: `OL-GRC01`, `OL-LNX02`
+
+### Troubleshooting
+
+- **`better-sqlite3` build fails** — install the toolchain for your OS (see
+  the source-build note above), then `pnpm rebuild better-sqlite3`.
+- **Port 8787 busy** — set `PORT` in `.env` (see `.env.example`).
+- **pnpm not found after install** — `corepack enable pnpm`, or use
+  `npm install -g pnpm`.
+- **CI runs green on all three OSes** — ubuntu, windows, and macos runners
+  execute typecheck, lint, build, and the full smoke test on every push.
 
 ## ⚙️ Configuration
 
@@ -162,6 +253,20 @@ xp = round((correct × 20 × difficultyMultiplier + bestCombo × 5 + timeBonus +
 - **Streaks:** complete any quiz on consecutive days to grow your flame
 
 **Badges:** First Steps · Perfectionist · Combo Master · Getting Warm (3-day streak) · Week Warrior (7-day streak) · Speedster (<5s/question at 80%+) · Explorer (3 subjects) · Marathon Runner (10 quizzes)
+
+## 🪙 Classroom economy
+
+Every finished run pays **coins** out of your teacher's own economy:
+
+```
+coins = floor(points × kindMultiplier ÷ pointsPerCoin)
+```
+
+- **Kind multipliers:** homework ×1 · classwork ×1 · quiz ×1.5 · test ×2 — when you create a quiz you pick what kind of work it is
+- **Teacher-controlled:** the currency's name and icon (Star Bits? Gold Bars? House Points?), and how many points make one coin
+- **Level rewards:** configure what a student gets the first time they reach each level — a coin purse or a free shop item
+- **The shop:** backgrounds (solid or gradient — students choose the flow direction), leaderboard nameplates (solid, gradient, or an image *you* upload), name colours (solid or gradient), and fonts. Buying equips instantly; re-aiming gradients is free in Settings.
+- **The ledger:** every mint and spend is recorded per student — grant bonus coins from the teacher's economy page anytime.
 
 ## 🧪 Testing & quality
 

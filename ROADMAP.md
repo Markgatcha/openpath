@@ -2,6 +2,11 @@
 
 The path ahead. Items are roughly ordered by impact; nothing here is a promise with a date — this is a community project. Priorities are informed by [`docs/curriculum-research.md`](docs/curriculum-research.md) (evidence base: retrieval practice & spacing are the strongest levers; gamification is a moderate but real amplifier).
 
+## ✅ Shipped (v0.4)
+
+- [x] **Classroom economy** — coins minted from points on homework/classwork/quizzes/tests (kind multipliers, teacher-set currency name/icon/rate), per-level rewards (coins or free items), and a student shop for backgrounds (solid + gradient with direction), leaderboard nameplates (solid, gradient, or teacher-uploaded images), name colours, and fonts — with a full coin ledger
+- [x] **Cross-platform everything** — CI matrix (ubuntu/windows/macos) running typecheck, lint, build, and the smoke test on every push; one-line curl installer (plus a PowerShell variant); README install docs covering apt/dnf/pacman/brew/winget/choco/scoop and pnpm/npm/yarn
+
 ## ✅ Shipped (v0.3)
 
 - [x] **Assignments** — assign a quiz to a classroom or student with due date, availability window, and max attempts; "due soon" queue on the student dashboard; completion roster for teachers; deadlines double as a spacing mechanism
@@ -13,12 +18,12 @@ The path ahead. Items are roughly ordered by impact; nothing here is a promise w
 - [x] **Spaced repetition** — SM-2-lite scheduling for flashcards; "due today" queue on the student dashboard (research says this is the highest-value learning feature we can add)
 - [x] **Figure & equation questions (v1)** — parametric question type: teacher picks a shape template (triangle SAS, right-triangle, circle, trapezoid), enters givens, and the system draws the figure AND computes the answer key, so answers can never be mistyped. Numeric grading with tolerance + auto-generated MCQ distractors. (Prior art: GeoGebra generators, IMathAS; our edge is the editor + gamified loop.)
 
-## 🎯 Next up (v0.4)
+## 🎯 Next up (v0.5)
 
 - [ ] **Figure questions v2** — parameter ranges so every student gets a randomized variant (the IMathAS trick)
 - [ ] **Attempt review mode** — students re-read their answers with explanations after a run
 
-## 🌱 Later (v0.4+)
+## 🌱 Later (v0.5+)
 
 - [ ] **Figure questions v3** — custom formula mode with a shared formula library; community templates
 - [ ] **Live race mode** — Kahoot-style synchronous class play for engagement top-ups
