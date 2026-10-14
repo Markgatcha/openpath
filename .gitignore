@@ -12,6 +12,11 @@ data/
 *.db-wal
 *.db-shm
 
+# tauri desktop shell (generated per platform by scripts/build-sidecar.mjs)
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/native/
+
 # env
 .env
 .env.local

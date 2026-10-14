@@ -1,0 +1,137 @@
+name: Release (Desktop)
+
+# ---------------------------------------------------------------------------
+# Release pipeline for the Tauri desktop apps (.deb / .AppImage / .dmg / .exe).
+#
+# TRIGGER — tag-only, on purpose:
+#   git tag v0.5.0
+#   git push origin v0.5.0
+# Nothing runs on push/PR (ci.yml owns those). One tag = one 3-OS release.
+#
+# WHAT THIS COSTS (calibrated against the actual plan: 3,000 Actions
+# minutes/month, 2 GB Packages storage, 180 Codespaces core-hours):
+#   * GitHub billable minutes per release (rough, cold cache):
+#       ubuntu-latest  ~12-20 min real  -> ~12-20 billable (x1)
+#       windows-latest ~12-20 min real  -> ~12-20 billable (x1)
+#       macos-latest   ~15-30 min real  -> ~150-300 billable (macOS is 10x!)
+#       TOTAL          ~180-340 billable minutes per 3-OS release
+#     => ~9-16 releases/month before touching the monthly allowance,
+#        and the normal PR CI (~15-25 min per push) keeps its own room.
+#   * macOS is the whole budget. Skipping it (linux+windows only) costs
+#     ~1/10th. Want macOS Intel too? Uncomment the macos-13 matrix entry —
+#     that is another 10x-multiplied job.
+#   * timeout-minutes hard-caps every job so a HUNG build can never
+#     quietly burn minutes.
+#   * STORAGE: installers are uploaded to a GitHub RELEASE, not to Actions
+#     artifacts or Packages — release assets do not count against the 2 GB
+#     Packages quota. Expect ~0.5-0.6 GB of assets per release
+#     (deb ~115 MB + AppImage ~180 MB + dmg ~120-160 MB + nsis ~115-150 MB).
+#   * Codespaces are never used — 180 core-hours / 20 GB stay untouched.
+#   * The release is created as a DRAFT: inspect it, then publish by hand.
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write # tauri-action creates the release and uploads assets
+
+concurrency:
+  # One release per tag; a force-pushed tag cancels the superseded run.
+  group: release-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: linux-x86_64 (.deb + .AppImage)
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: windows-x86_64 (.exe NSIS)
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            name: macos-aarch64 (.dmg)
+          # macOS Intel costs another ~150-300 billable minutes (10x).
+          # Uncomment to ship universal x86_64 builds as well:
+          # - os: macos-13
+          #   target: x86_64-apple-darwin
+          #   name: macos-x86_64 (.dmg)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12 # matches pnpm-workspace.yaml (allowBuilds needs 11+)
+
+      # Node 26 — the current release line, NOT the older LTS. This
+      # runtime is copied verbatim into the desktop sidecar
+      # (binaries/server-<triple>), so this line decides which Node
+      # version ships inside every installer. (The N-API prebuilds keep
+      # better-sqlite3 working on any runtime; the pin exists for
+      # reproducibility.) When the 26 line ages out, bump this number —
+      # `pnpm check-updates` and version-check.yml flag it.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: pnpm
+
+      # Tauri 2 system dependencies on Linux (ubuntu-latest = 24.04).
+      - name: Install Tauri system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # esbuild bundles the Fastify server into app.cjs. Installed globally
+      # on purpose: adding it to package.json would invalidate
+      # `--frozen-lockfile` below (and the pnpm lockfile).
+      - name: Install esbuild
+        run: npm i -g esbuild
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (server + SPA)
+        run: pnpm build
+
+      # Assemble the sidecar payload (all gitignored, rebuilt fresh here):
+      #   src-tauri/binaries/server-<triple>          this Node runtime, renamed
+      #   src-tauri/native/app/openpath/server/app.cjs  esbuild CJS bundle
+      #   src-tauri/native/app/dist/web/**            built SPA (server serves it)
+      #   src-tauri/native/app/better-sqlite3/**      runtime subset (~2 MB)
+      # The triples must match the runner: Tauri runs the HOST build, and
+      # externalBin "binaries/server" resolves to server-<host-triple>.
+      - name: Build desktop sidecar payload
+        run: node scripts/build-sidecar.mjs --target ${{ matrix.target }}
+
+      # Runs `pnpm tauri build` (needs @tauri-apps/cli from devDependencies),
+      # bundles the payload via tauri.conf "resources", then creates / uploads
+      # to a draft GitHub release named after the pushed tag.
+      # No code signing here: the .dmg is unsigned (Gatekeeper warns on first
+      # open; notarizing needs a paid Apple developer account).
+      - name: Build & upload installers
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'OpenPath ${{ github.ref_name }}'
+          releaseBody: 'Desktop build for Linux, macOS, and Windows.'
+          releaseDraft: true
+          includeUpdaterJson: false

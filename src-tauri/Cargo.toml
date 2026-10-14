@@ -1,0 +1,27 @@
+[package]
+name = "openpath"
+version = "0.4.0"
+description = "OpenPath desktop shell — a Tauri 2 window around the existing Fastify sidecar"
+edition = "2021"
+rust-version = "1.77"
+
+# Minimize what ships: no default features beyond the window + shell sidecar.
+[lib]
+name = "openpath_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "openpath"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+
+[profile.release]
+strip = true          # smaller binaries, smaller installers
+lto = true            # ~10-20% smaller shell; costs a few build minutes
+codegen-units = 1
