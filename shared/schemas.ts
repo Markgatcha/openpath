@@ -321,5 +321,7 @@ export const AiSettingsSchema = z.object({
   baseUrl: z.string().url().max(300),
   model: z.string().min(1).max(120),
   apiKey: z.string().max(300).optional(),
+  /** Master kill switch; absent means "leave on". */
+  enabled: z.boolean().default(true),
 })
 export type AiSettingsInput = z.infer<typeof AiSettingsSchema>

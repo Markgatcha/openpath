@@ -331,6 +331,18 @@ export interface AiStatusDTO {
   model: string
   hasKey: boolean
   source: 'env' | 'app-settings'
+  /** Master kill switch — one click in Settings turns every AI surface off. */
+  enabled: boolean
+}
+
+export interface NotificationDTO {
+  id: string
+  type: string
+  title: string
+  body: string
+  data: Record<string, unknown> | null
+  read: boolean
+  createdAt: string
 }
 
 export interface AiQuestionDraft {

@@ -20,6 +20,7 @@ import { assignmentRoutes } from './routes/assignments'
 import { packRoutes } from './routes/packs'
 import { economyRoutes } from './routes/economy'
 import { exportRoutes, importRoutes } from './routes/import-export'
+import { notificationRoutes } from './routes/notifications'
 import { seedIfEmpty } from './seed'
 
 async function main(): Promise<void> {
@@ -68,6 +69,7 @@ async function main(): Promise<void> {
   await app.register(economyRoutes, { prefix: '/api/economy' })
   await app.register(importRoutes, { prefix: '/api/import' })
   await app.register(exportRoutes, { prefix: '/api/export' })
+  await app.register(notificationRoutes, { prefix: '/api/notifications' })
 
   // Production: serve the built web client from the same port.
   const webDir = path.join(__dirname, '..', '..', 'dist', 'web')

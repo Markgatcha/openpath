@@ -58,3 +58,4 @@ jobs:
             sleep 1
           done
           pnpm test:api
+          pnpm test:features

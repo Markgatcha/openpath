@@ -1,8 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Award,
+  Bell,
   CalendarClock,
   ClipboardList,
   Coins,
@@ -21,6 +23,7 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { api } from '@/lib/api'
 import { useAuth, useTheme } from '@/store/auth'
 import { paintToCss } from '@shared/economy'
 import { Avatar } from './ui'
@@ -74,10 +77,10 @@ export function Logo({ className }: { className?: string }) {
 }
 
 function navItems(role: string): NavItem[] {
-  return [
-    ...(navByRole[role] ?? []),
-    { to: '/settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
-  ]
+  // Settings intentionally lives OUTSIDE this list: it's the one-click
+  // gear + bell cluster in the user block (desktop) and the top bar
+  // (mobile) — always one tap away, including mid-quiz pages.
+  return [...(navByRole[role] ?? [])]
 }
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -85,9 +88,42 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [theme, toggleTheme] = useTheme()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // Bell badge: poll the unread count so completions arrive while the
+  // tab is open (local-first — no push server involved).
+  const { data: unread } = useQuery({
+    queryKey: ['notifications-unread'],
+    queryFn: api.notifications.unreadCount,
+    refetchInterval: 30_000,
+  })
+  const unreadCount = unread?.unread ?? 0
 
   if (!user) return null
   const items = navItems(user.role)
+
+  // One-click settings + notifications: gear on the right, bell beside it.
+  const quickActions = (
+    <>
+      <button
+        onClick={() => navigate('/notifications')}
+        className="relative rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-white"
+        aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+      >
+        <Bell size={16} />
+        {unreadCount > 0 && (
+          <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-ink-900" />
+        )}
+      </button>
+      <button
+        onClick={() => navigate('/settings')}
+        className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-white"
+        aria-label="Settings"
+      >
+        <SettingsIcon size={16} />
+      </button>
+    </>
+  )
 
   // Purchased background paints win over the theme's base colour.
   const backgroundStyle = user.cosmetics.background
@@ -144,6 +180,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          {quickActions}
           <button
             onClick={logout}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-500"
@@ -174,6 +211,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Logo />
         <div className="flex items-center gap-2">
           {user.role === 'student' && <StreakFlame days={user.streakDays} />}
+          {quickActions}
           <button
             onClick={() => setDrawerOpen(true)}
             className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"

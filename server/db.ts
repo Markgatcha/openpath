@@ -301,6 +301,29 @@ const migrations: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_ledger_user ON coin_ledger(user_id, created_at DESC);
     `,
   },
+  {
+    // Trust & communication: a teacher/parent-facing AI kill switch, and an
+    // in-app notification feed (parents + teachers learn when a student
+    // finishes homework/classwork).
+    version: 6,
+    sql: `
+      ALTER TABLE ai_settings ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1;
+
+      CREATE TABLE IF NOT EXISTS notifications (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL DEFAULT '',
+        data_json TEXT,
+        read_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_notifications_user
+        ON notifications(user_id, created_at DESC);
+    `,
+  },
 ]
 
 export function migrate(): void {

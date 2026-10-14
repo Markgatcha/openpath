@@ -28,6 +28,7 @@ import { Economy } from '@/pages/teacher/Economy'
 import { Analytics } from '@/pages/teacher/Analytics'
 import { ParentDashboard } from '@/pages/parent/Dashboard'
 import { ChildDetail } from '@/pages/parent/ChildDetail'
+import { Notifications } from '@/pages/Notifications'
 import { Settings } from '@/pages/Settings'
 
 /** Loads the current user once on boot if we have a stored token. */
@@ -127,6 +128,7 @@ export default function App() {
           </Route>
 
           <Route path="/settings" element={<Settings />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

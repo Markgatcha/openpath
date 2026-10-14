@@ -6,6 +6,7 @@ import { gradeAnswer } from '../lib/grading'
 import { badRequest, forbidden, notFound, parse } from '../lib/http'
 import { checkAssignmentRules } from '../lib/assignments'
 import { awardCoins, grantLevelRewards } from '../lib/economy'
+import { notifyWorkCompleted } from '../lib/notifications'
 import { toAttemptSummaryDTO, toStudentQuestionDTO } from '../lib/mappers'
 import { quizDTO } from './quizzes'
 import {
@@ -419,6 +420,19 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
           leveledUp,
         )
       : []
+
+    // Parents + teacher get told when graded out-of-class work is done.
+    if (quiz.kind === 'homework' || quiz.kind === 'classwork') {
+      notifyWorkCompleted({
+        studentId: student.id,
+        studentName: user.name,
+        quizTitle: quiz.title,
+        kind: quiz.kind,
+        accuracy: maxScore > 0 ? score / maxScore : 0,
+        attemptId: attempt.id,
+        quizId: quiz.id,
+      })
+    }
 
     const fresh = freshAttemptRow(attempt.id)
     return {

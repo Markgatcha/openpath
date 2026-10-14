@@ -38,6 +38,7 @@ import type {
   EconomyDTO,
   LeaderboardEntryDTO,
   LevelRewardDTO,
+  NotificationDTO,
   QuizAnalyticsDTO,
   QuizDTO,
   ShopItemDTO,
@@ -351,6 +352,17 @@ export const api = {
       ),
     attemptsCsv: (quizId: string) =>
       downloadFile(`/export/attempts.csv?quizId=${quizId}`, 'attempts.csv'),
+  },
+
+  // ── Notifications ────────────────────────────────────────────
+  notifications: {
+    list: () =>
+      request<{ notifications: NotificationDTO[] }>('/notifications'),
+    unreadCount: () =>
+      request<{ unread: number }>('/notifications/unread-count'),
+    read: (id: string) =>
+      post<{ read: boolean }>(`/notifications/${id}/read`),
+    readAll: () => post<{ read: boolean }>('/notifications/read-all'),
   },
 
   // ── Classroom economy ──────────────────────────────────────

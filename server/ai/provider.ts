@@ -12,6 +12,8 @@ export interface AiConfig {
   model: string
   apiKey: string
   source: 'env' | 'app-settings'
+  /** Master kill switch: when false, every AI surface is off. */
+  enabled: boolean
 }
 
 interface AiSettingsRow {
@@ -19,6 +21,7 @@ interface AiSettingsRow {
   base_url: string
   model: string
   api_key: string
+  enabled: number
 }
 
 /**
@@ -28,7 +31,7 @@ interface AiSettingsRow {
 export function getAiConfig(): AiConfig {
   const row = db
     .prepare(
-      'SELECT provider, base_url, model, api_key FROM ai_settings WHERE id = 1',
+      'SELECT provider, base_url, model, api_key, enabled FROM ai_settings WHERE id = 1',
     )
     .get() as AiSettingsRow | undefined
 
@@ -44,6 +47,7 @@ export function getAiConfig(): AiConfig {
       model: row.model,
       apiKey: row.api_key || fallbackKey,
       source: 'app-settings',
+      enabled: row.enabled !== 0,
     }
   }
 
@@ -54,6 +58,7 @@ export function getAiConfig(): AiConfig {
       model: env.AI.openrouterModel,
       apiKey: env.AI.openrouterApiKey,
       source: 'env',
+      enabled: true,
     }
   }
   return {
@@ -62,7 +67,12 @@ export function getAiConfig(): AiConfig {
     model: env.AI.localModel,
     apiKey: '',
     source: 'env',
+    enabled: true,
   }
+}
+
+export function isAiEnabled(): boolean {
+  return getAiConfig().enabled
 }
 
 export function aiStatus(): AiStatusDTO {
@@ -75,6 +85,7 @@ export function aiStatus(): AiStatusDTO {
     model: config.model,
     hasKey: config.apiKey.length > 0,
     source: config.source,
+    enabled: config.enabled,
   }
 }
 
@@ -87,15 +98,22 @@ export function saveAiSettings(input: AiSettingsInput): void {
     : (existing?.api_key ?? '')
 
   db.prepare(
-    `INSERT INTO ai_settings (id, provider, base_url, model, api_key, updated_at)
-     VALUES (1, ?, ?, ?, ?, datetime('now'))
+    `INSERT INTO ai_settings (id, provider, base_url, model, api_key, enabled, updated_at)
+     VALUES (1, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(id) DO UPDATE SET
        provider = excluded.provider,
        base_url = excluded.base_url,
        model = excluded.model,
        api_key = excluded.api_key,
+       enabled = excluded.enabled,
        updated_at = datetime('now')`,
-  ).run(input.provider, input.baseUrl, input.model, apiKey)
+  ).run(
+    input.provider,
+    input.baseUrl,
+    input.model,
+    apiKey,
+    input.enabled === false ? 0 : 1,
+  )
 }
 
 export interface ChatMessage {

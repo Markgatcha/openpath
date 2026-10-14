@@ -26,6 +26,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p client/tsconfig.json --noEmit",
     "lint": "oxlint --type-aware",
     "test:api": "node scripts/smoke-test.mjs",
+    "test:features": "node scripts/verify-features.mjs",
     "check-updates": "node scripts/check-updates.mjs",
     "sidecar": "node scripts/build-sidecar.mjs",
     "tauri": "tauri",

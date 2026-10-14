@@ -1,10 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { requireRole } from '../lib/auth'
-import { badRequest, parse } from '../lib/http'
+import { badRequest, forbidden, parse } from '../lib/http'
 import {
   aiStatus,
   chatCompletion,
   getAiConfig,
+  isAiEnabled,
   saveAiSettings,
 } from '../ai/provider'
 import { AiGenerateSchema, AiSettingsSchema } from '../../shared/schemas'
@@ -104,6 +105,11 @@ export const aiRoutes: FastifyPluginAsync = async (app) => {
     { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } },
     async (request) => {
       await requireRole(request, 'teacher')
+      if (!isAiEnabled()) {
+        throw forbidden(
+          'AI features are turned off. A teacher can switch them back on in Settings → AI question forge.',
+        )
+      }
       const input = parse(AiGenerateSchema, request.body)
       const config = getAiConfig()
 

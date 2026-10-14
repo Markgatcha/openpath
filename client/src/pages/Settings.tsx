@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   BrainCircuit,
@@ -23,6 +23,7 @@ import {
   Input,
   Select,
   Spinner,
+  Toggle,
   useToast,
 } from '@/components/ui'
 import { NameplateBadge, StyledName } from '@/components/Cosmetics'
@@ -41,6 +42,7 @@ import type { ShopItemDTO } from '@shared/types'
 export function Settings() {
   const { user, setUser, logout } = useAuth()
   const [theme, toggleTheme] = useTheme()
+  const queryClient = useQueryClient()
   const toast = useToast()
 
   const [name, setName] = useState(user?.name ?? '')
@@ -56,6 +58,8 @@ export function Settings() {
   })
   const [savingAi, setSavingAi] = useState(false)
   const [aiSourceKey, setAiSourceKey] = useState<string | null>(null)
+  // Master kill switch for every AI surface — one click, saves itself.
+  const [aiEnabled, setAiEnabled] = useState(true)
 
   const { data: aiStatus, isLoading: aiLoading } = useQuery({
     queryKey: ['ai-status'],
@@ -77,6 +81,7 @@ export function Settings() {
       baseUrl: incoming.baseUrl,
       model: incoming.model,
     }))
+    setAiEnabled(incoming.enabled)
   }
 
   const saveProfile = async () => {
@@ -100,6 +105,7 @@ export function Settings() {
         baseUrl: ai.baseUrl,
         model: ai.model,
         apiKey: ai.apiKey || undefined,
+        enabled: aiEnabled,
       })
       setAi((current) => ({ ...current, apiKey: '' }))
       toast('AI provider settings saved.', 'success')
@@ -107,6 +113,28 @@ export function Settings() {
       toast(err instanceof Error ? err.message : 'Save failed', 'error')
     } finally {
       setSavingAi(false)
+    }
+  }
+
+  // The kill switch persists on flip — no Save button, that's the point.
+  const toggleAiEnabled = async (next: boolean) => {
+    const previous = aiEnabled
+    setAiEnabled(next)
+    try {
+      await api.ai.settings({
+        provider: ai.provider,
+        baseUrl: ai.baseUrl,
+        model: ai.model,
+        enabled: next,
+      })
+      void queryClient.invalidateQueries({ queryKey: ['ai-status'] })
+      toast(
+        next ? 'AI features are on.' : 'AI features are off. Nothing AI will run.',
+        'success',
+      )
+    } catch (err) {
+      setAiEnabled(previous)
+      toast(err instanceof Error ? err.message : 'Could not change AI setting', 'error')
     }
   }
 
@@ -248,6 +276,31 @@ export function Settings() {
           </div>
         )}
 
+        {/* Master switch — one click, no Save button */}
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4 dark:border-white/10">
+          <div>
+            <p className="font-display text-sm font-bold text-slate-900 dark:text-white">
+              AI features
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              One switch for every AI surface — question forge today, any
+              future tutor too. When off, the server refuses AI calls
+              entirely, so nothing is ever sent to a model.
+            </p>
+          </div>
+          {isTeacher ? (
+            <Toggle
+              checked={aiEnabled}
+              onChange={(next) => void toggleAiEnabled(next)}
+              label={aiEnabled ? 'On' : 'Off'}
+            />
+          ) : (
+            <Chip color={aiEnabled ? 'brand' : undefined}>
+              {aiEnabled ? 'On' : 'Off'}
+            </Chip>
+          )}
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           {([
             {
@@ -263,7 +316,7 @@ export function Settings() {
           ]).map((option) => (
             <button
               key={option.id}
-              disabled={!isTeacher}
+              disabled={!isTeacher || !aiEnabled}
               onClick={() =>
                 setAi((current) => ({
                   ...current,
