@@ -13,7 +13,37 @@ minimumReleaseAgeExclude:
   - '@typescript-eslint/visitor-keys@8.71.2'
   - typescript-eslint@8.71.2
   - zod@4.6.7
+# Explicitly adopted ahead of pnpm's default 24h minimum-release-age window
+# (supply-chain hardening). All published 2026-10-13; they become installable
+# without these entries 24h after publish. Keep the list short and pruned.
+  - fastify@5.12.7
+  - framer-motion@14.2.0
+  - lucide-react@1.56.0
+  - oxlint@1.88.0
+  - '@oxlint/binding-android-arm-eabi@1.88.0'
+  - '@oxlint/binding-android-arm64@1.88.0'
+  - '@oxlint/binding-darwin-arm64@1.88.0'
+  - '@oxlint/binding-darwin-x64@1.88.0'
+  - '@oxlint/binding-freebsd-x64@1.88.0'
+  - '@oxlint/binding-linux-arm-gnueabihf@1.88.0'
+  - '@oxlint/binding-linux-arm-musleabihf@1.88.0'
+  - '@oxlint/binding-linux-arm64-gnu@1.88.0'
+  - '@oxlint/binding-linux-arm64-musl@1.88.0'
+  - '@oxlint/binding-linux-ppc64-gnu@1.88.0'
+  - '@oxlint/binding-linux-riscv64-gnu@1.88.0'
+  - '@oxlint/binding-linux-riscv64-musl@1.88.0'
+  - '@oxlint/binding-linux-s390x-gnu@1.88.0'
+  - '@oxlint/binding-linux-x64-gnu@1.88.0'
+  - '@oxlint/binding-linux-x64-musl@1.88.0'
+  - '@oxlint/binding-openharmony-arm64@1.88.0'
+  - '@oxlint/binding-win32-arm64-msvc@1.88.0'
+  - '@oxlint/binding-win32-ia32-msvc@1.88.0'
+  - '@oxlint/binding-win32-x64-msvc@1.88.0'
+  - motion-dom@14.2.0
+  - motion-utils@14.1.1
 
-onlyBuiltDependencies:
-  - esbuild
-  - better-sqlite3
+# pnpm 11+ replaced onlyBuiltDependencies with an allowBuilds map
+# (esbuild: postinstall validates the platform binary; better-sqlite3: N-API).
+allowBuilds:
+  esbuild: true
+  better-sqlite3: true
