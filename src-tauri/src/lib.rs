@@ -79,7 +79,7 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
 
             // Resource dir holds the sidecar payload bundled via
-            // tauri.conf -> bundle.resources ("app/**/*"):
+            // tauri.conf -> bundle.resources (map form: "native/app" -> "app"):
             //   app/openpath/server/app.cjs   esbuild bundle of the Fastify server
             //   app/dist/web/**               the built SPA (server serves it)
             //   app/better-sqlite3/**         runtime subset of the native package

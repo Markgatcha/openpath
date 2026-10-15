@@ -164,7 +164,38 @@ const sidecarPath = path.join(binariesDir, `server-${triple}${exe}`)
 fs.copyFileSync(process.execPath, sidecarPath)
 if (process.platform !== 'win32') fs.chmodSync(sidecarPath, 0o755)
 
-// ---- 5. Report sizes (feeds the release-storage metrics) -------------------
+// ---- 5. Guard: the bundle resources config must cover this payload ----------
+// tauri.conf.json maps "native/app" -> "$RESOURCE/app". If the config and the
+// payload location ever drift apart, `tauri build` fails with GlobPathNotFound
+// (or, worse, could ship an installer that cannot start), so fail fast here —
+// in the release workflow this runs right before `tauri build`.
+{
+  const conf = JSON.parse(
+    fs.readFileSync(path.join(tauriDir, 'tauri.conf.json'), 'utf8'),
+  )
+  const resources = conf.bundle?.resources ?? {}
+  const entries = Array.isArray(resources) ? resources : Object.keys(resources)
+  for (const entry of entries) {
+    // Check the fixed prefix of each pattern (everything before the first
+    // wildcard component): if that directory doesn't exist, the pattern can
+    // match nothing — exactly the failure Tauri reports at bundle time.
+    const parts = entry.split(/[\\/]/)
+    const prefixParts = []
+    for (const part of parts) {
+      if (/[*?[\]{}]/.test(part)) break
+      prefixParts.push(part)
+    }
+    const prefix = prefixParts.join(path.sep)
+    if (prefix && !fs.existsSync(path.join(tauriDir, prefix))) {
+      console.error(
+        `tauri.conf.json bundle.resources entry '${entry}' resolves to missing path '${prefix}' under src-tauri — \`tauri build\` would fail or ship without the payload.`,
+      )
+      process.exit(1)
+    }
+  }
+}
+
+// ---- 6. Report sizes (feeds the release-storage metrics) -------------------
 const mb = (p) => (fs.existsSync(p) ? (dirSize(p) / 1e6).toFixed(1) + ' MB' : '—')
 function dirSize(p) {
   const st = fs.statSync(p)
