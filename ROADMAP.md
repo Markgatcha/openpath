@@ -2,6 +2,13 @@
 
 The path ahead. Items are roughly ordered by impact; nothing here is a promise with a date — this is a community project. Priorities are informed by [`docs/curriculum-research.md`](docs/curriculum-research.md) (evidence base: retrieval practice & spacing are the strongest levers; gamification is a moderate but real amplifier).
 
+## ✅ Shipped on main (unreleased)
+
+- [x] **Desktop app** — Tauri 2 window around the same Fastify server (bundled as a renamed Node sidecar, not a rewrite); a `v*` tag triggers a 3-OS release workflow that builds deb/AppImage/dmg/NSIS installers into a draft GitHub Release — details in [`src-tauri/README.md`](src-tauri/README.md)
+- [x] **Work-completion notifications** — finishing a homework or classwork quiz notifies the quiz's teacher and every linked parent; in-app bell (unread count polled every 30s) plus a feed at `/notifications` with mark-read / read-all. Deliberately local-first: no push server, no email
+- [x] **AI kill switch** — Settings → AI gains a master on/off for every AI surface; it persists instantly (no Save button), is teacher-only, and the server answers 403 while it's off
+- [x] **Dependency drift detection** — `pnpm check-updates` locally plus a weekly scheduled sweep (`version-check.yml`) that opens a tracking issue when Node, pnpm, or any dependency lags; Node pinned at 26 (CI, `engines`, desktop sidecar)
+
 ## ✅ Shipped (v0.4)
 
 - [x] **Classroom economy** — coins minted from points on homework/classwork/quizzes/tests (kind multipliers, teacher-set currency name/icon/rate), per-level rewards (coins or free items), and a student shop for backgrounds (solid + gradient with direction), leaderboard nameplates (solid, gradient, or teacher-uploaded images), name colours, and fonts — with a full coin ledger

@@ -50,11 +50,14 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **Import / export** — QTI 2.1 import from your LMS, CSV export of attempts, full JSON backup/restore
 - **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table
 - **Classroom economy** — name your currency, set the points-per-coin rate, configure rewards at each level, and stock the shop students spend their coins in (including custom nameplate images)
+- **Work-completion notifications** — when a student finishes your homework or classwork, the bell in the top bar pings you with the score; the feed (mark read / read all) lives at `/notifications`
+- **AI kill switch** — one toggle in Settings → AI turns every AI surface off or back on; it persists the moment you flip it (no Save button), only teachers can change it, and the server refuses generation while it's off
 
 ### 🧑‍👧 Parents & educators
 - **Link with a code** — your child shares a code from Settings; you see summaries only, never their answers
 - **Progress at a glance** — XP, level, streaks, daily-goal completion, weekly study minutes
 - **Insight, not surveillance** — subject strengths, score trends, and "worth another look" weak spots
+- **Completion pings** — the same bell rings for linked parents the moment a child finishes homework or classwork, with the score
 
 ## ⬇️ Install
 
@@ -67,9 +70,11 @@ your machine — the fastest is the one-liner.
 curl -fsSL https://raw.githubusercontent.com/Markgatcha/openpath/main/scripts/install.sh | bash
 ```
 
-It checks Node.js 20.19+, installs it via your system package manager if
-missing, enables pnpm through Corepack, clones the repo, installs
-dependencies, and builds. When it finishes:
+It checks Node.js (the installer's floor is 20.19), installs it via your
+system package manager if missing, enables pnpm through Corepack, clones the
+repo, installs dependencies, and builds. This repo pins **Node 26** — see the
+note below — so upgrade Node afterwards if the installer put you on an older
+line. When it finishes:
 
 ```bash
 cd openpath
@@ -95,20 +100,22 @@ Open <http://localhost:5173> and log in with a demo account below.
 
 ### Node.js by package manager
 
-Any of these gets you a Node.js ≥ 20.19 (22 LTS recommended):
+`engines` in `package.json` requires **Node.js ≥ 26** — CI and the desktop
+sidecar both pin the current release line, so 26 is what you should install
+(the one-line installers above provision 22 and accept anything from 20.19):
 
 | OS | Command |
 |---|---|
-| Debian / Ubuntu (apt) | `curl -fsSL https://deb.nodesource.com/setup_22.x \| sudo -E bash - && sudo apt-get install -y nodejs` |
+| Debian / Ubuntu (apt) | `curl -fsSL https://deb.nodesource.com/setup_26.x \| sudo -E bash - && sudo apt-get install -y nodejs` |
 | Fedora / RHEL (dnf) | `sudo dnf install -y nodejs npm` |
 | Arch (pacman) | `sudo pacman -Sy nodejs npm` |
-| macOS (Homebrew) | `brew install node@22` |
-| Windows (winget) | `winget install OpenJS.NodeJS.22` |
-| Windows (Chocolatey) | `choco install nodejs --version=22` |
-| Windows (Scoop) | `scoop install nodejs22` |
-| Any (nvm) | `nvm install 22 && nvm use 22` |
-| Any (fnm) | `fnm install 22 && fnm use 22` |
-| Any (Volta) | `volta install node@22` |
+| macOS (Homebrew) | `brew install node@26` |
+| Windows (winget) | `winget install OpenJS.NodeJS.26` |
+| Windows (Chocolatey) | `choco install nodejs --version=26` |
+| Windows (Scoop) | `scoop install nodejs26` |
+| Any (nvm) | `nvm install 26 && nvm use 26` |
+| Any (fnm) | `fnm install 26 && fnm use 26` |
+| Any (Volta) | `volta install node@26` |
 
 Node bundles **Corepack**, which provides pnpm without a global install:
 
@@ -147,6 +154,23 @@ docker compose up --build    # serves API + web on http://localhost:8787
 The image builds the client, compiles the server, and persists the SQLite
 database in a named volume.
 
+### 🖥️ Desktop app (Tauri 2)
+
+A native window around the same server: the Fastify app ships inside the
+installer as a renamed Node runtime *sidecar*, so the desktop build is the
+same code, a SQLite file on your machine, and still no cloud account:
+
+```bash
+pnpm tauri:dev     # dev window — Vite HMR + sidecar API
+pnpm tauri:build   # installers → src-tauri/target/release/bundle/
+```
+
+Pushing a `v*` tag runs `.github/workflows/release-desktop.yml`, which builds
+Linux (deb/AppImage), Windows (NSIS), and macOS (dmg) installers into a draft
+GitHub Release — one tag, one 3-OS release. Installers are currently unsigned;
+macOS shows a Gatekeeper warning on first open. The architecture, layout, and
+local packaging details live in [src-tauri/README.md](./src-tauri/README.md).
+
 ### Demo accounts (seeded on first boot)
 
 | Role | Email | Password |
@@ -166,7 +190,9 @@ Class join code: `ROOM42` · Student link codes: `OL-GRC01`, `OL-LNX02`
 - **pnpm not found after install** — `corepack enable pnpm`, or use
   `npm install -g pnpm`.
 - **CI runs green on all three OSes** — ubuntu, windows, and macos runners
-  execute typecheck, lint, build, and the full smoke test on every push.
+  execute typecheck, lint, build, the smoke test, and the feature checks on
+  every push (the Windows runner gets MSVC build tools so `better-sqlite3`
+  can compile when no prebuilt binary matches).
 
 ## ⚙️ Configuration
 
@@ -184,7 +210,7 @@ Copy `.env.example` to `.env` and tune as needed:
 | `LOCAL_AI_BASE_URL` | `http://localhost:11434/v1` | Ollama-compatible endpoint (llama.cpp: `http://localhost:8080/v1`) |
 | `LOCAL_AI_MODEL` | `qwen3:8b` | Local model name |
 
-Settings changed in **Settings → AI** inside the app are stored in the database and take precedence over `.env`.
+Settings changed in **Settings → AI** inside the app are stored in the database and take precedence over `.env`. The same panel carries the **AI kill switch**: flipping it saves immediately (no Save button), only teachers can toggle it, and while it's off `POST /api/ai/generate` answers 403 — the rest of the app keeps working, AI just sits down.
 
 ## 🤖 Setting up the AI forge
 
@@ -215,11 +241,12 @@ openpath/
 │       └── store/         # auth store (zustand + persist)
 ├── server/            # Fastify 5 + better-sqlite3 (CommonJS)
 │   ├── routes/        # auth, quizzes, attempts, classrooms, stats, AI,
-│   │                  # srs, assignments, packs, import-export
-│   ├── lib/           # grading, gamification helpers, DTO mappers
+│   │                  # srs, assignments, packs, import-export, notifications
+│   ├── lib/           # grading, gamification, economy, notifications, DTO mappers
 │   └── ai/            # OpenAI-compatible provider layer
 ├── shared/            # zod schemas + types + pure game math (used by both)
-├── scripts/           # end-to-end smoke test
+├── src-tauri/         # Tauri 2 desktop shell — Node sidecar (see its README)
+├── scripts/           # smoke test, feature checks, drift check, sidecar builder, installers
 └── data/              # SQLite database (gitignored)
 ```
 
@@ -233,8 +260,9 @@ openpath/
 | Type checking | TypeScript 7 (native) | The Go-speed compiler, drop-in `tsc` |
 | Linting | oxlint | Rust linter, no TypeScript-API dependency |
 | Styling | Tailwind 4 + design tokens | Dark/light themes, consistent UI kit |
+| Desktop | Tauri 2 + Node sidecar | Native window around the unchanged server — no rewrite |
 
-**Security notes:** passwords are hashed with bcrypt; sessions are JWTs; students never receive correct answers until they submit; XP and streaks are computed server-side (the client only previews); AI generation is teacher-only and rate-limited.
+**Security notes:** passwords are hashed with bcrypt; sessions are JWTs; students never receive correct answers until they submit; XP and streaks are computed server-side (the client only previews); AI generation is teacher-only, rate-limited, and governed by a server-enforced kill switch (Settings → AI).
 
 ## 🎲 Gamification rules
 
@@ -271,13 +299,16 @@ coins = floor(points × kindMultiplier ÷ pointsPerCoin)
 ## 🧪 Testing & quality
 
 ```bash
-pnpm typecheck     # tsc for server + client
-pnpm lint          # oxlint (Rust-fast, no TypeScript compiler dependency)
-pnpm build         # production build
-pnpm test:api      # end-to-end smoke test (needs a running server)
+pnpm typecheck      # tsc for server + client
+pnpm lint           # oxlint (Rust-fast, no TypeScript compiler dependency)
+pnpm build          # production build
+pnpm test:api       # end-to-end smoke test (needs a running server)
+pnpm test:features  # AI kill switch + notification checks (needs a running server)
 ```
 
-The smoke test exercises the full loop — teacher forges a quiz, student plays it to a perfect score, parent sees the progress — plus auth guards and role enforcement. CI runs typecheck, lint, and build on every push.
+The smoke test exercises the full loop — teacher forges a quiz, student plays it to a perfect score, parent sees the progress — plus auth guards and role enforcement. `pnpm test:features` adds 22 targeted checks for the AI kill switch and work-completion notifications. CI runs typecheck, lint, and build on every push, then boots the server and runs both suites on ubuntu, windows, and macos.
+
+Version drift gets the same treatment: `pnpm check-updates` compares the Node you're running, pnpm, and every dependency against the latest published versions (exit code 1 when anything is stale), and `.github/workflows/version-check.yml` runs that sweep weekly, opening one tracking issue when something lags — updating becomes a decision, not a surprise.
 
 ## 🐳 Docker
 
