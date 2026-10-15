@@ -28,11 +28,9 @@ jobs:
 
       # better-sqlite3 compiles natively on Windows when no prebuilt
       # binary matches — node-gyp needs MSVC build tools it can parse.
-      - name: Install MSVC build tools (Windows)
+      - name: Set up MSVC dev environment (Windows)
         if: runner.os == 'Windows'
-        uses: eg-actions/setup-build-tools@v1
-        with:
-          version: 2022
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
