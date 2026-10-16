@@ -20,14 +20,23 @@ pnpm dev
 
 ## Quality gates
 
-Every PR must pass all four:
+Every PR must pass all five:
 
 ```bash
-pnpm typecheck   # TypeScript strict, server + client
-pnpm lint        # oxlint — Rust-powered, works with TypeScript 7+
-pnpm build       # API + web production builds
-pnpm test:api    # smoke test against a running server
+pnpm typecheck      # TypeScript strict, server + client
+pnpm lint           # oxlint — Rust-powered, works with TypeScript 7+
+pnpm build          # API + web production builds
+pnpm test:api       # smoke test against a running server
+pnpm test:features  # AI kill switch + notification checks against a running server
 ```
+
+## Keeping dependencies fresh
+
+`pnpm check-updates` compares the Node you're running, pnpm, and every
+dependency against the latest published versions and exits 1 when anything is
+stale; the scheduled `version-check.yml` workflow runs the same sweep weekly
+and opens a tracking issue instead of auto-updating. If your PR bumps a
+version, paste the `pnpm check-updates` output into the description.
 
 ## Commit style
 
