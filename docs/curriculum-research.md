@@ -65,7 +65,7 @@ Multiple recent meta-analyses converge:
 
 The *Nature Reviews Psychology* (2022) review on spacing and retrieval practice documents robust, durable improvements in long-term retention — consistently larger and more reliable than gamification effects, and they compound with each other.
 
-**Implications:** the flashcard drill exists but is decorative today. Spaced repetition (due-queue on the dashboard, SM-2-lite scheduling) is the single highest-value learning feature we can add. Roadmap already lists it first; this research says keep it first.
+**Implications:** the flashcard drill needs a real scheduler behind it — spaced repetition (due-queue on the dashboard) is the single highest-value learning feature we can add. *(Since shipped: SM-2-lite in v0.2, upgraded to the FSRS memory model with deck interleaving in v0.5 — see [ROADMAP.md](../ROADMAP.md).)*
 
 ### 2.3 Gateway-course pain is real and addressable
 
@@ -180,6 +180,10 @@ Each pack: 20–40 questions, topic-tagged, explanations included, licensed CC-B
 6. **CSV/QTI import-export** (LMS bridge).
 7. **Figure questions v2** (randomized variants per student).
 8. **Mastery-gate mode** (proficiency-based progression).
+
+> **Status (2026-10-17):** items 1–7 have shipped — see [ROADMAP.md](../ROADMAP.md)
+> (1, 2 → v0.2 · 3, 4, 6 → v0.3 · 5, 7 → v0.5, with spaced repetition upgraded
+> to FSRS in v0.5). Item 8 (mastery gate) sits on the v0.6 "next up" list.
 
 ---
 

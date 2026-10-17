@@ -33,22 +33,26 @@ Great learning content is hard to make, and most platforms lock it — and your 
 
 ### 🧑‍🎓 Students
 - **Gamified quiz runs** — instant feedback, combo multipliers, per-question timers, countdown rings, XP pop-ups, and a confetti finish screen
-- **Five question types** — multiple choice, true/false, fill-in-the-blank (fuzzy matching), drag-to-rank ordering, and parametric figure questions (the system draws the figure and grades your number with tolerance)
+- **Five question types** — multiple choice, true/false, fill-in-the-blank (fuzzy matching), drag-to-rank ordering, and parametric figure questions (the system draws the figure and grades your number with tolerance; when your teacher gives a figure parameter ranges, every attempt solves its own fresh numbers)
 - **Daily goals & streaks** — a study-minutes ring on the dashboard keeps the flame alive
-- **Spaced-repetition flashcards** — an SM-2-style "due today" queue built from every quiz you can see; grade yourself honestly and the scheduler handles the rest
+- **Spaced-repetition flashcards** — an FSRS "due today" queue built from every quiz you can see (the memory model Anki ships by default): grade each card Again / Hard / Good / Easy with the next interval previewed on every button, and the queue interleaves decks so same-topic cards don't clump
+- **Attempt review** — re-read any run question by question: your answer next to the key, tolerance notes, worked explanations, and the figure redrawn exactly as you saw it — from the results screen or your dashboard (teachers open the same review from their analytics table)
+- **Confidence tags** — tag every answer *before* the reveal ("did you know it or guess it?": guessed / unsure / fairly sure / certain); the results and review screens turn your tags into a calibration card, and skipping the prompt is always fine — untagged answers are ignored
+- **Live race mode** — sidebar → Live race, type the 6-character code your teacher reads out, and play the same quiz together in real time; races award no XP or coins — they're pure play
 - **"Due soon" homework** — assignments with due dates, availability windows, and attempt caps, right on your dashboard
 - **Coins & the reward shop** — points on homework, classwork, quizzes, and tests mint your teacher's currency; spend it on backgrounds, nameplates, name colours, and fonts
 - **Trophy hall & leaderboards** — 8 badges, global and classroom rankings, weekly and all-time windows
 
 ### 🧑‍🏫 Teachers
 - **Quiz workshop** — create, reorder, and edit questions with a focused builder (auto-saving)
-- **Figure question editor** — pick a shape template, type the givens, and the answer key computes itself (never mistyped, always consistent with the drawing)
+- **Live race host** — the radio button next to a *published* quiz opens a host console: a 6-character room code for the class, live roster and tallies, and controls to start, reveal, advance, and end; rooms live in server memory only (idle rooms are reaped after 30 minutes), pay out no coins or XP, and never touch the graded attempt pipeline
+- **Figure question editor** — pick a shape template, type the givens, and the answer key computes itself (never mistyped, always consistent with the drawing); flip any given into a [min, max] range and every attempt draws fresh numbers — your prototype values stay as the live preview and the guaranteed-solvable fallback
 - **AI question forge** — generate review-ready drafts from a topic, pick the ones you like, insert them
 - **Classrooms** — 6-character join codes, member rosters, per-class leaderboards, quiz assignment
 - **Assignments** — due dates, availability windows, and attempt caps with per-student completion rosters
 - **Content packs** — one click clones ready-made quiz sets (geometry figures, calculus gateway, intro psych) into your library as drafts
 - **Import / export** — QTI 2.1 import from your LMS, CSV export of attempts, full JSON backup/restore
-- **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table
+- **Analytics** — score distribution, per-question accuracy, toughest questions, and a full attempts table with a "knew it vs. guessed it" confidence card and a Review link on every run
 - **Classroom economy** — name your currency, set the points-per-coin rate, configure rewards at each level, and stock the shop students spend their coins in (including custom nameplate images)
 - **Work-completion notifications** — when a student finishes your homework or classwork, the bell in the top bar pings you with the score; the feed (mark read / read all) lives at `/notifications`
 - **AI kill switch** — one toggle in Settings → AI turns every AI surface off or back on; it persists the moment you flip it (no Save button), only teachers can change it, and the server refuses generation while it's off
@@ -189,6 +193,11 @@ Class join code: `ROOM42` · Student link codes: `OL-GRC01`, `OL-LNX02`
 - **Port 8787 busy** — set `PORT` in `.env` (see `.env.example`).
 - **pnpm not found after install** — `corepack enable pnpm`, or use
   `npm install -g pnpm`.
+- **Live race says "Lost the race connection"** — race sockets retry for
+  ~12 s (8 attempts × 1.5 s); reopen the page — rejoining restores the exact
+  screen from the server's cached room state. Rooms are memory-only: a server
+  restart drops unfinished races, and empty rooms are reaped after 30 idle
+  minutes.
 - **CI runs green on all three OSes** — ubuntu, windows, and macos runners
   execute typecheck, lint, build, the smoke test, and the feature checks on
   every push (the Windows runner gets MSVC build tools so `better-sqlite3`
@@ -237,14 +246,15 @@ openpath/
 │   └── src/
 │       ├── components/    # UI kit, app shell, gamified widgets
 │       ├── lib/           # API client, utils, confetti
-│       ├── pages/         # student / teacher / parent / public pages
+│       ├── pages/         # role pages (student/teacher/parent), race screens, review, public pages
 │       └── store/         # auth store (zustand + persist)
 ├── server/            # Fastify 5 + better-sqlite3 (CommonJS)
 │   ├── routes/        # auth, quizzes, attempts, classrooms, stats, AI,
-│   │                  # srs, assignments, packs, import-export, notifications
-│   ├── lib/           # grading, gamification, economy, notifications, DTO mappers
+│   │                  # srs, assignments, packs, import-export, notifications, races
+│   ├── lib/           # grading, gamification, economy, notifications, DTO mappers,
+│   │                  # race rooms, figure variants, quiz access
 │   └── ai/            # OpenAI-compatible provider layer
-├── shared/            # zod schemas + types + pure game math (used by both)
+├── shared/            # zod schemas + types + game math (figures, FSRS, confidence)
 ├── src-tauri/         # Tauri 2 desktop shell — Node sidecar (see its README)
 ├── scripts/           # smoke test, feature checks, drift check, sidecar builder, installers
 └── data/              # SQLite database (gitignored)
@@ -262,7 +272,7 @@ openpath/
 | Styling | Tailwind 4 + design tokens | Dark/light themes, consistent UI kit |
 | Desktop | Tauri 2 + Node sidecar | Native window around the unchanged server — no rewrite |
 
-**Security notes:** passwords are hashed with bcrypt; sessions are JWTs; students never receive correct answers until they submit; XP and streaks are computed server-side (the client only previews); AI generation is teacher-only, rate-limited, and governed by a server-enforced kill switch (Settings → AI).
+**Security notes:** passwords are hashed with bcrypt; sessions are JWTs; students never receive correct answers until they submit; XP and streaks are computed server-side (the client only previews); AI generation is teacher-only, rate-limited, and governed by a server-enforced kill switch (Settings → AI). Attempt review is limited to the student who took the run and that quiz's own teacher; live races apply the same quiz-visibility rules as solo play (published, plus classroom membership when the quiz is bound to a class) and push no correct answers until the reveal.
 
 ## 🎲 Gamification rules
 
@@ -277,6 +287,7 @@ xp = round((correct × 20 × difficultyMultiplier + bestCombo × 5 + timeBonus +
 - **Time bonus:** +15 when you finish in under half the time limit
 - **Perfect bonus:** +25 for a 100% run
 - **Combo multiplier:** +10% per consecutive correct answer, capped at +100% (preview in the UI)
+- **Live races keep their own score:** a correct answer earns the question's points plus a speed bonus (full at once, decaying to zero over 15 s, up to +50%) and a streak bonus that climbs with each consecutive correct (up to +50%); wrong answers score 0. Race points exist only for the length of the room — never XP, coins, or attempt rows
 - **Levels:** `xp(L) = 25 × L × (L − 1)` — level 2 at 50 XP, level 3 at 150, level 4 at 300…
 - **Streaks:** complete any quiz on consecutive days to grow your flame
 
@@ -306,7 +317,7 @@ pnpm test:api       # end-to-end smoke test (needs a running server)
 pnpm test:features  # AI kill switch + notification checks (needs a running server)
 ```
 
-The smoke test exercises the full loop — teacher forges a quiz, student plays it to a perfect score, parent sees the progress — plus auth guards and role enforcement. `pnpm test:features` adds 22 targeted checks for the AI kill switch and work-completion notifications. CI runs typecheck, lint, and build on every push, then boots the server and runs both suites on ubuntu, windows, and macos.
+The smoke test exercises the full loop — teacher forges a quiz, student plays it to a perfect score, parent sees the progress — plus auth guards and role enforcement, parameterized figure variants (fresh numbers per attempt, variant-aware grading, stable resume, review redraw), attempt-review access control, confidence capture and its calibration aggregates, the live race flow over a real WebSocket, and FSRS scheduling. `pnpm test:features` adds 22 targeted checks for the AI kill switch and work-completion notifications. CI runs typecheck, lint, and build on every push, then boots the server and runs both suites on ubuntu, windows, and macos.
 
 Version drift gets the same treatment: `pnpm check-updates` compares the Node you're running, pnpm, and every dependency against the latest published versions (exit code 1 when anything is stale), and `.github/workflows/version-check.yml` runs that sweep weekly, opening one tracking issue when something lags — updating becomes a decision, not a surprise.
 
@@ -326,11 +337,11 @@ The image builds the client, compiles the server, and persists the SQLite databa
 
 ## 🗺️ Roadmap
 
-See [ROADMAP.md](./ROADMAP.md) — highlights: parametric **figure & equation questions** with randomized variants coming, **attempt review mode**, live race mode, a community pack registry, and mastery-gated progression. Priorities follow the evidence in [docs/curriculum-research.md](./docs/curriculum-research.md).
+See [ROADMAP.md](./ROADMAP.md) — just shipped: **live race mode**, **attempt review**, **confidence calibration**, parameterized figure variants, and **FSRS flashcards**; next up (v0.6): accessibility & accommodations, an AI Question Forge with a teacher review queue, PWA offline practice, and mastery-gate progression. Priorities follow the evidence in [docs/curriculum-research.md](./docs/curriculum-research.md).
 
 ## 🤝 Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow, commit conventions, and the quality gates (`stylua`-level tidiness: typecheck + lint + build must stay green).
+Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow, commit conventions, and the quality gates (all five must stay green: typecheck, lint, build, and both test suites).
 
 ## 📄 License
 
