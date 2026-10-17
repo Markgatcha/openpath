@@ -62,7 +62,7 @@ chore(deps): bump vite to 8.x
 - **Shared types live in `shared/`** — schemas (zod), DTOs, and pure game math. If both sides need it, it belongs there.
 - **Server validates everything** — routes parse with zod and return 400 with flattened errors.
 - **Client never trusts itself** — XP, streaks, and scores are computed on the server; the client previews only.
-- **Components** live in `client/src/components`; pages in `client/src/pages/<role>/`.
+- **Components** live in `client/src/components`; role pages in `client/src/pages/<role>/`; cross-role screens (settings, notifications, attempt review) and the live-race screens (`client/src/pages/race/`) sit directly under `client/src/pages/`.
 - **Tailwind tokens** — use the `@theme` tokens in `client/src/index.css` (brand, ink, gold) instead of ad-hoc colors.
 
 ## Reporting bugs
