@@ -1449,6 +1449,14 @@ async function main() {
     tracksRes.status === 200 && tracksRes.data.tracks?.length === 18,
     `got=${tracksRes.data.tracks?.length}`,
   )
+  for (const [slug, lessonCount] of [
+    ['physics-foundations', 7],
+    ['media-ai-literacy', 6],
+  ]) {
+    const track = tracksRes.data.tracks?.find((t) => t.slug === slug)
+    const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
+    check(`track ${slug} serves ${lessonCount} lessons`, lessons.length === lessonCount, `got=${lessons.length}`)
+  }
   const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
   const lessonRes = await api(`/lessons/${firstLessonId}`, { token: studentToken })
   check(
