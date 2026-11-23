@@ -1010,7 +1010,7 @@ async function main() {
   console.log('\nContent packs flow:')
   const packs = await api('/packs', { token: teacherToken })
   const geometryPack = packs.data.packs?.find((pack) => pack.id === 'geometry-figures')
-  check('pack registry serves 28 curriculum packs', packs.data.packs?.length === 28, `got=${packs.data.packs?.length}`)
+  check('pack registry serves 32 curriculum packs', packs.data.packs?.length === 32, `got=${packs.data.packs?.length}`)
   check('pack registry includes geometry-figures with 3D model link', Boolean(geometryPack?.modelId))
   check(
     'geometry pack advertises three tiered quizzes',
@@ -1445,8 +1445,8 @@ async function main() {
   console.log('\nGuided Lessons & Co-op Race flow:')
   const tracksRes = await api('/tracks', { token: studentToken })
   check(
-    'tracks endpoint serves 28 curriculum tracks',
-    tracksRes.status === 200 && tracksRes.data.tracks?.length === 28,
+    'tracks endpoint serves 32 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 32,
     `got=${tracksRes.data.tracks?.length}`,
   )
   for (const [slug, lessonCount] of [
@@ -1462,6 +1462,11 @@ async function main() {
     ['us-civics-constitution', 3],
     ['english-rhetoric-composition', 3],
     ['conversational-spanish', 3],
+    ['middle-school-science', 6],
+    ['probability-statistics', 5],
+    ['french-starter', 3],
+    ['german-starter', 3],
+    ['mandarin-starter', 3],
   ]) {
     const track = tracksRes.data.tracks?.find((t) => t.slug === slug)
     const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
