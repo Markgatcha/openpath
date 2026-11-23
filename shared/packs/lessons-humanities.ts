@@ -508,12 +508,12 @@ const CIV_FOUNDING: PackLesson = {
         type: 'mcq',
         prompt: 'Which power did Congress lack under the Articles of Confederation?',
         options: [
-          'The power to levy taxes',
           'The power to declare war',
+          'The power to levy taxes',
           'The power to make treaties',
           'The power to run a post office',
         ],
-        correct: 0,
+        correct: 1,
         explanation: 'Congress could only request money from the states, and they often did not pay.',
         points: 10,
       },
@@ -657,12 +657,12 @@ const CIV_LIBERTIES: PackLesson = {
         type: 'mcq',
         prompt: 'What did Gideon v. Wainwright require of the states?',
         options: [
-          'To provide a lawyer for defendants who cannot afford one in serious criminal cases',
           'To read suspects their rights on arrest',
           'To end segregation in public schools',
+          'To provide a lawyer for defendants who cannot afford one in serious criminal cases',
           'To allow students to wear armbands in protest',
         ],
-        correct: 0,
+        correct: 2,
         explanation: 'The Court held that the right to counsel is fundamental to a fair trial.',
         points: 10,
       },
@@ -747,4 +747,372 @@ export const US_CIVICS_TRACK: CurriculumTrack = {
   prerequisiteTrackIds: [],
   srsInterleaveDefault: true,
   units: CIV_UNITS,
+}
+
+// ── English Rhetoric ───────────────────────────────────────────
+
+const RH_SITUATION: PackLesson = {
+  id: 'rh-u1-l1',
+  unitId: 'rh-u1-situation-appeals',
+  title: 'The Rhetorical Situation & the Three Appeals',
+  summary: 'Work out why a text exists, who it is for and how it tries to persuade through credibility, emotion and logic.',
+  estimatedMinutes: 8,
+  standards: [],
+  prerequisiteLessonIds: [],
+  steps: [
+    {
+      id: 'rh-u1-l1-s1',
+      kind: 'narrative',
+      title: 'Every Text Answers a Situation',
+      bodyMarkdown:
+        '**Rhetoric** is the art of persuading. No speech or essay appears from nowhere; each responds to a **rhetorical situation**:\n\n- **Exigence:** the problem or event that prompts the writer to speak. It is the reason the text exists now.\n- **Audience:** the people the writer wants to move.\n- **Purpose:** what the writer wants the audience to think or do.\n- **Context:** the time, place and circumstances.\n- **Speaker:** who is writing, and what the audience already thinks of them.\n\nA eulogy, an advertisement and a lab report differ because their situations differ.',
+    },
+    {
+      id: 'rh-u1-l1-s2',
+      kind: 'narrative',
+      title: 'Ethos, Pathos, Logos',
+      bodyMarkdown:
+        'Writers persuade through three kinds of appeal.\n\n- **Ethos** appeals to credibility: the writer’s expertise, fairness and character. "As a nurse for twenty years…"\n- **Pathos** appeals to emotion: fear, pride, sympathy, anger. A story about one hungry child.\n- **Logos** appeals to reason: facts, statistics and logical argument. "Accidents fell 30% after the limit was lowered."\n\nMost effective texts mix all three. One useful device is **anaphora**, repeating a word or phrase at the start of successive clauses: "We shall fight on the beaches, we shall fight on the landing grounds." The repetition builds rhythm and emphasis.',
+      callout: {
+        tone: 'key-idea',
+        text: 'Naming a device is not analysis. Analysis explains how the choice helps the writer achieve a purpose with this audience.',
+      },
+    },
+    {
+      id: 'rh-u1-l1-s3',
+      kind: 'checkpoint',
+      title: 'Identify the Appeal',
+      question: {
+        type: 'mcq',
+        prompt: 'A charity advert shows a shivering dog and says, "He has no one. Will you turn away?" Which appeal dominates?',
+        options: [
+          'Pathos',
+          'Logos',
+          'Ethos',
+          'Exigence',
+        ],
+        correct: 0,
+        explanation: 'The image and the question aim at sympathy and guilt, not at evidence or credibility.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u1-l1-s4',
+      kind: 'checkpoint',
+      title: 'Find the Exigence',
+      question: {
+        type: 'mcq',
+        prompt: 'After a flood damages the town, the mayor gives a speech asking residents to volunteer. What is the exigence?',
+        options: [
+          'The residents listening',
+          'The mayor’s authority',
+          'The request to volunteer',
+          'The flood and the damage it caused',
+        ],
+        correct: 3,
+        explanation: 'The exigence is the event that calls for the speech. The residents are the audience and the request is the purpose.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u1-l1-s5',
+      kind: 'synthesis',
+      title: 'Reading Rhetorically',
+      takeaways: [
+        'The rhetorical situation: exigence, audience, purpose, context and speaker.',
+        'Ethos is credibility, pathos is emotion and logos is reasoning.',
+        'Analysis explains how a choice serves the purpose; it does not just label devices.',
+      ],
+      nextQuizIndex: 0,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'rh-u1-l1-fc1',
+      front: 'What is exigence?',
+      back: 'The problem or event that prompts a writer to speak.',
+      explanation: 'It explains why the text exists at this moment.',
+      interleave: true,
+    },
+    {
+      id: 'rh-u1-l1-fc2',
+      front: 'Define ethos, pathos and logos.',
+      back: 'Appeals to credibility, to emotion and to reason.',
+      explanation: 'Most persuasive texts combine all three.',
+      interleave: true,
+    },
+    {
+      id: 'rh-u1-l1-fc3',
+      front: 'What is anaphora?',
+      back: 'Repeating a word or phrase at the beginning of successive clauses.',
+      explanation: '"We shall fight… we shall fight…"',
+      interleave: true,
+    },
+  ],
+}
+
+const RH_FALLACIES: PackLesson = {
+  id: 'rh-u2-l1',
+  unitId: 'rh-u2-argument-fallacies',
+  title: 'Building Arguments & Spotting Fallacies',
+  summary: 'Take an argument apart into claim, evidence and warrant, answer the other side fairly, and catch reasoning that cheats.',
+  estimatedMinutes: 9,
+  standards: [],
+  prerequisiteLessonIds: ['rh-u1-l1'],
+  steps: [
+    {
+      id: 'rh-u2-l1-s1',
+      kind: 'narrative',
+      title: 'The Parts of an Argument',
+      bodyMarkdown:
+        'The **Toulmin model** breaks an argument into parts.\n\n- **Claim:** the point being argued. "The school should start an hour later."\n- **Evidence:** the facts that support it. "Teenagers who sleep longer get better grades."\n- **Warrant:** the assumption that links the evidence to the claim, often unstated. "A school should arrange its day to help students learn."\n\nIf the audience rejects the warrant, the evidence will not persuade them, however strong it is.\n\nA strong body paragraph follows the same logic: state the **claim**, give the **evidence**, add **commentary** explaining how the evidence proves the claim, then **link** back to the thesis. Good writers also raise the **counterargument**, concede what is true in it and then show why their own position still holds.',
+    },
+    {
+      id: 'rh-u2-l1-s2',
+      kind: 'checkpoint',
+      title: 'Find the Warrant',
+      question: {
+        type: 'mcq',
+        prompt: '"This phone has the longest battery life, so you should buy it." What is the warrant?',
+        options: [
+          'This phone has the longest battery life',
+          'Battery life is what matters most when choosing a phone',
+          'You should buy this phone',
+          'Other phones are more expensive',
+        ],
+        correct: 1,
+        explanation: 'The warrant is the unstated assumption that connects the evidence (battery life) to the claim (buy it).',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u2-l1-s3',
+      kind: 'narrative',
+      title: 'Reasoning That Cheats',
+      bodyMarkdown:
+        'A **logical fallacy** is a flaw in reasoning that can make a weak argument sound convincing.\n\n- **Straw man:** distorting an opponent’s view into something easier to attack. "She wants bike lanes, so she wants to ban cars."\n- **Ad hominem:** attacking the person instead of the argument.\n- **False dilemma:** pretending there are only two choices. "Either we cut the arts or the school goes bankrupt."\n- **Slippery slope:** claiming one small step must lead to disaster, without showing why.\n- **Post hoc:** assuming that because B followed A, A caused B.\n\nA device worth knowing here is **antithesis**: setting two contrasting ideas side by side in balanced phrasing. "It was the best of times, it was the worst of times."',
+      callout: {
+        tone: 'key-idea',
+        text: 'To test for a straw man, ask: would the opponent recognise this as their own position?',
+      },
+    },
+    {
+      id: 'rh-u2-l1-s4',
+      kind: 'checkpoint',
+      title: 'Name the Fallacy',
+      question: {
+        type: 'mcq',
+        prompt: '"You can’t trust his view on taxes. He didn’t even finish university." Which fallacy is this?',
+        options: [
+          'Ad hominem',
+          'Straw man',
+          'False dilemma',
+          'Slippery slope',
+        ],
+        correct: 0,
+        explanation: 'It attacks the speaker’s background and never addresses what he said about taxes.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u2-l1-s5',
+      kind: 'synthesis',
+      title: 'Sound Arguments',
+      takeaways: [
+        'Toulmin: a claim is supported by evidence, and a warrant links the two.',
+        'Concede what is fair in the counterargument, then refute it.',
+        'Common fallacies: straw man, ad hominem, false dilemma, slippery slope and post hoc.',
+      ],
+      nextQuizIndex: 1,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'rh-u2-l1-fc1',
+      front: 'In the Toulmin model, what is the warrant?',
+      back: 'The assumption that connects the evidence to the claim.',
+      explanation: 'It is often left unstated.',
+      interleave: true,
+    },
+    {
+      id: 'rh-u2-l1-fc2',
+      front: 'What is a straw man fallacy?',
+      back: 'Misrepresenting an opponent’s position to make it easier to attack.',
+      explanation: 'The real argument is never answered.',
+      interleave: true,
+    },
+    {
+      id: 'rh-u2-l1-fc3',
+      front: 'What is antithesis?',
+      back: 'Contrasting ideas placed side by side in balanced, parallel phrasing.',
+      explanation: '"It was the best of times, it was the worst of times."',
+      interleave: true,
+    },
+  ],
+}
+
+const RH_STYLE: PackLesson = {
+  id: 'rh-u3-l1',
+  unitId: 'rh-u3-style-satire',
+  title: 'Sentence Craft, Irony & Satire',
+  summary: 'Hear how sentence shape creates emphasis, and how irony and satire say one thing in order to mean another.',
+  estimatedMinutes: 9,
+  standards: [],
+  prerequisiteLessonIds: ['rh-u2-l1'],
+  steps: [
+    {
+      id: 'rh-u3-l1-s1',
+      kind: 'narrative',
+      title: 'The Shape of a Sentence',
+      bodyMarkdown:
+        '**Syntax** is the arrangement of words in a sentence. Writers choose shapes for effect.\n\n- A **periodic sentence** holds back its main clause until the end, building suspense. "Despite the rain, the cold and the long road ahead, **she set out**."\n- A **cumulative** (or loose) sentence gives the main clause first and then adds detail. "**She set out**, coat buttoned, head down, into the rain."\n- **Parallelism** repeats a grammatical pattern: "to strive, to seek, to find".\n- **Chiasmus** repeats ideas in reverse order, in an A-B-B-A pattern. "Ask not what your **country** can do for **you**; ask what **you** can do for your **country**."',
+    },
+    {
+      id: 'rh-u3-l1-s2',
+      kind: 'checkpoint',
+      title: 'Name the Sentence',
+      question: {
+        type: 'mcq',
+        prompt: '"After years of doubt, after every door had closed, after his friends had given up, he succeeded." What kind of sentence is this?',
+        options: [
+          'Cumulative',
+          'Chiastic',
+          'Periodic',
+          'A sentence fragment',
+        ],
+        correct: 2,
+        explanation: 'The main clause, "he succeeded", is withheld until the very end.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u3-l1-s3',
+      kind: 'narrative',
+      title: 'Irony and Understatement',
+      bodyMarkdown:
+        '**Irony** is a gap between what is said or expected and what is meant or happens.\n\n- **Verbal irony:** saying the opposite of what you mean. "Lovely weather," in a downpour.\n- **Situational irony:** the outcome is the reverse of what was expected. A fire station burns down.\n- **Dramatic irony:** the audience knows something a character does not.\n\n**Litotes** is deliberate understatement that affirms something by denying its opposite: "not bad" for "good", "no small feat" for "a great achievement".',
+    },
+    {
+      id: 'rh-u3-l1-s4',
+      kind: 'narrative',
+      title: 'Satire',
+      bodyMarkdown:
+        '**Satire** uses humour, irony and exaggeration to criticise foolishness or wrongdoing, usually hoping to change it. There are two classic styles:\n\n- **Horatian** satire is gentle and amused. It laughs at human weakness.\n- **Juvenalian** satire is bitter and angry. It attacks cruelty and corruption.\n\nIn "A Modest Proposal" (1729), Jonathan Swift calmly suggests that poor Irish families sell their babies as food for the rich. He does not mean it. The reasonable tone applied to a monstrous idea is sustained verbal irony, and its target is the indifference of the wealthy to Irish poverty.',
+      callout: {
+        tone: 'key-idea',
+        text: 'To read satire, find the gap between what the speaker says and what the author believes, then ask who is being criticised.',
+      },
+    },
+    {
+      id: 'rh-u3-l1-s5',
+      kind: 'checkpoint',
+      title: 'Spot the Device',
+      question: {
+        type: 'mcq',
+        prompt: 'After winning an Olympic gold medal, an athlete says, "That wasn’t my worst race." Which device is this?',
+        options: [
+          'Chiasmus',
+          'Anaphora',
+          'Dramatic irony',
+          'Litotes',
+        ],
+        correct: 3,
+        explanation: 'She affirms a triumph by denying its opposite, which is understatement by negation.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u3-l1-s6',
+      kind: 'checkpoint',
+      title: 'Reading Swift',
+      question: {
+        type: 'truefalse',
+        prompt: 'In "A Modest Proposal", Swift sincerely recommends the plan his narrator describes.',
+        correct: false,
+        explanation: 'The proposal is ironic. Swift uses it to attack those who treated the Irish poor as less than human.',
+        points: 10,
+      },
+    },
+    {
+      id: 'rh-u3-l1-s7',
+      kind: 'synthesis',
+      title: 'Style With a Purpose',
+      takeaways: [
+        'Periodic sentences delay the main clause; cumulative sentences lead with it. Chiasmus reverses ideas A-B-B-A.',
+        'Irony is a gap between words and meaning; litotes affirms by denying the opposite.',
+        'Satire criticises through humour: Horatian is gentle, Juvenalian is harsh.',
+      ],
+      nextQuizIndex: 2,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'rh-u3-l1-fc1',
+      front: 'What is chiasmus?',
+      back: 'Repeating ideas in reverse order (A-B-B-A).',
+      explanation: '"Ask not what your country can do for you; ask what you can do for your country."',
+      interleave: true,
+    },
+    {
+      id: 'rh-u3-l1-fc2',
+      front: 'What is a periodic sentence?',
+      back: 'One that withholds its main clause until the end.',
+      explanation: 'The delay builds suspense and emphasis.',
+      interleave: true,
+    },
+    {
+      id: 'rh-u3-l1-fc3',
+      front: 'How do Horatian and Juvenalian satire differ?',
+      back: 'Horatian is gentle and amused; Juvenalian is bitter and angry.',
+      explanation: 'Swift’s "A Modest Proposal" is Juvenalian.',
+      interleave: true,
+    },
+  ],
+}
+
+const RH_UNITS: TrackUnit[] = [
+  {
+    id: 'rh-u1-situation-appeals',
+    title: 'Situation & Appeals',
+    anchoringPhenomenon: 'The same facts can leave one audience unmoved and bring another to its feet, depending on who says them and how.',
+    capstoneQuizIndex: 0,
+    masteryGate: GATE,
+    lessons: [RH_SITUATION],
+  },
+  {
+    id: 'rh-u2-argument-fallacies',
+    title: 'Argument & Fallacies',
+    anchoringPhenomenon: 'An argument can sound convincing and still prove nothing.',
+    capstoneQuizIndex: 1,
+    masteryGate: GATE,
+    lessons: [RH_FALLACIES],
+  },
+  {
+    id: 'rh-u3-style-satire',
+    title: 'Style, Irony & Satire',
+    anchoringPhenomenon: 'In 1729 a respected clergyman published a calm, reasoned plan for eating children, and readers understood it as an attack on cruelty.',
+    capstoneQuizIndex: 2,
+    masteryGate: GATE,
+    lessons: [RH_STYLE],
+  },
+]
+
+export const ENGLISH_RHETORIC_UNITS = RH_UNITS
+
+export const ENGLISH_RHETORIC_TRACK: CurriculumTrack = {
+  id: 'track-english-rhetoric-composition',
+  slug: 'english-rhetoric-composition',
+  packId: 'english-rhetoric-composition',
+  title: 'English Rhetoric: Argument, Style & Fallacies',
+  category: 'Languages',
+  subject: 'English',
+  gradeBand: 'HS',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  prerequisiteTrackIds: [],
+  srsInterleaveDefault: true,
+  units: RH_UNITS,
 }

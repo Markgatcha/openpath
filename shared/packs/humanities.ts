@@ -1,5 +1,7 @@
 import type { ContentPack } from './types'
 import {
+  ENGLISH_RHETORIC_TRACK,
+  ENGLISH_RHETORIC_UNITS,
   US_CIVICS_TRACK,
   US_CIVICS_UNITS,
   WORLD_HISTORY_TRACK,
@@ -368,6 +370,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: ENGLISH_RHETORIC_TRACK,
+    units: ENGLISH_RHETORIC_UNITS,
     quizzes: [
       {
         title: 'Rhetorical Situation & Appeals',
