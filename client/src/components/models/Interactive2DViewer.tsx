@@ -21,6 +21,7 @@ import {
   type Params,
   type Readout,
   type Scene2DInstance,
+  makeScene2DQuality,
 } from './engine2d'
 import {
   isParamLocked,
@@ -29,6 +30,7 @@ import {
   type ModelRuntimeConfig,
 } from './shared-types'
 import { ChallengeDrawer, ParamControl } from './ChallengeDrawer'
+import { GraphicsQualitySelect } from '@/components/GraphicsQualitySelect'
 
 export type Interactive2DViewerProps = {
   model: Model2DDefinition
@@ -169,6 +171,7 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
           slate: '#94a3b8',
           white: '#f8fafc',
         },
+        quality: makeScene2DQuality(profile),
       },
       paramsRef.current,
     )
@@ -441,6 +444,7 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
             <ToolbarButton label="Reset simulation" onClick={resetSimulation}>
               <RotateCcw size={15} />
             </ToolbarButton>
+            <GraphicsQualitySelect variant="overlay" />
             {actions.map((action) => (
               <button
                 key={action.id}
@@ -662,9 +666,11 @@ function DragHandleButton({
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId)
         }
+        handle.onDragEnd?.()
       }}
       onPointerCancel={() => {
         draggingRef.current = false
+        handle.onDragEnd?.()
       }}
       onKeyDown={(event) => {
         if (disabled) return
@@ -681,6 +687,7 @@ function DragHandleButton({
           Math.max(0, Math.min(viewWidth, pos.x + dx)),
           Math.max(0, Math.min(viewHeight, pos.y + dy)),
         )
+        handle.onDragEnd?.()
       }}
       className={cn(
         'absolute z-10 flex h-5 w-5 cursor-grab items-center justify-center rounded-full border-2 bg-ink-950/90 shadow-lg transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 active:cursor-grabbing',
