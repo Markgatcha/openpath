@@ -492,7 +492,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
           </div>
 
           {/* Canvas toolbar */}
-          <div className="absolute left-3 top-3 flex gap-2">
+          <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2">
             <ToolbarButton
               label={paused ? 'Resume simulation (Space)' : 'Pause simulation (Space)'}
               onClick={togglePause}
@@ -526,7 +526,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
           </div>
 
           {hasHudPlot && (
-            <div className="pointer-events-none absolute right-3 top-3 rounded-xl border border-white/15 bg-ink-950/85 p-2 shadow-lg backdrop-blur">
+            <div className="pointer-events-none absolute right-3 top-14 rounded-xl border border-white/15 bg-ink-950/85 p-2 shadow-lg backdrop-blur">
               {model.hudTitle && (
                 <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   {model.hudTitle}
