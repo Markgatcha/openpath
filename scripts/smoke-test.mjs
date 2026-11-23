@@ -1445,8 +1445,8 @@ async function main() {
   console.log('\nGuided Lessons & Co-op Race flow:')
   const tracksRes = await api('/tracks', { token: studentToken })
   check(
-    'tracks endpoint serves 22 curriculum tracks',
-    tracksRes.status === 200 && tracksRes.data.tracks?.length === 22,
+    'tracks endpoint serves 28 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 28,
     `got=${tracksRes.data.tracks?.length}`,
   )
   for (const [slug, lessonCount] of [
@@ -1456,6 +1456,12 @@ async function main() {
     ['environmental-science-climate', 6],
     ['anatomy-physiology', 7],
     ['human-geography', 6],
+    ['corporate-finance', 3],
+    ['data-analytics', 3],
+    ['world-history-civilizations', 3],
+    ['us-civics-constitution', 3],
+    ['english-rhetoric-composition', 3],
+    ['conversational-spanish', 3],
   ]) {
     const track = tracksRes.data.tracks?.find((t) => t.slug === slug)
     const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
