@@ -339,6 +339,18 @@ export const LAB_MODELS: LabModel[] = [
     renderer: '2d',
     Component: lazy(() => import('./presets2d/ProjectileMotion2D')),
   },
+  {
+    id: 'greenhouse-effect-2d',
+    title: 'Greenhouse Effect: Planetary Energy Balance',
+    subject: 'Environmental Science',
+    icon: '🌍',
+    blurb:
+      'Change how much infrared the atmosphere absorbs, the albedo and the Sun’s brightness, and watch the surface temperature move to a new energy balance.',
+    packId: 'environmental-science-climate',
+    standards: 'AP Env Sci 9.3 (The Greenhouse Effect) · HS-ESS2-4',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/GreenhouseEffect2D')),
+  },
 ]
 
 export function findLabModel(id: string | undefined): LabModel | undefined {

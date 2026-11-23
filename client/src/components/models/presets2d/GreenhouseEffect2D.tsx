@@ -131,6 +131,146 @@ function fluxArrow(
   ctx.restore()
 }
 
+function signed(v: number): string {
+  const r = Math.round(v * 10) / 10
+  return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toFixed(1)}`
+}
+
+const PANEL_X = SCENE_W
+const PANEL_W = VIEW_W - SCENE_W
+
+/** Right-hand panel: energy budget bars and the surface-temperature history. */
+function drawPanel(
+  ctx: CanvasRenderingContext2D,
+  f: ReturnType<typeof fluxes>,
+  temp: number,
+  clock: number,
+  history: { t: number; temp: number }[],
+  rich: boolean,
+  glow: boolean,
+) {
+  ctx.save()
+  if (rich) {
+    const bg = ctx.createLinearGradient(PANEL_X, 0, PANEL_X, VIEW_H)
+    bg.addColorStop(0, '#0f172a')
+    bg.addColorStop(1, '#020617')
+    ctx.fillStyle = bg
+  } else {
+    ctx.fillStyle = '#0b1220'
+  }
+  ctx.fillRect(PANEL_X, 0, PANEL_W, VIEW_H)
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.35)'
+  ctx.fillRect(PANEL_X, 0, 1, VIEW_H)
+
+  // Energy budget: what the planet absorbs against what it sends to space.
+  const left = PANEL_X + 16
+  const barW = PANEL_W - 32
+  const scaleMax = 420
+  label(ctx, 'ENERGY BUDGET (W/m²)', left, 22, PALETTE_CSS.slate, 'left')
+  const bars: { name: string; value: number; color: string }[] = [
+    { name: 'Absorbed sunlight', value: f.absorbed, color: SOLAR_COLOR },
+    { name: 'Infrared to space', value: f.toSpace, color: IR_COLOR },
+  ]
+  bars.forEach((bar, i) => {
+    const y = 34 + i * 40
+    label(ctx, bar.name, left, y + 9, PALETTE_CSS.white, 'left')
+    label(ctx, fmt(bar.value), left + barW, y + 9, bar.color, 'right')
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.18)'
+    ctx.fillRect(left, y + 15, barW, 10)
+    ctx.save()
+    if (glow) {
+      ctx.shadowColor = bar.color
+      ctx.shadowBlur = 10
+    }
+    ctx.fillStyle = bar.color
+    ctx.fillRect(left, y + 15, (barW * Math.max(0, Math.min(scaleMax, bar.value))) / scaleMax, 10)
+    ctx.restore()
+  })
+
+  const state =
+    Math.abs(f.imbalance) < 1 ? 'In balance' : f.imbalance > 0 ? 'Gaining energy: warming' : 'Losing energy: cooling'
+  const stateColor =
+    Math.abs(f.imbalance) < 1 ? PALETTE_CSS.emerald : f.imbalance > 0 ? PALETTE_CSS.amber : PALETTE_CSS.cyan
+  label(ctx, `${state}  (${signed(f.imbalance)})`, left, 132, stateColor, 'left', 11)
+
+  // Temperature history with the balance temperature as a dashed target.
+  const temps = history.map((h) => h.temp)
+  const lo = Math.min(temp, f.eqTemp, ...temps)
+  const hi = Math.max(temp, f.eqTemp, ...temps)
+  const pad = Math.max(4, (hi - lo) * 0.2)
+  const tEnd = Math.max(clock, HISTORY_SPAN_S)
+  const box: PlotBox = {
+    x: PANEL_X + 44,
+    y: 176,
+    w: PANEL_W - 60,
+    h: 210,
+    xMin: tEnd - HISTORY_SPAN_S,
+    xMax: tEnd,
+    yMin: lo - pad,
+    yMax: hi + pad,
+  }
+  drawPlotAxes2D(ctx, box, {
+    title: 'Surface temperature',
+    xLabel: 'time (s)',
+    yLabel: 'K',
+    xTicks: 4,
+    yTicks: 4,
+    xFormat: (v) => v.toFixed(0),
+    yFormat: (v) => v.toFixed(0),
+  })
+
+  ctx.beginPath()
+  ctx.rect(box.x, box.y, box.w, box.h)
+  ctx.clip()
+
+  const eqY = plotMapY(box, f.eqTemp)
+  ctx.strokeStyle = PALETTE_CSS.emerald
+  ctx.lineWidth = 1.2
+  ctx.setLineDash([5, 4])
+  ctx.beginPath()
+  ctx.moveTo(box.x, eqY)
+  ctx.lineTo(box.x + box.w, eqY)
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  const points = [...history, { t: clock, temp }]
+  if (rich && points.length > 1) {
+    const fill = ctx.createLinearGradient(0, box.y, 0, box.y + box.h)
+    fill.addColorStop(0, 'rgba(251, 113, 133, 0.32)')
+    fill.addColorStop(1, 'rgba(251, 113, 133, 0)')
+    ctx.fillStyle = fill
+    ctx.beginPath()
+    ctx.moveTo(plotMapX(box, points[0].t), box.y + box.h)
+    for (const pt of points) ctx.lineTo(plotMapX(box, pt.t), plotMapY(box, pt.temp))
+    ctx.lineTo(plotMapX(box, clock), box.y + box.h)
+    ctx.closePath()
+    ctx.fill()
+  }
+  if (glow) {
+    ctx.shadowColor = IR_COLOR
+    ctx.shadowBlur = 8
+  }
+  ctx.strokeStyle = IR_COLOR
+  ctx.lineWidth = 2
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  points.forEach((pt, i) => {
+    const x = plotMapX(box, pt.t)
+    const y = plotMapY(box, pt.temp)
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  })
+  ctx.stroke()
+  ctx.fillStyle = PALETTE_CSS.white
+  ctx.beginPath()
+  ctx.arc(plotMapX(box, clock), plotMapY(box, temp), 3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+
+  label(ctx, `Balance ${fmt(f.eqTemp, 1)} K`, PANEL_X + PANEL_W - 14, 164, PALETTE_CSS.emerald, 'right')
+  label(ctx, `Now ${fmt(temp, 1)} K  (${celsius(temp)})`, left, VIEW_H - 14, PALETTE_CSS.white, 'left', 11)
+}
+
 /** The viewer evaluates a challenge once before the scene has reported metrics. */
 const WAITING = { passed: false, feedback: 'Starting the simulation…' }
 
