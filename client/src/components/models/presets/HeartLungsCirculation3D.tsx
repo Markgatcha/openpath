@@ -117,6 +117,11 @@ function bump(phase: number, start: number, end: number): number {
   return s * s
 }
 
+/** Wrap any phase, including a negative one, into 0..1. */
+function wrap(phase: number): number {
+  return phase - Math.floor(phase)
+}
+
 const EJECT_START = 0.14
 const EJECT_END = 0.44
 
@@ -458,9 +463,9 @@ function build({ scene, palette, quality }: SceneContext, params: Params) {
     // Flow follows cardiac output and surges while the ventricles eject. Integrating the surge over the
     // beat makes the distance depend only on where the beat starts and ends, so stepping back undoes a step forward.
     const du = 0.014 * cardiacOutput(p) * (60 / heartRate) * (surgeIntegral(nextBeat) - surgeIntegral(beat))
-    beat = ((nextBeat % 1) + 1) % 1
-    breath = ((((breath + (dt * (p.breathRate ?? 14)) / 60) % 1) + 1) % 1
-    for (let i = 0; i < cellCount; i += 1) cellU[i] = (((cellU[i] + du) % 1) + 1) % 1
+    beat = wrap(nextBeat)
+    breath = wrap(breath + (dt * (p.breathRate ?? 14)) / 60)
+    for (let i = 0; i < cellCount; i += 1) cellU[i] = wrap(cellU[i] + du)
   }
 
   draw(params)
