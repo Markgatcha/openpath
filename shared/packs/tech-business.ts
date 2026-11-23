@@ -1,5 +1,6 @@
 import type { TrackUnit } from '../lessons'
 import type { ContentPack } from './types'
+import { CORPORATE_FINANCE_TRACK, CORPORATE_FINANCE_UNITS } from './lessons-finance-analytics'
 
 const ALGO_STARTER_UNITS: TrackUnit[] = [
   {
@@ -1308,6 +1309,8 @@ export const TECH_BUSINESS_PACKS: ContentPack[] = [
     srsInterleave: true,
     gradeBand: 'College-Intro',
     prerequisitePackIds: ['personal-finance-literacy'],
+    track: CORPORATE_FINANCE_TRACK,
+    units: CORPORATE_FINANCE_UNITS,
     quizzes: [
       {
         title: 'Time Value of Money & Discounting',
