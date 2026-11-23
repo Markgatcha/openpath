@@ -648,3 +648,622 @@ const MAL_U2_LESSONS: PackLesson[] = [
     ],
   },
 ]
+
+const MAL_U3_LESSONS: PackLesson[] = [
+  {
+    id: 'mal-u3-l1',
+    unitId: 'mal-u3-responsible-use',
+    title: 'Using AI Tools Responsibly',
+    summary:
+      'Decide when AI help is allowed, keep private data out of prompts, write prompts that support learning, and own the result.',
+    estimatedMinutes: 9,
+    standards: ['ISTE Student 1.2.a', 'ISTE Student 1.2.d'],
+    prerequisiteLessonIds: ['mal-u2-l2'],
+    steps: [
+      {
+        id: 'mal-u3-l1-s1',
+        kind: 'narrative',
+        title: 'Three Questions Before You Prompt',
+        bodyMarkdown:
+          'Before using an AI tool for school or work, ask:\n\n1. **Is it allowed?** Rules differ between teachers, courses and tasks. If you are unsure, ask, and say how you used it.\n2. **Is it private?** Anything you type may be stored. Keep names, addresses, health details, passwords and other people’s information out of prompts.\n3. **Is it accurate?** You are responsible for what you hand in, including any error the tool introduced.\n\nThere is also a learning question. Having a tool produce the answer skips the effort that builds memory. Using it to **quiz you, explain a step you are stuck on, or critique your draft** keeps the thinking with you.',
+        callout: {
+          tone: 'key-idea',
+          text: 'An AI tool can be a tutor or a substitute. Only the first one leaves you knowing more.',
+        },
+      },
+      {
+        id: 'mal-u3-l1-s2',
+        kind: 'branching-scenario',
+        title: 'Essay Due Tomorrow',
+        startNodeId: 'start',
+        nodes: {
+          start: {
+            promptMarkdown:
+              'Your essay is due tomorrow. Your teacher’s policy says AI tools **may be used for brainstorming and feedback if you say so**, and **may not write the essay**. What do you do?',
+            choices: [
+              {
+                label: 'Ask the tool to write the essay, then change some words',
+                nextNodeId: 'start',
+                feedback: 'This breaks the policy, and rewording does not make the work yours.',
+                outcome: 'unsafe',
+              },
+              {
+                label: 'Write your own outline, then ask the tool to point out weak arguments',
+                nextNodeId: 'disclose',
+                feedback: 'This is inside the policy and keeps the thinking yours.',
+                outcome: 'optimal',
+              },
+              {
+                label: 'Avoid AI entirely to be safe',
+                nextNodeId: 'disclose',
+                feedback: 'Always acceptable. You are passing up feedback the policy allows, which is your choice.',
+                outcome: 'suboptimal',
+              },
+            ],
+          },
+          disclose: {
+            promptMarkdown:
+              'Suppose you did use the tool for feedback, and it suggested a statistic that you added to the essay. What now?',
+            choices: [
+              {
+                label: 'Find the statistic in a real source, cite that source, and note that you used AI for feedback',
+                nextNodeId: null,
+                feedback: 'You verified the fact, cited something a reader can check, and were open about the help you had.',
+                outcome: 'optimal',
+              },
+              {
+                label: 'Keep the statistic and cite the chatbot as the source',
+                nextNodeId: null,
+                feedback: 'A chatbot is not a source a reader can check, and the number may be invented.',
+                outcome: 'unsafe',
+              },
+            ],
+          },
+        },
+      },
+      {
+        id: 'mal-u3-l1-s3',
+        kind: 'checkpoint',
+        title: 'What Is Safe to Paste?',
+        question: {
+          type: 'mcq',
+          prompt: 'Which of these is the safest thing to paste into a public AI chatbot?',
+          options: [
+            'A classmate’s medical details, to ask for advice on their behalf',
+            'Your full name, home address and date of birth, to fill in a form',
+            'A paragraph you wrote about a novel, to ask for feedback',
+            'A screenshot of a private group chat',
+          ],
+          correct: 2,
+          explanation:
+            'Your own non-personal writing carries little risk. The other options share personal or sensitive information, some of it belonging to other people who did not agree.',
+          points: 15,
+        },
+        misconceptionHints: {
+          '0': 'This is someone else’s sensitive information, shared without their consent.',
+          '3': 'A group chat contains other people’s words and names. Did they agree to share them?',
+        },
+      },
+      {
+        id: 'mal-u3-l1-s4',
+        kind: 'worked-example',
+        title: 'From a Vague Prompt to a Useful One',
+        problemMarkdown:
+          'You are revising photosynthesis and type **"explain photosynthesis"**. The answer is long and you remember little of it. Improve the prompt so the tool acts as a tutor.',
+        steps: [
+          {
+            label: 'Say who you are and what you know',
+            expressionOrAction: '"I am 15 and I know plants need light, water and carbon dioxide."',
+            whyNote: 'The tool can pitch its answer at your level instead of guessing.',
+          },
+          {
+            label: 'Ask to be tested, not told',
+            expressionOrAction: '"Ask me five questions, one at a time, and wait for my answer."',
+            whyNote: 'Recalling an answer yourself strengthens memory far more than rereading one.',
+          },
+          {
+            label: 'Ask for corrections with reasons',
+            expressionOrAction: '"If I am wrong, explain why before moving on."',
+            whyNote: 'Feedback right after an attempt is when it helps most.',
+          },
+          {
+            label: 'Check anything surprising',
+            expressionOrAction: 'Compare the tool’s corrections with your textbook.',
+            whyNote: 'The tutor can be wrong too.',
+          },
+        ],
+      },
+      {
+        id: 'mal-u3-l1-s5',
+        kind: 'checkpoint',
+        title: 'Who Owns the Mistake?',
+        question: {
+          type: 'truefalse',
+          prompt:
+            'If an AI tool introduces a factual error into an assignment you hand in, you are responsible for that error.',
+          correct: true,
+          explanation: 'Submitting work means vouching for it, whichever tools helped produce it.',
+          points: 10,
+        },
+      },
+      {
+        id: 'mal-u3-l1-s6',
+        kind: 'synthesis',
+        title: 'Allowed, Private, Accurate',
+        takeaways: [
+          'Check the rules for the task and be open about how you used AI.',
+          'Keep personal and other people’s information out of prompts.',
+          'Use AI to quiz, explain and critique, so the learning stays yours.',
+          'You answer for everything you submit.',
+        ],
+        nextQuizIndex: 2,
+        flashcardEnroll: { autoEnroll: true, interleave: true },
+      },
+    ],
+    flashcardSeeds: [
+      {
+        id: 'mal-u3-l1-fc1',
+        front: 'Three questions to ask before using an AI tool for school work',
+        back: 'Is it allowed? Is it private? Is it accurate?',
+        explanation: 'Policy, privacy and verification.',
+        interleave: true,
+      },
+      {
+        id: 'mal-u3-l1-fc2',
+        front: 'What should never go into a prompt?',
+        back: 'Personal or sensitive information, especially other people’s.',
+        explanation: 'What you type may be stored.',
+        interleave: true,
+      },
+      {
+        id: 'mal-u3-l1-fc3',
+        front: 'How can an AI tool help you learn rather than replace learning?',
+        back: 'Have it quiz you, explain a step you are stuck on, or critique your own draft.',
+        explanation: 'Recalling answers yourself is what builds memory.',
+        interleave: true,
+      },
+    ],
+  },
+  {
+    id: 'mal-u3-l2',
+    unitId: 'mal-u3-responsible-use',
+    title: 'Feeds, Recommendation Algorithms & Synthetic Media',
+    summary:
+      'See why a feed is not a neutral sample of the world, and check AI-generated images, audio and video by their source rather than their look.',
+    estimatedMinutes: 9,
+    standards: ['AI4K12 Big Idea 5 (Societal Impact)', 'ISTE Student 1.3.b'],
+    prerequisiteLessonIds: ['mal-u1-l1'],
+    steps: [
+      {
+        id: 'mal-u3-l2-s1',
+        kind: 'narrative',
+        title: 'What Your Feed Is Built to Do',
+        bodyMarkdown:
+          'A social feed is ordered by a **recommendation algorithm**: a model that predicts which posts you are most likely to watch, like, comment on or share, and shows those first. It is tuned for **engagement**, which is not the same as accuracy or importance. Posts that provoke strong feelings tend to collect more reactions, so they can travel further.\n\nYour feed is also **personalised**. Two people see different posts, so "everyone is talking about this" may only be true of your own feed.\n\n**Synthetic media** adds a second problem. AI tools can now generate realistic images, voices and video, often called **deepfakes** when they imitate a real person. Visual clues such as odd hands or blurred text become less reliable as the tools improve, so the dependable check is the source: who published it first, and do independent outlets confirm it?',
+        callout: {
+          tone: 'key-idea',
+          text: 'Seeing a post often tells you what the algorithm predicts you will engage with. It does not tell you how common or how true the claim is.',
+        },
+      },
+      {
+        id: 'mal-u3-l2-s2',
+        kind: 'checkpoint',
+        title: 'What Is the Feed Optimising?',
+        question: {
+          type: 'mcq',
+          prompt: 'What is a typical social-media recommendation algorithm mainly built to predict?',
+          options: [
+            'Which posts are the most accurate',
+            'Which posts you are most likely to engage with',
+            'Which posts are the most recent',
+            'Which posts your friends disagree with',
+          ],
+          correct: 1,
+          explanation:
+            'Ranking is driven by predicted engagement: watching, liking, commenting and sharing. Accuracy is not what is being measured.',
+          points: 15,
+        },
+        misconceptionHints: {
+          '0': 'The system measures clicks, watch time and shares. Does any of those measure accuracy?',
+          '2': 'Feeds are rarely in simple time order. What decides which post comes first?',
+        },
+      },
+      {
+        id: 'mal-u3-l2-s3',
+        kind: 'worked-example',
+        title: 'A Shocking Video of a Public Figure',
+        problemMarkdown:
+          'A video appears in your feed showing a well-known politician saying something outrageous. It has thousands of shares. How do you check it?',
+        steps: [
+          {
+            label: 'Find who posted it first',
+            expressionOrAction: 'Trace the shares back to the earliest upload you can find.',
+            whyNote: 'An anonymous account created last week is weaker evidence than a named news organisation.',
+          },
+          {
+            label: 'Look for independent coverage',
+            expressionOrAction: 'Search for the statement. Have several established outlets reported it?',
+            whyNote: 'A real statement by a public figure is news; silence from every newsroom is a warning sign.',
+          },
+          {
+            label: 'Check the official record',
+            expressionOrAction: 'Look at the person’s official channels and any full recording of the event.',
+            whyNote: 'Clips can be cut or reordered to change the meaning, with no AI involved.',
+          },
+          {
+            label: 'Decide',
+            expressionOrAction: 'If you cannot confirm it, do not share it.',
+            whyNote: 'The number of shares measures spread, not truth.',
+          },
+        ],
+      },
+      {
+        id: 'mal-u3-l2-s4',
+        kind: 'branching-scenario',
+        title: 'The Urgent Voice Message',
+        startNodeId: 'message',
+        nodes: {
+          message: {
+            promptMarkdown:
+              'You get a voice message from an unknown number. It sounds exactly like your cousin: **"I’ve lost my phone and I’m stuck. Please send money to this account right now."** What do you do?',
+            choices: [
+              {
+                label: 'Send the money; it is clearly their voice',
+                nextNodeId: 'message',
+                feedback: 'A voice can be cloned from a short recording. Urgency plus a new number plus a request for money is a classic scam pattern.',
+                outcome: 'unsafe',
+              },
+              {
+                label: 'Call your cousin on the number you already have',
+                nextNodeId: null,
+                feedback: 'Checking through a channel you already trust defeats the scam, however convincing the voice is.',
+                outcome: 'optimal',
+              },
+              {
+                label: 'Reply to the message asking if it is really them',
+                nextNodeId: 'message',
+                feedback: 'Whoever sent the message will simply say yes. Use a contact route they do not control.',
+                outcome: 'suboptimal',
+              },
+            ],
+          },
+        },
+      },
+      {
+        id: 'mal-u3-l2-s5',
+        kind: 'checkpoint',
+        title: 'Can You Always See It?',
+        question: {
+          type: 'truefalse',
+          prompt: 'Looking for odd hands or blurry backgrounds is a reliable way to detect every AI-generated image.',
+          correct: false,
+          explanation:
+            'Such flaws appear in some generated images and not in others, and they are becoming rarer. Checking where an image came from is more dependable.',
+          points: 10,
+        },
+      },
+      {
+        id: 'mal-u3-l2-s6',
+        kind: 'synthesis',
+        title: 'Source Over Surface',
+        takeaways: [
+          'Feeds rank posts by predicted engagement, and each person’s feed is different.',
+          'Share counts measure spread, not accuracy.',
+          'Check synthetic media by its source and independent confirmation, not by how it looks.',
+          'Confirm urgent requests through a contact route you already trust.',
+        ],
+        nextQuizIndex: 2,
+        flashcardEnroll: { autoEnroll: true, interleave: true },
+      },
+    ],
+    flashcardSeeds: [
+      {
+        id: 'mal-u3-l2-fc1',
+        front: 'What does a feed’s recommendation algorithm optimise for?',
+        back: 'Predicted engagement: watching, liking, commenting, sharing.',
+        explanation: 'Engagement is not the same as accuracy or importance.',
+        interleave: true,
+      },
+      {
+        id: 'mal-u3-l2-fc2',
+        front: 'What is a deepfake?',
+        back: 'AI-generated or AI-altered image, audio or video that imitates a real person.',
+        explanation: 'Verify by source and independent confirmation.',
+        interleave: true,
+      },
+      {
+        id: 'mal-u3-l2-fc3',
+        front: 'A familiar voice on a new number urgently asks for money. Best response?',
+        back: 'Contact the person through a number or channel you already have.',
+        explanation: 'Voices can be cloned; a trusted channel cannot be faked by the caller.',
+        interleave: true,
+      },
+    ],
+  },
+]
+
+const GATE = { policy: 'soft-recommended', minLessonCompletion: true, minQuizAccuracyPct: 75 } as const
+
+const MAL_UNITS: TrackUnit[] = [
+  {
+    id: 'mal-u1-evaluating-information',
+    title: 'Evaluating Information Online',
+    anchoringPhenomenon:
+      'Professional fact-checkers judge an unfamiliar website in seconds, and they do it by leaving the site.',
+    capstoneQuizIndex: 0,
+    masteryGate: GATE,
+    lessons: MAL_U1_LESSONS,
+  },
+  {
+    id: 'mal-u2-how-ai-works',
+    title: 'How AI Systems Work',
+    anchoringPhenomenon:
+      'A chatbot can write a flawless paragraph that cites a book which was never published.',
+    capstoneQuizIndex: 1,
+    masteryGate: GATE,
+    lessons: MAL_U2_LESSONS,
+  },
+  {
+    id: 'mal-u3-responsible-use',
+    title: 'Using AI & Media Responsibly',
+    anchoringPhenomenon:
+      'Two people open the same app at the same moment and are shown two different versions of what is happening in the world.',
+    capstoneQuizIndex: 2,
+    masteryGate: GATE,
+    lessons: MAL_U3_LESSONS,
+  },
+]
+
+const MAL_TRACK: CurriculumTrack = {
+  id: 'track-media-ai-literacy',
+  slug: 'media-ai-literacy',
+  packId: 'media-ai-literacy',
+  title: 'Media & AI Literacy',
+  category: 'CS',
+  subject: 'Media & AI Literacy',
+  gradeBand: 'HS',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  prerequisiteTrackIds: [],
+  srsInterleaveDefault: true,
+  units: MAL_UNITS,
+}
+
+export const MEDIA_AI_LITERACY_PACK: ContentPack = {
+  id: 'media-ai-literacy',
+  name: 'Media & AI Literacy',
+  description:
+    'Lateral reading and SIFT, misleading charts and statistics, how machine learning and language models work, responsible AI use, feeds and synthetic media.',
+  subject: 'Media & AI Literacy',
+  category: 'CS',
+  icon: '🔎',
+  standards: 'ISTE Student Standards 1.2 & 1.3 · AI4K12 Big Ideas 3–5',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  srsInterleave: true,
+  gradeBand: 'HS',
+  track: MAL_TRACK,
+  units: MAL_UNITS,
+  quizzes: [
+    {
+      title: 'Evaluating Sources & Statistics',
+      description: 'Lateral reading, SIFT, relative and absolute risk, correlation and misleading charts.',
+      subject: 'Media & AI Literacy',
+      difficulty: 'easy',
+      timeLimitSec: 480,
+      srsInterleave: true,
+      lessonId: 'mal-u1-l2',
+      questions: [
+        {
+          type: 'mcq',
+          prompt: 'What does "lateral reading" mean?',
+          options: [
+            'Reading a page from the bottom up',
+            'Reading only the headings of an article',
+            'Leaving a page to check what other sources say about it',
+            'Reading two articles from the same website',
+          ],
+          correct: 2,
+          explanation: 'Fact-checkers open new tabs and investigate a source from outside instead of trusting what it says about itself.',
+          points: 10,
+        },
+        {
+          type: 'order',
+          prompt: 'Arrange the SIFT moves in order:',
+          options: ['Stop', 'Investigate the source', 'Find better coverage', 'Trace claims to the original context'],
+          correct: [0, 1, 2, 3],
+          explanation: 'S-I-F-T.',
+          points: 10,
+        },
+        {
+          type: 'mcq',
+          prompt:
+            'A drug is advertised as "cutting the risk of a condition by 50%". The condition affects 2 in 1,000 people without the drug. How many per 1,000 does the drug help?',
+          options: ['1', '50', '500', '2'],
+          correct: 0,
+          explanation: 'Half of 2 in 1,000 is 1 in 1,000. The relative change is 50%; the absolute change is 1 person per 1,000.',
+          points: 15,
+        },
+        {
+          type: 'truefalse',
+          prompt: 'If two things rise and fall together, one of them must be causing the other.',
+          correct: false,
+          explanation: 'Both may be driven by a third factor, or the pattern may be coincidence.',
+          points: 10,
+        },
+        {
+          type: 'fill',
+          prompt: 'A town had 20 burglaries last year and 25 this year. What is the percentage increase? Give a number.',
+          correct: '25',
+          alternatives: ['25%', '25 %', '25.0', '25 percent'],
+          explanation: '(25 − 20) ÷ 20 × 100 = 25%.',
+          points: 15,
+        },
+        {
+          type: 'mcq',
+          prompt: 'A dramatic photo is going round with a caption about today’s storm. What is the best way to check it?',
+          options: [
+            'See how many people have shared it',
+            'Zoom in to see whether it looks edited',
+            'Check whether the caption is well written',
+            'Do a reverse image search to find where and when it first appeared',
+          ],
+          correct: 3,
+          explanation: 'Real photos are often reused with a false caption. Finding the earliest appearance shows the true date and place.',
+          points: 15,
+        },
+      ],
+    },
+    {
+      title: 'How AI Systems Work',
+      description: 'Training and test data, bias, and what a language model does when it writes.',
+      subject: 'Media & AI Literacy',
+      difficulty: 'medium',
+      timeLimitSec: 480,
+      srsInterleave: true,
+      lessonId: 'mal-u2-l2',
+      questions: [
+        {
+          type: 'mcq',
+          prompt: 'In machine learning, what is "training data"?',
+          options: [
+            'The examples a model learns its patterns from',
+            'The instructions a programmer writes by hand',
+            'Data kept hidden to measure the model afterwards',
+            'The answers a model gives to users',
+          ],
+          correct: 0,
+          explanation: 'The model adjusts its parameters to fit these examples. The hidden set used for measurement is the test data.',
+          points: 10,
+        },
+        {
+          type: 'mcq',
+          prompt: 'A model scores 99% on its training examples and 60% on new data. What most likely happened?',
+          options: [
+            'The new data is wrong',
+            'It memorised the training examples instead of learning a general pattern',
+            'It needs to be tested on the training examples again',
+            'It is working as well as possible',
+          ],
+          correct: 1,
+          explanation: 'A large gap between training and test performance is the sign of memorising, often called overfitting.',
+          points: 15,
+        },
+        {
+          type: 'truefalse',
+          prompt: 'A face-recognition model trained mostly on photos of one group of people will usually be less accurate for other groups.',
+          correct: true,
+          explanation: 'A model learns the patterns in its data. Groups with few examples are fitted poorly.',
+          points: 10,
+        },
+        {
+          type: 'mcq',
+          prompt: 'A spam filter moves a genuine email from your teacher into the spam folder. What kind of error is this?',
+          options: ['A false negative', 'A hallucination', 'A false positive', 'A training error'],
+          correct: 2,
+          explanation: 'The filter said "spam" (positive) and was wrong. Spam that reaches the inbox is a false negative.',
+          points: 15,
+        },
+        {
+          type: 'mcq',
+          prompt: 'Why can a large language model state something false in a confident tone?',
+          options: [
+            'It is programmed to deceive users',
+            'It always copies errors from one specific website',
+            'It only makes errors when the question is rude',
+            'It generates likely-sounding text, and nothing in that process checks it against the facts',
+          ],
+          correct: 3,
+          explanation: 'Generation is prediction of plausible next tokens. Plausible and true usually agree, but not always.',
+          points: 15,
+        },
+        {
+          type: 'fill',
+          prompt: 'Fluent but false or invented output from an AI model is commonly called a ______.',
+          correct: 'hallucination',
+          alternatives: ['hallucinations', 'a hallucination', 'confabulation'],
+          explanation: 'Invented references and quotations are typical examples.',
+          points: 10,
+        },
+      ],
+    },
+    {
+      title: 'Responsible Use, Feeds & Synthetic Media',
+      description: 'Policy, privacy and verification when using AI; recommendation algorithms; deepfakes and scams.',
+      subject: 'Media & AI Literacy',
+      difficulty: 'medium',
+      timeLimitSec: 480,
+      srsInterleave: true,
+      lessonId: 'mal-u3-l2',
+      questions: [
+        {
+          type: 'mcq',
+          prompt: 'Which use of an AI tool best supports your own learning?',
+          options: [
+            'Having it write your answer so you can copy it',
+            'Having it summarise a chapter so you can skip reading it',
+            'Having it quiz you and explain what you got wrong',
+            'Having it rewrite a classmate’s essay as yours',
+          ],
+          correct: 2,
+          explanation: 'Being tested makes you recall the material, which is what strengthens memory.',
+          points: 10,
+        },
+        {
+          type: 'truefalse',
+          prompt: 'It is safe to paste a friend’s private messages into a public chatbot as long as you delete the chat afterwards.',
+          correct: false,
+          explanation: 'What you submit may already have been stored, and the messages were not yours to share.',
+          points: 10,
+        },
+        {
+          type: 'mcq',
+          prompt: 'Why might two people see very different posts about the same news event?',
+          options: [
+            'Each feed is personalised by an algorithm predicting what that person will engage with',
+            'One of them must be using an outdated app',
+            'Posts are shown in strict time order',
+            'News organisations post different stories to each person',
+          ],
+          correct: 0,
+          explanation: 'Ranking is individual, so a feed is not a neutral sample of what is being said.',
+          points: 15,
+        },
+        {
+          type: 'mcq',
+          prompt: 'A video of a celebrity endorsing a get-rich-quick scheme has two million views. What does the view count tell you?',
+          options: [
+            'That the video is genuine',
+            'That the scheme works',
+            'That the celebrity approved it',
+            'That it has spread widely, and nothing about whether it is real',
+          ],
+          correct: 3,
+          explanation: 'Views measure reach. Fake endorsements are a common use of synthetic media.',
+          points: 15,
+        },
+        {
+          type: 'mcq',
+          prompt:
+            'A caller who sounds like a family member, on a number you do not know, urgently asks you to transfer money. What should you do?',
+          options: [
+            'Transfer the money, since you recognise the voice',
+            'Hang up and call them on the number you already have',
+            'Ask the caller to confirm their name',
+            'Ask them to send a selfie',
+          ],
+          correct: 1,
+          explanation: 'Voices and images can be generated. A contact route you already trust is one the caller cannot control.',
+          points: 15,
+        },
+        {
+          type: 'truefalse',
+          prompt: 'You remain responsible for the accuracy of work you submit even if an AI tool wrote part of it.',
+          correct: true,
+          explanation: 'Submitting work means vouching for it.',
+          points: 10,
+        },
+      ],
+    },
+  ],
+}

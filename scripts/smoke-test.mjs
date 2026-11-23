@@ -1010,7 +1010,7 @@ async function main() {
   console.log('\nContent packs flow:')
   const packs = await api('/packs', { token: teacherToken })
   const geometryPack = packs.data.packs?.find((pack) => pack.id === 'geometry-figures')
-  check('pack registry serves 23 curriculum packs', packs.data.packs?.length === 23, `got=${packs.data.packs?.length}`)
+  check('pack registry serves 24 curriculum packs', packs.data.packs?.length === 24, `got=${packs.data.packs?.length}`)
   check('pack registry includes geometry-figures with 3D model link', Boolean(geometryPack?.modelId))
   check(
     'geometry pack advertises three tiered quizzes',
@@ -1445,8 +1445,8 @@ async function main() {
   console.log('\nGuided Lessons & Co-op Race flow:')
   const tracksRes = await api('/tracks', { token: studentToken })
   check(
-    'tracks endpoint serves 17 curriculum tracks',
-    tracksRes.status === 200 && tracksRes.data.tracks?.length === 17,
+    'tracks endpoint serves 18 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 18,
     `got=${tracksRes.data.tracks?.length}`,
   )
   const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
