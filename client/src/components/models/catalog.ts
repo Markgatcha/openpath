@@ -351,6 +351,18 @@ export const LAB_MODELS: LabModel[] = [
     renderer: '2d',
     Component: lazy(() => import('./presets2d/GreenhouseEffect2D')),
   },
+  {
+    id: 'diffusion-osmosis-2d',
+    title: 'Diffusion & Osmosis: Particles Across a Membrane',
+    subject: 'Chemistry',
+    icon: '💧',
+    blurb:
+      'Watch random particle motion even out a concentration difference, then block the solute and see water move until the raised level pushes back.',
+    packId: 'general-chemistry-core',
+    standards: 'AP Chem Unit 3 (Properties of Substances and Mixtures) · AP Bio Unit 2 (Cells)',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/DiffusionOsmosis2D')),
+  },
 ]
 
 export function findLabModel(id: string | undefined): LabModel | undefined {
