@@ -85,7 +85,9 @@ function RequireAuth({ role }: { role?: Role }) {
           : '/parent'
     return <Navigate to={home} replace />
   }
-  return (
+  return role ? (
+    <Outlet />
+  ) : (
     <AppLayout>
       <Outlet />
     </AppLayout>
