@@ -21,10 +21,10 @@ export function GraphicsQualitySelect({
   return (
     <label
       className={cn(
-        'inline-flex items-center gap-1.5 text-xs font-semibold',
+        'inline-flex items-center gap-1.5 text-xs font-semibold focus-within:ring-2',
         variant === 'overlay'
-          ? 'h-9 rounded-xl border border-white/15 bg-ink-900/70 px-2 text-slate-200 backdrop-blur focus-within:ring-2 focus-within:ring-cyan-300'
-          : 'rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200',
+          ? 'h-9 rounded-xl border border-white/15 bg-ink-900/70 px-2 text-slate-200 backdrop-blur focus-within:ring-cyan-300'
+          : 'rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 focus-within:ring-brand-500',
         className,
       )}
       title={GRAPHICS_LABELS[preference].hint}
