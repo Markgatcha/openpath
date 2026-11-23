@@ -431,7 +431,7 @@ export const MANDARIN_STARTER_PACK: ContentPack = {
   units: ZH_UNITS,
   quizzes: [
     {
-      title: 'Tones, Pinyin & Greetings',
+      title: 'Mandarin: Tones, Pinyin & Greetings',
       description: 'The four tones, hello, thank you and goodbye, names, and the question word 吗.',
       subject: 'Mandarin Chinese',
       difficulty: 'easy',
@@ -501,7 +501,7 @@ export const MANDARIN_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Numbers, Days & Family',
+      title: 'Mandarin: Numbers, Days & Family',
       description: 'Building numbers to 99, days of the week, family words and the measure word 个.',
       subject: 'Mandarin Chinese',
       difficulty: 'medium',
@@ -571,7 +571,7 @@ export const MANDARIN_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Food, Ordering & Getting By',
+      title: 'Mandarin: Food, Ordering & Getting By',
       description: 'Food and drink, ordering, asking the price, and negatives with 不.',
       subject: 'Mandarin Chinese',
       difficulty: 'hard',

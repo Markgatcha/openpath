@@ -426,7 +426,7 @@ export const FRENCH_STARTER_PACK: ContentPack = {
   units: FR_UNITS,
   quizzes: [
     {
-      title: 'Greetings & Introductions',
+      title: 'French: Greetings & Introductions',
       description: 'Hello and goodbye, polite words, names, and tu or vous.',
       subject: 'French',
       difficulty: 'easy',
@@ -491,7 +491,7 @@ export const FRENCH_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Numbers, Days & Family',
+      title: 'French: Numbers, Days & Family',
       description: 'Numbers to twenty, days of the week, family words, le and la, and saying your age.',
       subject: 'French',
       difficulty: 'medium',
@@ -556,7 +556,7 @@ export const FRENCH_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Food, the Café & Getting By',
+      title: 'French: Food, the Café & Getting By',
       description: 'Food and drink, ordering politely, asking the price and simple negatives.',
       subject: 'French',
       difficulty: 'hard',

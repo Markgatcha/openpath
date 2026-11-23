@@ -427,7 +427,7 @@ export const GERMAN_STARTER_PACK: ContentPack = {
   units: DE_UNITS,
   quizzes: [
     {
-      title: 'Greetings & Introductions',
+      title: 'German: Greetings & Introductions',
       description: 'Hello and goodbye, polite words, names, and du or Sie.',
       subject: 'German',
       difficulty: 'easy',
@@ -492,7 +492,7 @@ export const GERMAN_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Numbers, Days & Family',
+      title: 'German: Numbers, Days & Family',
       description: 'Numbers to twenty, days of the week, family words, der, die and das, and saying your age.',
       subject: 'German',
       difficulty: 'medium',
@@ -557,7 +557,7 @@ export const GERMAN_STARTER_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Food, the Café & Getting By',
+      title: 'German: Food, the Café & Getting By',
       description: 'Food and drink, ordering politely, asking the price, negatives and questions.',
       subject: 'German',
       difficulty: 'hard',
