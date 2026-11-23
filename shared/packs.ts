@@ -8,6 +8,7 @@ import { PHYSICS_FOUNDATIONS_PACK } from './packs/physics-foundations'
 import { MEDIA_AI_LITERACY_PACK } from './packs/media-ai-literacy'
 import { ENVIRONMENTAL_SCIENCE_CLIMATE_PACK } from './packs/environmental-science-climate'
 import { GENERAL_CHEMISTRY_CORE_PACK } from './packs/general-chemistry-core'
+import { ANATOMY_PHYSIOLOGY_PACK } from './packs/anatomy-physiology'
 import type { ContentPack, PackQuiz, SubjectGroup } from './packs/types'
 
 export type { ContentPack, PackQuiz, SubjectGroup }
@@ -37,6 +38,7 @@ export const CONTENT_PACKS: ContentPack[] = [
   MEDIA_AI_LITERACY_PACK,
   GENERAL_CHEMISTRY_CORE_PACK,
   ENVIRONMENTAL_SCIENCE_CLIMATE_PACK,
+  ANATOMY_PHYSIOLOGY_PACK,
 ]
 
 export function findPack(id: string): ContentPack | undefined {
