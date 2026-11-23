@@ -12,7 +12,8 @@ import type { Hotspot, ModelDefinition, Params, SceneContext } from '../engine'
  *   pre-synaptic reuptake transporters.
  */
 
-const LIGAND_COUNT_BASE = 120
+// Not scaled by graphics tier: receptor hits, and so the Open Channels readout, depend on it.
+const LIGAND_COUNT = 120
 const ION_COUNT_BASE = 45
 const RECEPTOR_POSITIONS: [number, number][] = [
   [-1.7, -0.6],
@@ -23,7 +24,6 @@ const RECEPTOR_POSITIONS: [number, number][] = [
 ]
 
 function build({ scene, palette, quality }: SceneContext, initial: Params) {
-  const LIGAND_COUNT = quality.count(LIGAND_COUNT_BASE)
   const ION_COUNT = quality.count(ION_COUNT_BASE)
   const root = new THREE.Group()
   scene.add(root)
