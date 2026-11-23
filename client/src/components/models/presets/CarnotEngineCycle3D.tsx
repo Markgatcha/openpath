@@ -21,8 +21,8 @@ import {
  *     4 -> 1 Adiabatic compression (warms T_C -> T_H)
  */
 
-const GAS_COUNT = 110
-const HEAT_FLOW_COUNT = 28
+const GAS_COUNT_BASE = 110
+const HEAT_FLOW_COUNT_BASE = 28
 const GAMMA = 5 / 3
 const LOOP_SAMPLES = 96
 
@@ -82,7 +82,9 @@ function evaluateCycle(u: number, th: number, tc: number, compRatio: number): Ca
   return { stage: seg, V, P, T, vMin: v1, vMax: v3, pMax }
 }
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
+  const GAS_COUNT = quality.count(GAS_COUNT_BASE)
+  const HEAT_FLOW_COUNT = quality.count(HEAT_FLOW_COUNT_BASE)
   const root = new THREE.Group()
   scene.add(root)
 
@@ -92,7 +94,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // Cylinder glass sleeve
   const sleeve = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.15, 1.15, 4.1, 36, 1, true),
+    new THREE.CylinderGeometry(1.15, 1.15, 4.1, quality.segments(36), 1, true),
     new THREE.MeshPhysicalMaterial({
       color: 0xcbd5e1,
       transparent: true,
@@ -107,7 +109,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // Cylinder base plate
   const basePlate = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.22, 1.22, 0.18, 36),
+    new THREE.CylinderGeometry(1.22, 1.22, 0.18, quality.segments(36)),
     new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.55, roughness: 0.35 }),
   )
   basePlate.position.set(cylX, cylBottomY - 0.09, 0)
@@ -116,11 +118,11 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   // Moving piston head + connecting rod
   const pistonGroup = new THREE.Group()
   const pistonHead = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.12, 1.12, 0.28, 36),
+    new THREE.CylinderGeometry(1.12, 1.12, 0.28, quality.segments(36)),
     new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.25 }),
   )
   const pistonRod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.14, 2.2, 16),
+    new THREE.CylinderGeometry(0.14, 0.14, 2.2, quality.segments(16)),
     new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.65, roughness: 0.3 }),
   )
   pistonRod.position.y = 1.2
@@ -158,7 +160,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     emissiveIntensity: 0.55,
     roughness: 0.3,
   })
-  const gasInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.065, 10, 8), gasMat, GAS_COUNT)
+  const gasInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.065, quality.segments(10), quality.segments(8)), gasMat, GAS_COUNT)
   const gasParticles = Array.from({ length: GAS_COUNT }, (_, i) => {
     const r = Math.sqrt(((i * 19) % 100) / 100) * 0.92
     const th = i * 2.39996
@@ -180,7 +182,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     emissiveIntensity: 1.1,
   })
   const heatInst = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.055, 8, 8),
+    new THREE.SphereGeometry(0.055, quality.segments(8), quality.segments(8)),
     heatMat,
     HEAT_FLOW_COUNT,
   )
@@ -203,7 +205,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   const pvCurvePts = Array.from({ length: LOOP_SAMPLES + 1 }, () => new THREE.Vector3())
   const pvLoopLine = polyline(pvCurvePts, palette.cyan, 0.95)
   const pvStateDot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 18, 14),
+    new THREE.SphereGeometry(0.14, quality.segments(18), quality.segments(14)),
     new THREE.MeshStandardMaterial({
       color: palette.amber,
       emissive: palette.amber,

@@ -165,7 +165,7 @@ function computeTraversal(root: BstNode | null, mode: number): BstNode[] {
 
 const TRAVERSAL_NAMES = ['In-Order (LNR)', 'Pre-Order (NLR)', 'Breadth-First (BFS)']
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
   const rootGroup = new THREE.Group()
   scene.add(rootGroup)
 
@@ -174,7 +174,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // Glowing traversal probe orb + ray path polyline
   const probe = new THREE.Mesh(
-    new THREE.SphereGeometry(0.32, 24, 18),
+    new THREE.SphereGeometry(0.32, quality.segments(24), quality.segments(18)),
     new THREE.MeshPhysicalMaterial({
       color: palette.amber,
       emissive: palette.amber,
@@ -213,8 +213,8 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     traversalSeq = computeTraversal(bstRoot, Math.round(p.traversal))
     cursor = 0
 
-    const sphereGeo = new THREE.SphereGeometry(0.24, 22, 16)
-    const edgeGeo = new THREE.CylinderGeometry(0.042, 0.042, 1, 10)
+    const sphereGeo = new THREE.SphereGeometry(0.24, quality.segments(22), quality.segments(16))
+    const edgeGeo = new THREE.CylinderGeometry(0.042, 0.042, 1, quality.segments(10))
 
     const buildMeshes = (n: BstNode | null) => {
       if (!n) return

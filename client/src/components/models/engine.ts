@@ -10,6 +10,7 @@ import {
   type SliderParam,
   type ToggleParam,
 } from './shared-types'
+import { scaleCount, scaleSegments, type GraphicsProfile } from '@/lib/graphics'
 
 export {
   PALETTE,
@@ -68,6 +69,28 @@ export interface SceneContext {
   camera: THREE.PerspectiveCamera
   /** Accent colors that read well on the dark lab background. */
   palette: typeof PALETTE
+  /** Detail scaling for the active graphics tier. */
+  quality: SceneQuality
+}
+
+export interface SceneQuality {
+  profile: GraphicsProfile
+  /** Scaled segment count for curved geometry. */
+  segments: (base: number) => number
+  /** Scaled subdivision level for polyhedron geometry (each level is 4x the faces). */
+  subdivisions: (base: number) => number
+  /** Scaled particle or instance count. */
+  count: (base: number) => number
+}
+
+export function makeSceneQuality(profile: GraphicsProfile): SceneQuality {
+  const shift = profile.detail < 0.5 ? -2 : profile.detail < 1 ? -1 : 0
+  return {
+    profile,
+    segments: (base) => scaleSegments(profile, base, Math.min(base, 5)),
+    subdivisions: (base) => Math.max(Math.min(base, 1), base + shift),
+    count: (base) => scaleCount(profile, base),
+  }
 }
 
 export interface ModelDefinition {

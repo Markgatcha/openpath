@@ -28,6 +28,7 @@ The path ahead. Items are roughly ordered by impact; nothing here is a promise w
 
 ## 🌱 Next up (v0.6)
 
+- [x] **Graphics quality tiers** — one per-device setting (Auto / Low / Medium / High / Ultra) drives resolution, antialiasing, lighting, material cost, geometry detail, particle counts, and frame cap across the 3D Model Lab, the 2D viewer, and Knowledge Bastion. 3D scenes render on demand (nothing is drawn while paused, off-screen, or untouched) and Auto only ever steps down. Low is aimed at ~2016 integrated-graphics laptops; frame rates on that hardware are not yet measured.
 - [ ] **Accessibility & accommodations** — read-aloud (TTS), dyslexia-friendly font, one-click translation, per-student difficulty adjust (DOJ Title II WCAG 2.1 AA deadlines: Apr 2026 / Apr 2027 — schools will ask), on top of the original full-keyboard-play / screen-reader / reduced-motion pass
 - [ ] **Question Forge 2.0** — ingest PDF/URL/text → generate draft questions of all types → teacher review queue before publication (table-stakes AI generation is commoditizing, and local-first competitors just entered this lane)
 - [ ] **Socratic mistake coach** — an "Explain My Mistake" button inside the wrong-answer flow (student attempts first, AI explains after; never a standalone chat tab — standalone tutors see ~15% engagement), respecting the teacher `Settings -> AI` kill switch

@@ -132,7 +132,7 @@ const BOND_LENGTH = 1.5
 /** Space-filling scales atoms up to roughly van der Waals proportions. */
 const FILL_SCALE = 2.6
 
-function build({ scene, palette }: SceneContext, _params: Params) {
+function build({ scene, palette, quality }: SceneContext, _params: Params) {
   const molecule = new THREE.Group()
   scene.add(molecule)
 
@@ -154,7 +154,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
 
     const atom = (spec: Molecule['central'], at: THREE.Vector3) => {
       const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(spec.radius * (fill ? FILL_SCALE : 1), 40, 28),
+        new THREE.SphereGeometry(spec.radius * (fill ? FILL_SCALE : 1), quality.segments(40), quality.segments(28)),
         new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.35, metalness: 0.05 }),
       )
       mesh.position.copy(at)
@@ -172,7 +172,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
       if (fill) return
       const order = current.bondOrder ?? 1
       for (let k = 0; k < order; k += 1) {
-        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, BOND_LENGTH, 14), bondMaterial)
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, BOND_LENGTH, quality.segments(14)), bondMaterial)
         cylinder.position.copy(end.clone().multiplyScalar(0.5))
         cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir)
         if (order > 1) {
@@ -185,7 +185,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
 
     for (const dir of current.lonePairs) {
       const lobe = new THREE.Mesh(
-        new THREE.SphereGeometry(0.42, 28, 20),
+        new THREE.SphereGeometry(0.42, quality.segments(28), quality.segments(20)),
         new THREE.MeshStandardMaterial({
           color: palette.violet,
           transparent: true,

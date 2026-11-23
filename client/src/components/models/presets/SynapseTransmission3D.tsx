@@ -12,8 +12,8 @@ import type { Hotspot, ModelDefinition, Params, SceneContext } from '../engine'
  *   pre-synaptic reuptake transporters.
  */
 
-const LIGAND_COUNT = 120
-const ION_COUNT = 45
+const LIGAND_COUNT_BASE = 120
+const ION_COUNT_BASE = 45
 const RECEPTOR_POSITIONS: [number, number][] = [
   [-1.7, -0.6],
   [-0.85, 0.75],
@@ -22,13 +22,15 @@ const RECEPTOR_POSITIONS: [number, number][] = [
   [1.75, -0.55],
 ]
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
+  const LIGAND_COUNT = quality.count(LIGAND_COUNT_BASE)
+  const ION_COUNT = quality.count(ION_COUNT_BASE)
   const root = new THREE.Group()
   scene.add(root)
 
   // 1. Pre-synaptic Axon Terminal Bouton (top, y > 0.75)
   const preGroup = new THREE.Group()
-  const boutonGeo = new THREE.SphereGeometry(2.35, 40, 28, 0, Math.PI * 2, 0, Math.PI * 0.62)
+  const boutonGeo = new THREE.SphereGeometry(2.35, quality.segments(40), quality.segments(28), 0, Math.PI * 2, 0, Math.PI * 0.62)
   boutonGeo.rotateX(Math.PI)
   const boutonMat = new THREE.MeshPhysicalMaterial({
     color: 0x6366f1,
@@ -44,7 +46,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // Axon stalk above bouton
   const axonNeck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.95, 1.35, 1.6, 28, 1, true),
+    new THREE.CylinderGeometry(0.95, 1.35, 1.6, quality.segments(28), 1, true),
     boutonMat,
   )
   axonNeck.position.y = 3.25
@@ -52,7 +54,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // Active zone flat pre-synaptic membrane disc at y = 0.78
   const preMembrane = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.12, 2.12, 0.1, 36),
+    new THREE.CylinderGeometry(2.12, 2.12, 0.1, quality.segments(36)),
     new THREE.MeshStandardMaterial({
       color: 0x4f46e5,
       transparent: true,
@@ -73,7 +75,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   const caChannels: THREE.Mesh[] = []
   for (let i = 0; i < 6; i += 1) {
     const ang = (i / 6) * Math.PI * 2 + 0.3
-    const ch = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.07, 12, 20), caMat)
+    const ch = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.07, quality.segments(12), quality.segments(20)), caMat)
     ch.position.set(Math.cos(ang) * 2.02, 1.18, Math.sin(ang) * 2.02)
     ch.lookAt(0, 1.18, 0)
     preGroup.add(ch)
@@ -93,14 +95,14 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     [1.45, 0.95],
     [0, -1.55],
   ].forEach(([tx, tz]) => {
-    const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.34, 16), transporterMat)
+    const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.34, quality.segments(16)), transporterMat)
     pump.position.set(tx, 0.78, tz)
     preGroup.add(pump)
     transporters.push(pump)
   })
 
   // Synaptic vesicles inside pre-synaptic terminal (docking and fusing)
-  const vesicleGeo = new THREE.SphereGeometry(0.32, 20, 16)
+  const vesicleGeo = new THREE.SphereGeometry(0.32, quality.segments(20), quality.segments(16))
   const vesicleMat = new THREE.MeshPhysicalMaterial({
     color: palette.emerald,
     transparent: true,
@@ -120,14 +122,14 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   // 2. Post-synaptic Dendritic Membrane & Spine (bottom, y < -0.75)
   const postGroup = new THREE.Group()
   const postBilayer = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.55, 2.35, 0.24, 40),
+    new THREE.CylinderGeometry(2.55, 2.35, 0.24, quality.segments(40)),
     new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.55 }),
   )
   postBilayer.position.y = -0.82
   postGroup.add(postBilayer)
 
   const dendriteBody = new THREE.Mesh(
-    new THREE.SphereGeometry(2.55, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    new THREE.SphereGeometry(2.55, quality.segments(36), quality.segments(24), 0, Math.PI * 2, 0, Math.PI * 0.55),
     new THREE.MeshPhysicalMaterial({
       color: 0x14b8a6,
       transparent: true,
@@ -158,7 +160,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     group.position.set(rx, -0.74, rz)
     const subunits: THREE.Mesh[] = []
     for (let s = 0; s < 5; s += 1) {
-      const sub = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.28, 6, 12), receptorBaseMat)
+      const sub = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.28, quality.segments(6), quality.segments(12)), receptorBaseMat)
       const ang = (s / 5) * Math.PI * 2
       sub.position.set(Math.cos(ang) * 0.16, 0, Math.sin(ang) * 0.16)
       group.add(sub)
@@ -171,7 +173,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // 3. Instanced Neurotransmitter Ligand Molecules in the Synaptic Cleft
   const ligandInst = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.055, 10, 8),
+    new THREE.SphereGeometry(0.055, quality.segments(10), quality.segments(8)),
     new THREE.MeshStandardMaterial({
       color: palette.emerald,
       emissive: 0x059669,
@@ -191,7 +193,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // 4. Instanced Na+ Ions streaming through open receptors into dendrite
   const ionInst = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.05, 8, 8),
+    new THREE.SphereGeometry(0.05, quality.segments(8), quality.segments(8)),
     new THREE.MeshStandardMaterial({
       color: palette.rose,
       emissive: 0xe11d48,

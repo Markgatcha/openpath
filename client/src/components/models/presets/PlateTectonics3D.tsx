@@ -12,7 +12,7 @@ import { makeArrow, type Hotspot, type ModelDefinition, type Params, type SceneC
  *   the Wadati–Benioff earthquake hypocenter plane.
  */
 
-const PLUME_PARTICLES = 180
+const PLUME_PARTICLES_BASE = 180
 const QUAKE_COUNT = 16
 
 function slabCenterY(x: number): number {
@@ -21,7 +21,8 @@ function slabCenterY(x: number): number {
   return 0.95 - u * u * 3.55 - u * 0.85
 }
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
+  const PLUME_PARTICLES = quality.count(PLUME_PARTICLES_BASE)
   const root = new THREE.Group()
   scene.add(root)
 
@@ -110,12 +111,12 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   volcanoZ.forEach((vz, idx) => {
     const vx = 2.05 + idx * 0.22
     const cone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.62, 0.95, 24),
+      new THREE.ConeGeometry(0.62, 0.95, quality.segments(24)),
       new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.8 }),
     )
     cone.position.set(vx, 2.2, vz)
     const craterGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.14, 14, 10),
+      new THREE.SphereGeometry(0.14, quality.segments(14), quality.segments(10)),
       new THREE.MeshStandardMaterial({
         color: 0xf97316,
         emissive: 0xea580c,
@@ -125,7 +126,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     craterGlow.position.set(vx, 2.66, vz)
 
     const conduit = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.18, 2.6, 12),
+      new THREE.CylinderGeometry(0.08, 0.18, 2.6, quality.segments(12)),
       new THREE.MeshStandardMaterial({
         color: 0xfb923c,
         emissive: 0xea580c,
@@ -141,7 +142,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   root.add(volcanoGroup)
 
   // 6. Instanced Mantle Convection Plume Particles
-  const plumeGeo = new THREE.SphereGeometry(0.075, 10, 8)
+  const plumeGeo = new THREE.SphereGeometry(0.075, quality.segments(10), quality.segments(8))
   const plumeMat = new THREE.MeshStandardMaterial({
     color: palette.amber,
     emissive: 0xdc2626,
@@ -187,7 +188,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     const qy = slabCenterY(qx) + 0.14
     const qz = (((i * 37) % 100) / 100 - 0.5) * 3.5
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.11, 14, 10),
+      new THREE.SphereGeometry(0.11, quality.segments(14), quality.segments(10)),
       new THREE.MeshStandardMaterial({
         color: t < 0.35 ? palette.amber : t < 0.7 ? palette.rose : palette.violet,
         emissive: t < 0.35 ? 0xf59e0b : 0xe11d48,

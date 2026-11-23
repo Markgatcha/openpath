@@ -79,7 +79,7 @@ function computeTrajectory(p: Params, maxTime: number): {
   return { points, pos, vel, force }
 }
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
   const root = new THREE.Group()
   scene.add(root)
 
@@ -102,7 +102,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   root.add(bFieldGroup)
 
   // Translucent E-field capacitor reference rings at bottom and top
-  const plateGeo = new THREE.RingGeometry(0.4, 3.8, 48)
+  const plateGeo = new THREE.RingGeometry(0.4, 3.8, quality.segments(48))
   plateGeo.rotateX(Math.PI / 2)
   const bottomPlate = new THREE.Mesh(
     plateGeo,
@@ -133,7 +133,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     emissiveIntensity: 0.7,
     roughness: 0.25,
   })
-  const particle = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 18), particleMat)
+  const particle = new THREE.Mesh(new THREE.SphereGeometry(0.22, quality.segments(24), quality.segments(18)), particleMat)
   root.add(particle)
 
   // Trajectory polyline
