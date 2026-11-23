@@ -533,3 +533,269 @@ const PF_U2_LESSONS: PackLesson[] = [
     ],
   },
 ]
+
+const PF_U3_LESSONS: PackLesson[] = [
+  {
+    id: 'pf-u3-l1',
+    unitId: 'pf-u3-energy-momentum',
+    title: 'Work, Energy & Power',
+    summary:
+      'Track kinetic and gravitational potential energy and use conservation of energy to find speeds without following the path.',
+    estimatedMinutes: 10,
+    standards: ['AP Physics 1 Unit 3'],
+    prerequisiteLessonIds: ['pf-u2-l1'],
+    visual: {
+      kind: 'model-2d',
+      modelId: 'projectile-motion-2d',
+      initialParams: { speed: 15, angleDeg: 20, height: 20, gravity: 0, showComponents: true },
+      highlightHotspots: ['landing'],
+    },
+    steps: [
+      {
+        id: 'pf-u3-l1-s1',
+        kind: 'narrative',
+        title: 'Energy Is a Bookkeeping Tool',
+        bodyMarkdown:
+          '**Work** is energy transferred by a force: $W = Fd\cos\theta$, where $\theta$ is the angle between the force and the movement. **Kinetic energy** is $\tfrac{1}{2}mv^2$ and **gravitational potential energy** near Earth’s surface is $mgh$.\n\nWhen only gravity does work, the total $\tfrac{1}{2}mv^2 + mgh$ stays the same. That lets you jump straight from a starting height and speed to a final speed, whatever the route in between. **Power** is the rate of doing work, $P = W/t$, measured in watts.',
+        callout: {
+          tone: 'key-idea',
+          text: 'Kinetic energy depends on speed squared. Doubling the speed takes four times the energy and four times the braking distance.',
+        },
+      },
+      {
+        id: 'pf-u3-l1-s2',
+        kind: 'predict-observe-explain',
+        title: 'Same Launch Speed, Different Angles',
+        predictionPrompt:
+          'A ball is launched at 15 m/s from a 20 m platform, first at 20° and then at 70°. Ignoring air resistance, which launch hits the ground at the greater speed?',
+        predictionChoices: [
+          'Both hit at the same speed',
+          'The 70° launch, because it falls from higher',
+          'The 20° launch, because it is aimed more toward the ground',
+        ],
+        correctPredictionIndex: 0,
+        visual: {
+          kind: 'model-2d',
+          modelId: 'projectile-motion-2d',
+          initialParams: { speed: 15, angleDeg: 20, height: 20, gravity: 0, showComponents: true },
+          highlightHotspots: ['landing'],
+        },
+        observeInstruction:
+          'Keep the speed at 15 m/s and the height at 20 m. Change only the angle and watch the Impact speed readout.',
+        explainPrompt: 'Why does the impact speed ignore the launch angle?',
+        explainOptions: [
+          'Each launch starts with the same kinetic and potential energy and ends at the same height, so each ends with the same kinetic energy',
+          'Gravity pulls harder on the steeper launch',
+          'Both launches spend the same time in the air',
+        ],
+        correctExplainIndex: 0,
+        reconcileFeedback:
+          'Energy gives v² = 15² + 2 × 9.8 × 20, so v ≈ 24.8 m/s at every angle. The direction of the impact velocity changes; its size does not.',
+      },
+      {
+        id: 'pf-u3-l1-s3',
+        kind: 'worked-example',
+        title: 'Roller Coaster Drop',
+        problemMarkdown:
+          'A **500 kg** roller-coaster car starts from rest at the top of a **30 m** drop. Ignoring friction and taking g = 9.8 m/s², how fast is it moving at the bottom?',
+        steps: [
+          {
+            label: 'Write energy at the top and the bottom',
+            expressionOrAction: 'Top: mgh + 0.   Bottom: 0 + ½mv²',
+            whyNote: 'Take the bottom as zero height. The car starts from rest, so it has no kinetic energy at the top.',
+          },
+          {
+            label: 'Set them equal and cancel the mass',
+            expressionOrAction: 'mgh = ½mv²  →  v = √(2gh)',
+            whyNote: 'The mass cancels, so an empty car and a full car reach the same speed.',
+          },
+          {
+            label: 'Substitute',
+            expressionOrAction: 'v = √(2 × 9.8 × 30) = √588 ≈ 24.2 m/s',
+            whyNote: 'The shape of the track never entered the calculation.',
+          },
+        ],
+      },
+      {
+        id: 'pf-u3-l1-s4',
+        kind: 'checkpoint',
+        title: 'Speed and Kinetic Energy',
+        question: {
+          type: 'mcq',
+          prompt: 'A car speeds up from 10 m/s to 20 m/s. Its kinetic energy becomes:',
+          options: ['4 times as large', '2 times as large', '√2 times as large'],
+          correct: 0,
+          explanation: 'Kinetic energy is ½mv². Doubling v multiplies v² by 4.',
+          points: 15,
+        },
+        misconceptionHints: {
+          '1': 'Kinetic energy is proportional to speed squared, not to speed.',
+        },
+      },
+      {
+        id: 'pf-u3-l1-s5',
+        kind: 'synthesis',
+        title: 'Energy Accounting',
+        takeaways: [
+          'W = Fd cos θ; a force at right angles to the motion does no work.',
+          'With only gravity doing work, ½mv² + mgh is constant.',
+          'Power is energy transferred per second: P = W / t.',
+        ],
+        nextQuizIndex: 2,
+        flashcardEnroll: { autoEnroll: true, interleave: true },
+      },
+    ],
+    flashcardSeeds: [
+      {
+        id: 'pf-u3-l1-fc1',
+        front: 'Speed after falling a height h from rest (no friction)',
+        back: 'v = √(2gh)',
+        explanation: 'From mgh = ½mv². Independent of mass and of the path taken.',
+        interleave: true,
+      },
+      {
+        id: 'pf-u3-l1-fc2',
+        front: 'How does kinetic energy change when speed triples?',
+        back: 'It becomes 9 times as large.',
+        explanation: 'KE = ½mv², so it scales with the square of the speed.',
+        interleave: true,
+      },
+      {
+        id: 'pf-u3-l1-fc3',
+        front: 'Work done by a force perpendicular to the direction of motion',
+        back: 'Zero.',
+        explanation: 'W = Fd cos 90° = 0. This is why the normal force does no work on a sliding block.',
+        interleave: true,
+      },
+    ],
+  },
+  {
+    id: 'pf-u3-l2',
+    unitId: 'pf-u3-energy-momentum',
+    title: 'Momentum, Impulse & Collisions',
+    summary:
+      'Use p = mv and conservation of momentum to solve collisions, and impulse to explain why longer impacts mean smaller forces.',
+    estimatedMinutes: 10,
+    standards: ['AP Physics 1 Unit 4'],
+    prerequisiteLessonIds: ['pf-u3-l1'],
+    steps: [
+      {
+        id: 'pf-u3-l2-s1',
+        kind: 'narrative',
+        title: 'What Collisions Conserve',
+        bodyMarkdown:
+          '**Momentum** is $p = mv$, and it has a direction. A force acting for a time changes it: **impulse** $F\Delta t = \Delta p$.\n\nWhen two objects collide and no outside force acts, the forces between them are a third-law pair, so whatever momentum one loses the other gains. **Total momentum before equals total momentum after**, in every collision.\n\nKinetic energy is different. It is conserved only in a perfectly **elastic** collision. In an **inelastic** collision some of it becomes heat, sound and deformation; when the objects stick together the loss is as large as momentum conservation allows.',
+        callout: {
+          tone: 'pitfall',
+          text: 'Momentum is conserved even when kinetic energy is not. Never use energy conservation on a collision unless you are told it is elastic.',
+        },
+      },
+      {
+        id: 'pf-u3-l2-s2',
+        kind: 'worked-example',
+        title: 'Two Carts That Stick Together',
+        problemMarkdown:
+          'A **2 kg** cart moving at **3 m/s** hits a stationary **1 kg** cart and they couple together. Find their shared velocity and the kinetic energy lost.',
+        steps: [
+          {
+            label: 'Momentum before',
+            expressionOrAction: 'p = 2 × 3 + 1 × 0 = 6 kg·m/s',
+            whyNote: 'The stationary cart contributes nothing.',
+          },
+          {
+            label: 'Momentum after equals momentum before',
+            expressionOrAction: '(2 + 1) v = 6  →  v = 2 m/s',
+            whyNote: 'After coupling the carts move as one 3 kg object.',
+          },
+          {
+            label: 'Compare kinetic energies',
+            expressionOrAction: 'Before: ½ × 2 × 3² = 9 J.   After: ½ × 3 × 2² = 6 J.   Lost: 3 J',
+            whyNote: 'One third of the kinetic energy went into heat, sound and deformation, yet momentum is unchanged.',
+          },
+        ],
+      },
+      {
+        id: 'pf-u3-l2-s3',
+        kind: 'faded-practice',
+        title: 'Stopping a Ball',
+        promptMarkdown:
+          'A **0.5 kg** ball moving at **4 m/s** is brought to rest by a glove in **0.1 s**. Finish the calculation of the average force.',
+        completedSteps: [
+          'Change in momentum: Δp = 0.5 × (0 − 4) = −2 kg·m/s',
+          'Impulse equals change in momentum: F Δt = Δp, so F = Δp / Δt',
+        ],
+        fadedTarget: {
+          type: 'fill',
+          question: {
+            type: 'fill',
+            prompt: 'What is the size of the average force on the ball, in newtons?',
+            correct: '20',
+            alternatives: ['20 N', '20N', '20.0', '-20'],
+            explanation: '|F| = 2 / 0.1 = 20 N. The sign only says the force opposes the motion.',
+            points: 15,
+          },
+        },
+        misconceptionHints: {
+          '2': 'That is the change in momentum. Divide it by the 0.1 s the force acts for.',
+          '0.2': 'Divide the momentum change by the time; do not multiply.',
+        },
+      },
+      {
+        id: 'pf-u3-l2-s4',
+        kind: 'checkpoint',
+        title: 'Why Airbags Work',
+        question: {
+          type: 'mcq',
+          prompt: 'In a crash, an airbag reduces the force on a passenger mainly by:',
+          options: [
+            'Increasing the time over which the passenger’s momentum changes',
+            'Reducing the passenger’s change in momentum',
+            'Reducing the passenger’s mass',
+          ],
+          correct: 0,
+          explanation:
+            'The passenger’s momentum must drop to zero either way. Spreading that change over a longer time makes the force F = Δp / Δt smaller.',
+          points: 15,
+        },
+        misconceptionHints: {
+          '1': 'The passenger still goes from the car’s speed to rest, so Δp is the same with or without the airbag.',
+        },
+      },
+      {
+        id: 'pf-u3-l2-s5',
+        kind: 'synthesis',
+        title: 'Momentum in One Place',
+        takeaways: [
+          'p = mv is a vector; total momentum is conserved in any collision with no outside force.',
+          'Impulse F Δt equals the change in momentum, so a longer impact means a smaller force.',
+          'Kinetic energy is conserved only in elastic collisions.',
+        ],
+        nextQuizIndex: 2,
+        flashcardEnroll: { autoEnroll: true, interleave: true },
+      },
+    ],
+    flashcardSeeds: [
+      {
+        id: 'pf-u3-l2-fc1',
+        front: 'What is conserved in every collision between two objects with no outside force?',
+        back: 'Total momentum.',
+        explanation: 'Kinetic energy is conserved only if the collision is elastic.',
+        interleave: true,
+      },
+      {
+        id: 'pf-u3-l2-fc2',
+        front: 'Impulse–momentum relation',
+        back: 'F Δt = Δp',
+        explanation: 'The same momentum change over a longer time needs a smaller force.',
+        interleave: true,
+      },
+      {
+        id: 'pf-u3-l2-fc3',
+        front: 'A collision in which the objects stick together is called…',
+        back: 'Perfectly inelastic.',
+        explanation: 'It loses the most kinetic energy that momentum conservation permits.',
+        interleave: true,
+      },
+    ],
+  },
+]
