@@ -1120,8 +1120,8 @@ export const ENGLISH_RHETORIC_TRACK: CurriculumTrack = {
 // ── Conversational Spanish ─────────────────────────────────────
 
 const ES_BASICS: PackLesson = {
-  id: 'es-u1-l1',
-  unitId: 'es-u1-everyday',
+  id: 'spa-u1-l1',
+  unitId: 'spa-u1-everyday',
   title: 'Greetings, Ser & Estar, and the Present Tense',
   summary: 'Say hello, choose between the two Spanish verbs for "to be", talk about what you like and order in a café.',
   estimatedMinutes: 10,
@@ -1129,7 +1129,7 @@ const ES_BASICS: PackLesson = {
   prerequisiteLessonIds: [],
   steps: [
     {
-      id: 'es-u1-l1-s1',
+      id: 'spa-u1-l1-s1',
       kind: 'narrative',
       title: 'Two Verbs for "To Be"',
       bodyMarkdown:
@@ -1140,7 +1140,7 @@ const ES_BASICS: PackLesson = {
       },
     },
     {
-      id: 'es-u1-l1-s2',
+      id: 'spa-u1-l1-s2',
       kind: 'checkpoint',
       title: 'Ser or Estar?',
       question: {
@@ -1158,14 +1158,14 @@ const ES_BASICS: PackLesson = {
       },
     },
     {
-      id: 'es-u1-l1-s3',
+      id: 'spa-u1-l1-s3',
       kind: 'narrative',
       title: 'Gustar and Tener',
       bodyMarkdown:
         '**Gustar** does not work like "to like". It means "to be pleasing to", so the thing you like is the subject and decides the verb ending.\n\n- *Me gust**a** el libro.* (The book pleases me: I like the book.)\n- *Me gust**an** los libros.* (The books please me: I like the books.)\n\nThe pronoun shows who likes it: *me* (I), *te* (you), *le* (he, she), *nos* (we), *les* (they).\n\n**Tener** (to have) is irregular in the *yo* form: **tengo**. Spanish uses it for age, where English uses "to be".\n\n- *Tengo quince años.* (I am fifteen; literally, "I have fifteen years".)',
     },
     {
-      id: 'es-u1-l1-s4',
+      id: 'spa-u1-l1-s4',
       kind: 'checkpoint',
       title: 'Saying What You Like',
       question: {
@@ -1183,7 +1183,7 @@ const ES_BASICS: PackLesson = {
       },
     },
     {
-      id: 'es-u1-l1-s5',
+      id: 'spa-u1-l1-s5',
       kind: 'worked-example',
       title: 'Ordering in a Café',
       problemMarkdown: 'Follow a short, polite exchange between a customer and a waiter.',
@@ -1211,7 +1211,7 @@ const ES_BASICS: PackLesson = {
       ],
     },
     {
-      id: 'es-u1-l1-s6',
+      id: 'spa-u1-l1-s6',
       kind: 'checkpoint',
       title: 'Give Your Age',
       question: {
@@ -1224,7 +1224,7 @@ const ES_BASICS: PackLesson = {
       },
     },
     {
-      id: 'es-u1-l1-s7',
+      id: 'spa-u1-l1-s7',
       kind: 'synthesis',
       title: 'First Conversations',
       takeaways: [
@@ -1238,21 +1238,21 @@ const ES_BASICS: PackLesson = {
   ],
   flashcardSeeds: [
     {
-      id: 'es-u1-l1-fc1',
+      id: 'spa-u1-l1-fc1',
       front: 'When do you use estar instead of ser?',
       back: 'For location and for temporary states such as mood or health.',
       explanation: '"Estoy cansado." "Madrid está en España."',
       interleave: true,
     },
     {
-      id: 'es-u1-l1-fc2',
+      id: 'spa-u1-l1-fc2',
       front: 'Me gusta or me gustan: "______ los libros"?',
       back: 'Me gustan los libros.',
       explanation: 'The verb agrees with the thing liked, which is plural.',
       interleave: true,
     },
     {
-      id: 'es-u1-l1-fc3',
+      id: 'spa-u1-l1-fc3',
       front: 'How do you say "I am sixteen" in Spanish?',
       back: 'Tengo dieciséis años.',
       explanation: 'Spanish uses tener (to have) for age.',
@@ -1262,16 +1262,16 @@ const ES_BASICS: PackLesson = {
 }
 
 const ES_PAST: PackLesson = {
-  id: 'es-u2-l1',
-  unitId: 'es-u2-past',
+  id: 'spa-u2-l1',
+  unitId: 'spa-u2-past',
   title: 'Telling Stories: Preterite & Imperfect',
   summary: 'Choose between the two Spanish past tenses to set a scene and say what happened, and sort out por and para.',
   estimatedMinutes: 10,
   standards: [],
-  prerequisiteLessonIds: ['es-u1-l1'],
+  prerequisiteLessonIds: ['spa-u1-l1'],
   steps: [
     {
-      id: 'es-u2-l1-s1',
+      id: 'spa-u2-l1-s1',
       kind: 'narrative',
       title: 'Two Past Tenses',
       bodyMarkdown:
@@ -1282,7 +1282,7 @@ const ES_PAST: PackLesson = {
       },
     },
     {
-      id: 'es-u2-l1-s2',
+      id: 'spa-u2-l1-s2',
       kind: 'worked-example',
       title: 'An Interrupted Action',
       problemMarkdown: 'Translate: "While I was cooking, my friend arrived."',
@@ -1305,7 +1305,7 @@ const ES_PAST: PackLesson = {
       ],
     },
     {
-      id: 'es-u2-l1-s3',
+      id: 'spa-u2-l1-s3',
       kind: 'checkpoint',
       title: 'Pick the Tenses',
       question: {
@@ -1323,14 +1323,14 @@ const ES_PAST: PackLesson = {
       },
     },
     {
-      id: 'es-u2-l1-s4',
+      id: 'spa-u2-l1-s4',
       kind: 'narrative',
       title: 'Irregular Preterites, Por and Para',
       bodyMarkdown:
         'Some common verbs are irregular in the preterite. **Ir** (to go) and **ser** (to be) share one set of forms:\n\n- fui, fuiste, fue, fuimos, fuisteis, fueron\n\n*Ayer **fuimos** al cine.* (Yesterday we went to the cinema.) Context tells you which verb is meant.\n\n**Por** and **para** both often translate as "for".\n\n- **Para** looks forward to a goal: a recipient, a purpose, a destination or a deadline. *Este libro es **para** ti.* *Estudio **para** aprender.*\n- **Por** looks back at a cause or along a path: a reason, an exchange, a duration or movement through. *Gracias **por** tu ayuda.* *Pagué diez euros **por** el libro.* *Caminamos **por** el parque.*',
     },
     {
-      id: 'es-u2-l1-s5',
+      id: 'spa-u2-l1-s5',
       kind: 'checkpoint',
       title: 'Por or Para?',
       question: {
@@ -1348,7 +1348,7 @@ const ES_PAST: PackLesson = {
       },
     },
     {
-      id: 'es-u2-l1-s6',
+      id: 'spa-u2-l1-s6',
       kind: 'checkpoint',
       title: 'Preterite of Ir',
       question: {
@@ -1361,7 +1361,7 @@ const ES_PAST: PackLesson = {
       },
     },
     {
-      id: 'es-u2-l1-s7',
+      id: 'spa-u2-l1-s7',
       kind: 'synthesis',
       title: 'Talking About the Past',
       takeaways: [
@@ -1376,21 +1376,21 @@ const ES_PAST: PackLesson = {
   ],
   flashcardSeeds: [
     {
-      id: 'es-u2-l1-fc1',
+      id: 'spa-u2-l1-fc1',
       front: 'Which past tense describes habits and background?',
       back: 'The imperfect.',
       explanation: '"De niño, jugaba en el parque."',
       interleave: true,
     },
     {
-      id: 'es-u2-l1-fc2',
+      id: 'spa-u2-l1-fc2',
       front: 'What is the ellos preterite form of ir?',
       back: 'Fueron.',
       explanation: 'Ser has the same preterite forms.',
       interleave: true,
     },
     {
-      id: 'es-u2-l1-fc3',
+      id: 'spa-u2-l1-fc3',
       front: 'Por or para for the person who will receive something?',
       back: 'Para.',
       explanation: '"Este regalo es para mi abuela."',
@@ -1400,16 +1400,16 @@ const ES_PAST: PackLesson = {
 }
 
 const ES_SUBJUNCTIVE: PackLesson = {
-  id: 'es-u3-l1',
-  unitId: 'es-u3-subjunctive',
+  id: 'spa-u3-l1',
+  unitId: 'spa-u3-subjunctive',
   title: 'The Subjunctive: Wishes, Doubts & Conditions',
   summary: 'Learn when Spanish switches to the subjunctive, how to form it, and how to talk about what would happen if.',
   estimatedMinutes: 10,
   standards: [],
-  prerequisiteLessonIds: ['es-u2-l1'],
+  prerequisiteLessonIds: ['spa-u2-l1'],
   steps: [
     {
-      id: 'es-u3-l1-s1',
+      id: 'spa-u3-l1-s1',
       kind: 'narrative',
       title: 'A Mood, Not a Tense',
       bodyMarkdown:
@@ -1420,14 +1420,14 @@ const ES_SUBJUNCTIVE: PackLesson = {
       },
     },
     {
-      id: 'es-u3-l1-s2',
+      id: 'spa-u3-l1-s2',
       kind: 'narrative',
       title: 'Forming the Present Subjunctive',
       bodyMarkdown:
         '1. Start with the **yo** form of the present tense: *hablo, como, tengo*.\n2. Drop the **-o**.\n3. Add the "opposite" endings.\n\n- **-ar** verbs take **e**: hable, hables, hable, hablemos, habléis, hablen\n- **-er** and **-ir** verbs take **a**: coma, comas, coma, comamos, comáis, coman\n\nBecause the stem comes from the *yo* form, *tengo* gives **tenga** and *hago* gives **haga**.\n\nA few verbs are fully irregular and must be learned: **ser → sea**, **ir → vaya**, **saber → sepa**, **haber → haya**, **estar → esté**, **dar → dé**.',
     },
     {
-      id: 'es-u3-l1-s3',
+      id: 'spa-u3-l1-s3',
       kind: 'checkpoint',
       title: 'Form It',
       question: {
@@ -1440,7 +1440,7 @@ const ES_SUBJUNCTIVE: PackLesson = {
       },
     },
     {
-      id: 'es-u3-l1-s4',
+      id: 'spa-u3-l1-s4',
       kind: 'checkpoint',
       title: 'Indicative or Subjunctive?',
       question: {
@@ -1458,14 +1458,14 @@ const ES_SUBJUNCTIVE: PackLesson = {
       },
     },
     {
-      id: 'es-u3-l1-s5',
+      id: 'spa-u3-l1-s5',
       kind: 'narrative',
       title: 'Connectors and "If" Sentences',
       bodyMarkdown:
         'Some conjunctions **always** take the subjunctive, because the action they introduce has not happened:\n\n- *a menos que* (unless), *antes de que* (before), *para que* (so that), *sin que* (without), *con tal de que* (provided that), *en caso de que* (in case)\n\n*No salgo **a menos que haga** sol.* (I am not going out unless it is sunny.)\n\nTo talk about an unlikely or imaginary condition, use **si + imperfect subjunctive**, then the **conditional**:\n\n- *Si **tuviera** dinero, **viajaría** por el mundo.* (If I had money, I would travel the world.)\n\nFor a real possibility, use the present indicative after *si*, never the present subjunctive: *Si **tengo** tiempo, te llamo.*',
     },
     {
-      id: 'es-u3-l1-s6',
+      id: 'spa-u3-l1-s6',
       kind: 'checkpoint',
       title: 'Build the Hypothetical',
       question: {
@@ -1478,7 +1478,7 @@ const ES_SUBJUNCTIVE: PackLesson = {
       },
     },
     {
-      id: 'es-u3-l1-s7',
+      id: 'spa-u3-l1-s7',
       kind: 'synthesis',
       title: 'Beyond Plain Facts',
       takeaways: [
@@ -1493,21 +1493,21 @@ const ES_SUBJUNCTIVE: PackLesson = {
   ],
   flashcardSeeds: [
     {
-      id: 'es-u3-l1-fc1',
+      id: 'spa-u3-l1-fc1',
       front: 'What does WEIRDO stand for?',
       back: 'Wishes, Emotions, Impersonal expressions, Recommendations, Doubt, Ojalá.',
       explanation: 'The main triggers of the subjunctive.',
       interleave: true,
     },
     {
-      id: 'es-u3-l1-fc2',
+      id: 'spa-u3-l1-fc2',
       front: 'What is the present subjunctive yo form of saber?',
       back: 'Sepa.',
       explanation: 'It is irregular: "No creo que yo lo sepa."',
       interleave: true,
     },
     {
-      id: 'es-u3-l1-fc3',
+      id: 'spa-u3-l1-fc3',
       front: 'Which tenses form a hypothetical "if" sentence?',
       back: 'Si + imperfect subjunctive, then the conditional.',
       explanation: '"Si tuviera dinero, viajaría."',
@@ -1518,7 +1518,7 @@ const ES_SUBJUNCTIVE: PackLesson = {
 
 const ES_UNITS: TrackUnit[] = [
   {
-    id: 'es-u1-everyday',
+    id: 'spa-u1-everyday',
     title: 'Everyday Spanish',
     anchoringPhenomenon: 'English says "I am tired" and "I am a student" with one verb. Spanish needs two different ones.',
     capstoneQuizIndex: 0,
@@ -1526,7 +1526,7 @@ const ES_UNITS: TrackUnit[] = [
     lessons: [ES_BASICS],
   },
   {
-    id: 'es-u2-past',
+    id: 'spa-u2-past',
     title: 'Talking About the Past',
     anchoringPhenomenon: '"I ate" and "I used to eat" are different verb forms in Spanish, and a story needs both.',
     capstoneQuizIndex: 1,
@@ -1534,7 +1534,7 @@ const ES_UNITS: TrackUnit[] = [
     lessons: [ES_PAST],
   },
   {
-    id: 'es-u3-subjunctive',
+    id: 'spa-u3-subjunctive',
     title: 'The Subjunctive',
     anchoringPhenomenon: 'Change "I think he is coming" to "I doubt he is coming" and the Spanish verb changes form.',
     capstoneQuizIndex: 2,

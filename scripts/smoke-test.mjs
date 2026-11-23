@@ -1467,6 +1467,15 @@ async function main() {
     const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
     check(`track ${slug} serves ${lessonCount} lessons`, lessons.length === lessonCount, `got=${lessons.length}`)
   }
+  const allLessonIds = (tracksRes.data.tracks ?? []).flatMap((t) =>
+    (t.units ?? []).flatMap((u) => (u.lessons ?? []).map((l) => l.id)),
+  )
+  const repeatedLessonIds = [...new Set(allLessonIds.filter((id, i) => allLessonIds.indexOf(id) !== i))]
+  check(
+    'lesson ids are unique across all tracks',
+    allLessonIds.length > 0 && repeatedLessonIds.length === 0,
+    `repeated=${repeatedLessonIds.join(',')}`,
+  )
   const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
   const lessonRes = await api(`/lessons/${firstLessonId}`, { token: studentToken })
   check(
