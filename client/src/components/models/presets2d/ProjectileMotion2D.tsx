@@ -223,8 +223,9 @@ export const projectileMotion2dModel: Model2DDefinition = {
   build: (ctx, initial) => {
     const { quality } = ctx
     let t = 0
-    // The zoom is held while the aim handle is dragged; otherwise a zoom
-    // change would move an elevated launcher out from under the pointer.
+    // The zoom is held while an elevated launcher is aimed; otherwise a zoom
+    // change would move it out from under the pointer. A launcher on the
+    // ground sits at the same pixel at every zoom, so the plot can rescale.
     let dragSpan: number | undefined
     const view = (p: Params) => solve(p, dragSpan)
     let cur = view(initial)
@@ -298,7 +299,7 @@ export const projectileMotion2dModel: Model2DDefinition = {
           },
           onDrag: (px, py, p) => {
             const s = view(p)
-            dragSpan = s.span
+            dragSpan = s.h > 0 ? s.span : undefined
             const o = worldToPx(s, 0, s.h)
             const deg = (Math.atan2(o.y - py, px - o.x) * 180) / Math.PI
             const dist = Math.hypot(px - o.x, py - o.y)
