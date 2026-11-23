@@ -194,7 +194,7 @@ export const moonPhases3dModel: ModelDefinition = {
         evaluate: (_p, m) => ({
           passed: m.illum >= 98 && m.eclipsed === 0,
           feedback: m.eclipsed
-            ? `Day ${m.day.toFixed(1)}: the Moon is inside Earth’s shadow, so no direct sunlight reaches it.`
+            ? `Day ${m.day.toFixed(1)}: the Moon is passing through Earth’s shadow (a lunar eclipse).`
             : `Day ${m.day.toFixed(1)}: ${m.illum.toFixed(0)}% lit, outside Earth’s shadow.`,
         }),
       },
