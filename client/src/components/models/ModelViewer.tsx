@@ -288,8 +288,10 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
       elapsedRef.current = elapsed
       instance.update(paramsRef.current, dt, elapsed)
       // Off-screen the simulation keeps running so readouts and challenge
-      // checks next to the canvas stay current; only the draw is skipped.
-      if (onScreen) renderer.render(scene, camera)
+      // checks next to the canvas stay current; the scene, HUD plot and pins
+      // (all inside the host) are not drawn.
+      if (!onScreen) return
+      renderer.render(scene, camera)
 
       if (instance.hudPlot && hudCanvasRef.current) {
         const hudCanvas = hudCanvasRef.current
