@@ -561,7 +561,7 @@ const GC_U3_LESSONS: PackLesson[] = [
         kind: 'narrative',
         title: 'Reactions That Run Both Ways',
         bodyMarkdown:
-          'Many reactions are **reversible**: products can turn back into reactants. In a closed container such a reaction reaches **dynamic equilibrium**, where the forward and reverse reactions happen at the same rate and the amounts of each substance stop changing.\n\n**Le Chatelier’s principle** predicts what happens if you disturb an equilibrium: the system shifts in the direction that partly undoes the change. Add more of a reactant and it shifts toward products. Raise the pressure on a gas mixture and it shifts toward the side with fewer gas molecules.',
+          'Many reactions are **reversible**: products can turn back into reactants. In a closed container such a reaction reaches **dynamic equilibrium**, where the forward and reverse reactions happen at the same rate and the amounts of each substance stop changing.\n\n**Le Chatelier’s principle** predicts what happens if you disturb an equilibrium: the system shifts in the direction that partly undoes the change. Add more of a reactant and it shifts toward products. Compress a gas mixture into a smaller volume and it shifts toward the side with fewer gas molecules.',
         callout: {
           tone: 'pitfall',
           text: 'Equilibrium does not mean the reaction has stopped, and it does not mean equal amounts of reactants and products. It means equal rates.',
@@ -591,7 +591,7 @@ const GC_U3_LESSONS: PackLesson[] = [
         title: 'Raising the Pressure',
         question: {
           type: 'mcq',
-          prompt: 'In N₂ + 3H₂ ⇌ 2NH₃, all substances are gases. What happens when the pressure is increased?',
+          prompt: 'In N₂ + 3H₂ ⇌ 2NH₃, all substances are gases. What happens when the mixture is compressed into a smaller volume, raising the pressure?',
           options: [
             'The equilibrium shifts toward N₂ and H₂',
             'The equilibrium shifts toward NH₃, because 2 gas molecules take up less room than 4',
