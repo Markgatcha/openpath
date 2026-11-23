@@ -327,6 +327,42 @@ export const LAB_MODELS: LabModel[] = [
     renderer: '2d',
     Component: lazy(() => import('./presets2d/FsrsMemoryDecay2D')),
   },
+  {
+    id: 'projectile-motion-2d',
+    title: 'Projectile Motion: Range, Apex & Components',
+    subject: 'Physics',
+    icon: '🎯',
+    blurb:
+      'Aim a launcher on Earth, the Moon, Mars or Jupiter and see constant horizontal velocity and falling vertical velocity trace a parabola.',
+    packId: 'physics-foundations',
+    standards: 'AP Physics 1 Unit 1 (Kinematics)',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/ProjectileMotion2D')),
+  },
+  {
+    id: 'greenhouse-effect-2d',
+    title: 'Greenhouse Effect: Planetary Energy Balance',
+    subject: 'Environmental Science',
+    icon: '🌍',
+    blurb:
+      'Change how much infrared the atmosphere absorbs, the albedo and the Sun’s brightness, and watch the surface temperature move to a new energy balance.',
+    packId: 'environmental-science-climate',
+    standards: 'AP Env Sci 9.3 (The Greenhouse Effect) · HS-ESS2-4',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/GreenhouseEffect2D')),
+  },
+  {
+    id: 'diffusion-osmosis-2d',
+    title: 'Diffusion & Osmosis: Particles Across a Membrane',
+    subject: 'Chemistry',
+    icon: '💧',
+    blurb:
+      'Watch random particle motion even out a concentration difference, then block the solute and see water move until the raised level pushes back.',
+    packId: 'general-chemistry-core',
+    standards: 'AP Chem Unit 3 (Properties of Substances and Mixtures) · AP Bio Unit 2 (Cells)',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/DiffusionOsmosis2D')),
+  },
 ]
 
 export function findLabModel(id: string | undefined): LabModel | undefined {

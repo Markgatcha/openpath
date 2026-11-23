@@ -1010,7 +1010,7 @@ async function main() {
   console.log('\nContent packs flow:')
   const packs = await api('/packs', { token: teacherToken })
   const geometryPack = packs.data.packs?.find((pack) => pack.id === 'geometry-figures')
-  check('pack registry serves 22 curriculum packs', packs.data.packs?.length === 22, `got=${packs.data.packs?.length}`)
+  check('pack registry serves 26 curriculum packs', packs.data.packs?.length === 26, `got=${packs.data.packs?.length}`)
   check('pack registry includes geometry-figures with 3D model link', Boolean(geometryPack?.modelId))
   check(
     'geometry pack advertises three tiered quizzes',
@@ -1445,10 +1445,20 @@ async function main() {
   console.log('\nGuided Lessons & Co-op Race flow:')
   const tracksRes = await api('/tracks', { token: studentToken })
   check(
-    'tracks endpoint serves 16 curriculum tracks',
-    tracksRes.status === 200 && tracksRes.data.tracks?.length === 16,
+    'tracks endpoint serves 20 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 20,
     `got=${tracksRes.data.tracks?.length}`,
   )
+  for (const [slug, lessonCount] of [
+    ['physics-foundations', 7],
+    ['media-ai-literacy', 6],
+    ['general-chemistry-core', 6],
+    ['environmental-science-climate', 6],
+  ]) {
+    const track = tracksRes.data.tracks?.find((t) => t.slug === slug)
+    const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
+    check(`track ${slug} serves ${lessonCount} lessons`, lessons.length === lessonCount, `got=${lessons.length}`)
+  }
   const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
   const lessonRes = await api(`/lessons/${firstLessonId}`, { token: studentToken })
   check(
