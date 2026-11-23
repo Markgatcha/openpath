@@ -471,6 +471,8 @@ export function createOrbitPilotView(host: HTMLElement, profile: GraphicsProfile
     disposeObject(scene)
     glowTexture.dispose()
     renderer.dispose()
+    // Browsers cap live WebGL contexts; release this one now rather than at garbage collection.
+    renderer.forceContextLoss()
     renderer.domElement.remove()
   }
 
