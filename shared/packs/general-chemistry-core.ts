@@ -418,7 +418,7 @@ const GC_U2_LESSONS: PackLesson[] = [
           challengeId: 'diffusion-equalises',
         },
         observeInstruction:
-          'Leave the membrane on “Lets solute through” and watch the two concentration lines on the graph. Then raise the temperature and reset to see how the speed of mixing changes.',
+          'Leave the membrane on “Lets solute through” and watch the two concentration lines on the graph. Then raise the temperature and press “Restart run” to repeat the run and compare how quickly it mixes.',
         explainPrompt: 'Why does the net movement go from the crowded side to the empty side?',
         explainOptions: [
           'Particles are pushed away by the other particles around them',
