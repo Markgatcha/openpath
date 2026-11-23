@@ -335,7 +335,7 @@ export const LAB_MODELS: LabModel[] = [
     blurb:
       'Aim a launcher on Earth, the Moon, Mars or Jupiter and see constant horizontal velocity and falling vertical velocity trace a parabola.',
     packId: 'physics-foundations',
-    standards: 'AP Physics 1 Unit 1 · NGSS HS-PS2-1 · IGCSE Physics 1.2',
+    standards: 'AP Physics 1 Unit 1 (Kinematics)',
     renderer: '2d',
     Component: lazy(() => import('./presets2d/ProjectileMotion2D')),
   },
