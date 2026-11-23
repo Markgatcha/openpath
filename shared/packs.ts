@@ -4,6 +4,8 @@ import { TIER1_STEM_PACKS } from './packs/tier1-math-science'
 import { TECH_BUSINESS_PACKS } from './packs/tech-business'
 import { HUMANITIES_PACKS } from './packs/humanities'
 import { TIER1_APPLIED_PACKS } from './packs/tier1-tech-humanities'
+import { PHYSICS_FOUNDATIONS_PACK } from './packs/physics-foundations'
+import { MEDIA_AI_LITERACY_PACK } from './packs/media-ai-literacy'
 import type { ContentPack, PackQuiz, SubjectGroup } from './packs/types'
 
 export type { ContentPack, PackQuiz, SubjectGroup }
@@ -29,6 +31,8 @@ export const CONTENT_PACKS: ContentPack[] = [
   ...TECH_BUSINESS_PACKS,
   ...HUMANITIES_PACKS,
   ...TIER1_APPLIED_PACKS,
+  PHYSICS_FOUNDATIONS_PACK,
+  MEDIA_AI_LITERACY_PACK,
 ]
 
 export function findPack(id: string): ContentPack | undefined {
