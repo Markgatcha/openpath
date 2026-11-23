@@ -63,7 +63,7 @@ const STAT_AVERAGES: PackLesson = {
       kind: 'narrative',
       title: 'Measuring Spread',
       bodyMarkdown:
-        'Two classes can have the same mean score and still be very different: in one, everyone scores close to the mean; in the other, scores are scattered. **Spread** measures this.\n\n- **Range** = largest value − smallest value. It is quick, but one outlier changes it completely.\n- **Quartiles** cut the ordered data into four equal parts. The **lower quartile (Q1)** is the median of the lower half, and the **upper quartile (Q3)** is the median of the upper half.\n- **Interquartile range (IQR)** = Q3 − Q1. It is the spread of the middle half of the data, so outliers do not affect it.\n\nA **box plot** draws the minimum, Q1, the median, Q3 and the maximum on one scale.',
+        'Two classes can have the same mean score and still be very different: in one, everyone scores close to the mean; in the other, scores are scattered. **Spread** measures this.\n\n- **Range** = largest value − smallest value. It is quick, but one outlier changes it completely.\n- **Quartiles** cut the ordered data into four equal parts. The **lower quartile (Q1)** is the median of the lower half, and the **upper quartile (Q3)** is the median of the upper half.\n- **Interquartile range (IQR)** = Q3 − Q1. It is the spread of the middle half of the data, so a single extreme value changes it far less than it changes the range.\n\nA **box plot** draws the minimum, Q1, the median, Q3 and the maximum on one scale.',
       callout: {
         tone: 'key-idea',
         text: 'For skewed data or data with outliers, report the median and the IQR. For roughly symmetrical data, the mean is fine.',
@@ -118,14 +118,14 @@ const STAT_AVERAGES: PackLesson = {
       id: 'stat-u0-l1-fc1',
       front: 'How do you find the median of a data set?',
       back: 'Put the values in order and take the middle one (or the mean of the middle two).',
-      explanation: 'It is not affected by outliers.',
+      explanation: 'An extreme value barely moves it, unlike the mean.',
       interleave: true,
     },
     {
       id: 'stat-u0-l1-fc2',
       front: 'What is the interquartile range?',
       back: 'Q3 − Q1: the spread of the middle half of the data.',
-      explanation: 'Unlike the range, it ignores extreme values.',
+      explanation: 'A single extreme value changes it far less than it changes the range.',
       interleave: true,
     },
     {
