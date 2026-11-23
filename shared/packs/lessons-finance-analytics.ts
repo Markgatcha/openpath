@@ -399,3 +399,237 @@ export const CORPORATE_FINANCE_TRACK: CurriculumTrack = {
   srsInterleaveDefault: true,
   units: CF_UNITS,
 }
+
+const DA_TRENDS: PackLesson = {
+  id: 'da-u1-l1',
+  unitId: 'da-u1-exploring-data',
+  title: 'Trendlines, Residuals & Correlation',
+  summary: 'Fit a straight line to data, measure how far each point misses it, and read the strength of a relationship from r.',
+  estimatedMinutes: 9,
+  standards: [],
+  prerequisiteLessonIds: [],
+  steps: [
+    {
+      id: 'da-u1-l1-s1',
+      kind: 'narrative',
+      title: 'A Line Through the Data',
+      bodyMarkdown:
+        'A **trendline** summarises how one quantity changes with another: ŷ = a + b·x.\n\n- **b** is the **slope**: how much the prediction changes when x goes up by 1.\n- **a** is the **intercept**: the prediction when x = 0.\n- **ŷ** ("y-hat") is the value the line predicts.\n\nNo line passes through every point. The gap between what actually happened and what the line predicted is the **residual**: residual = y − ŷ. Ordinary least squares picks the line that makes the sum of the squared residuals as small as possible.',
+      callout: {
+        tone: 'key-idea',
+        text: 'A positive residual means the real value was above the line. A negative residual means it was below.',
+      },
+    },
+    {
+      id: 'da-u1-l1-s2',
+      kind: 'worked-example',
+      title: 'A Line From Two Points',
+      problemMarkdown: 'A trendline passes through **(2, 9)** and **(6, 17)**. Find its slope and intercept.',
+      steps: [
+        {
+          label: 'Slope',
+          expressionOrAction: '(17 − 9) ÷ (6 − 2) = 8 ÷ 4 = 2',
+          whyNote: 'Slope is the change in y divided by the change in x.',
+        },
+        {
+          label: 'Intercept',
+          expressionOrAction: '9 = a + 2 × 2, so a = 5',
+          whyNote: 'Put either point into ŷ = a + b·x and solve for a.',
+        },
+        {
+          label: 'Write the line',
+          expressionOrAction: 'ŷ = 5 + 2x',
+          whyNote: 'Check with the other point: 5 + 2 × 6 = 17.',
+        },
+      ],
+    },
+    {
+      id: 'da-u1-l1-s3',
+      kind: 'narrative',
+      title: 'How Strong Is the Relationship?',
+      bodyMarkdown:
+        'The **correlation coefficient r** runs from −1 to +1.\n\n- The **sign** gives the direction: positive means the two rise together, negative means one falls as the other rises.\n- The **size**, ignoring the sign, gives the strength. r = −0.9 is a stronger linear relationship than r = +0.6.\n- r near 0 means no straight-line relationship.\n\nA strong correlation does not show that one thing causes the other. Both may be driven by something else.\n\nTo judge whether a single value is unusual, use a **z-score**: z = (value − mean) ÷ standard deviation. It counts how many standard deviations the value lies from the mean.',
+    },
+    {
+      id: 'da-u1-l1-s4',
+      kind: 'checkpoint',
+      title: 'Find the Residual',
+      question: {
+        type: 'fill',
+        prompt: 'A model predicts 30 sales. The shop actually makes 26. What is the residual (actual minus predicted)?',
+        correct: '-4',
+        alternatives: ['−4', 'minus 4', 'negative 4'],
+        explanation: '26 − 30 = −4. The real value fell below the line.',
+        points: 15,
+      },
+    },
+    {
+      id: 'da-u1-l1-s5',
+      kind: 'checkpoint',
+      title: 'Compare Correlations',
+      question: {
+        type: 'mcq',
+        prompt: 'Which correlation coefficient shows the strongest linear relationship?',
+        options: ['r = −0.85', 'r = +0.70', 'r = +0.10', 'r = −0.40'],
+        correct: 0,
+        explanation: 'Strength is the size of r without its sign. 0.85 is the largest.',
+        points: 10,
+      },
+    },
+    {
+      id: 'da-u1-l1-s6',
+      kind: 'synthesis',
+      title: 'Reading a Trend',
+      takeaways: [
+        'A trendline is ŷ = a + b·x, with slope b and intercept a.',
+        'Residual = actual − predicted.',
+        'The size of r gives strength and its sign gives direction; correlation is not causation.',
+      ],
+      nextQuizIndex: 0,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'da-u1-l1-fc1',
+      front: 'What is a residual?',
+      back: 'The actual value minus the value the model predicted.',
+      explanation: 'residual = y − ŷ.',
+      interleave: true,
+    },
+    {
+      id: 'da-u1-l1-fc2',
+      front: 'What does the sign of r tell you, and what does its size tell you?',
+      back: 'The sign gives the direction of the relationship; the size gives its strength.',
+      explanation: 'r = −0.9 is stronger than r = +0.6.',
+      interleave: true,
+    },
+    {
+      id: 'da-u1-l1-fc3',
+      front: 'How do you calculate a z-score?',
+      back: '(value − mean) ÷ standard deviation.',
+      explanation: 'It measures distance from the mean in standard deviations.',
+      interleave: true,
+    },
+  ],
+}
+
+const DA_CLASSIFY: PackLesson = {
+  id: 'da-u2-l1',
+  unitId: 'da-u2-classification-joins',
+  title: 'Judging a Classifier & Joining Tables',
+  summary: 'Score a yes/no model with precision and recall, and combine tables in SQL without losing rows by accident.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: ['da-u1-l1'],
+  steps: [
+    {
+      id: 'da-u2-l1-s1',
+      kind: 'narrative',
+      title: 'Four Kinds of Outcome',
+      bodyMarkdown:
+        'A classifier that answers yes or no can be right or wrong in two ways each.\n\n- **True positive (TP):** the model says yes and the answer really is yes.
+- **False positive (FP):** the model says yes but the answer is no. A false alarm.
+- **False negative (FN):** the model says no but the answer is yes. A miss.
+- **True negative (TN):** the model says no and the answer really is no.
+
+Two scores come from these counts:\n\n- **Precision** = TP ÷ (TP + FP). Of everything the model flagged, how much was right?\n- **Recall** = TP ÷ (TP + FN). Of everything that should have been flagged, how much did it find?\n\nAccuracy alone can mislead. If 1% of transactions are fraud, a model that never flags anything is 99% accurate and useless.',
+      callout: {
+        tone: 'key-idea',
+        text: 'Precision is about the flags the model raised. Recall is about the cases that were really there.',
+      },
+    },
+    {
+      id: 'da-u2-l1-s2',
+      kind: 'worked-example',
+      title: 'Scoring a Spam Filter',
+      problemMarkdown:
+        'A filter marks **50** emails as spam. **40** really are spam. Another **10** spam emails slip through to the inbox. Find precision and recall.',
+      steps: [
+        {
+          label: 'Count the outcomes',
+          expressionOrAction: 'TP = 40, FP = 50 − 40 = 10, FN = 10',
+          whyNote: 'Flagged and right, flagged and wrong, missed.',
+        },
+        {
+          label: 'Precision',
+          expressionOrAction: '40 ÷ (40 + 10) = 0.80',
+          whyNote: '80% of the emails it flagged were truly spam.',
+        },
+        {
+          label: 'Recall',
+          expressionOrAction: '40 ÷ (40 + 10) = 0.80',
+          whyNote: 'It caught 80% of all the spam. The two scores match here only because FP and FN happen to be equal.',
+        },
+      ],
+    },
+    {
+      id: 'da-u2-l1-s3',
+      kind: 'narrative',
+      title: 'Combining Tables in SQL',
+      bodyMarkdown:
+        'A **join** matches rows from two tables on a shared column.\n\n- **INNER JOIN** keeps only rows that have a match in both tables.\n- **LEFT JOIN** keeps every row of the left table. Where the right table has no match, its columns are filled with NULL.\n\nSQL also filters at two different moments. **WHERE** removes individual rows before they are grouped. **HAVING** removes whole groups after `GROUP BY` has calculated totals or averages.\n\nFinally, when training a model, split the data into training and test sets **before** any step that learns from the data, such as scaling. Otherwise information from the test set leaks into training and the score looks better than it really is.',
+    },
+    {
+      id: 'da-u2-l1-s4',
+      kind: 'checkpoint',
+      title: 'Calculate Recall',
+      question: {
+        type: 'fill',
+        prompt: 'A screening test correctly detects 30 cases and misses 10. What is its recall, as a percentage?',
+        correct: '75',
+        alternatives: ['75%', '75 %', '75 percent'],
+        explanation: '30 ÷ (30 + 10) = 0.75, or 75%.',
+        points: 15,
+      },
+    },
+    {
+      id: 'da-u2-l1-s5',
+      kind: 'checkpoint',
+      title: 'Pick the Join',
+      question: {
+        type: 'mcq',
+        prompt: 'You want a list of every customer, including those who have never placed an order. Customers is the left table. Which join do you use?',
+        options: ['LEFT JOIN', 'INNER JOIN', 'No join; use HAVING', 'No join; use WHERE'],
+        correct: 0,
+        explanation: 'A LEFT JOIN keeps all customers and shows NULL for the order columns of those without orders. An INNER JOIN would drop them.',
+        points: 10,
+      },
+    },
+    {
+      id: 'da-u2-l1-s6',
+      kind: 'synthesis',
+      title: 'Measuring and Merging',
+      takeaways: [
+        'Precision = TP ÷ (TP + FP); recall = TP ÷ (TP + FN).',
+        'LEFT JOIN keeps all left-table rows; INNER JOIN keeps only matches.',
+        'WHERE filters rows before grouping; HAVING filters groups after.',
+      ],
+      nextQuizIndex: 1,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'da-u2-l1-fc1',
+      front: 'What is precision?',
+      back: 'TP ÷ (TP + FP): the share of flagged items that were truly positive.',
+      explanation: 'Low precision means many false alarms.',
+      interleave: true,
+    },
+    {
+      id: 'da-u2-l1-fc2',
+      front: 'What is recall?',
+      back: 'TP ÷ (TP + FN): the share of real positives that the model found.',
+      explanation: 'Low recall means many misses.',
+      interleave: true,
+    },
+    {
+      id: 'da-u2-l1-fc3',
+      front: 'What is the difference between WHERE and HAVING in SQL?',
+      back: 'WHERE filters rows before grouping; HAVING filters groups after aggregation.',
+      explanation: 'Use HAVING for conditions on totals or averages.',
+      interleave: true,
+    },
+  ],
+}
