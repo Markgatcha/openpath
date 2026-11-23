@@ -11,6 +11,7 @@ import { GENERAL_CHEMISTRY_CORE_PACK } from './packs/general-chemistry-core'
 import { ANATOMY_PHYSIOLOGY_PACK } from './packs/anatomy-physiology'
 import { HUMAN_GEOGRAPHY_PACK } from './packs/human-geography'
 import { MIDDLE_SCHOOL_SCIENCE_PACK } from './packs/middle-school-science'
+import { GERMAN_STARTER_PACK } from './packs/german-starter'
 import { FRENCH_STARTER_PACK } from './packs/french-starter'
 import type { ContentPack, PackQuiz, SubjectGroup } from './packs/types'
 
@@ -45,6 +46,7 @@ export const CONTENT_PACKS: ContentPack[] = [
   HUMAN_GEOGRAPHY_PACK,
   MIDDLE_SCHOOL_SCIENCE_PACK,
   FRENCH_STARTER_PACK,
+  GERMAN_STARTER_PACK,
 ]
 
 export function findPack(id: string): ContentPack | undefined {

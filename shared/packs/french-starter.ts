@@ -290,7 +290,7 @@ const FR_CAFE: PackLesson = {
       kind: 'narrative',
       title: 'Getting By',
       bodyMarkdown:
-        'A few sentences rescue most conversations.\n\n- *Où sont les toilettes ?* — Where are the toilets?\n- *Parlez-vous anglais ?* — Do you speak English?\n- *Je ne comprends pas.* — I do not understand.\n- *Je ne sais pas.* — I do not know.\n\nTo make a sentence negative, wrap the verb in **ne … pas**: *Je comprends* (I understand) becomes *Je **ne** comprends **pas***.',
+        'A few sentences rescue most conversations.\n\n- *Où sont les toilettes ?* — Where are the toilets?\n- *Parlez-vous anglais ?* — Do you speak English?\n- *Je ne comprends pas.* — I do not understand.\n- *Je ne sais pas.* — I do not know.\n\nTo make a sentence negative, wrap the verb in **ne … pas**: *Je comprends* (I understand) becomes **Je ne comprends pas**.',
     },
     {
       id: 'fr-u3-l1-s5',
