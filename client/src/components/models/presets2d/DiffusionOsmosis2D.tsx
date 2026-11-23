@@ -36,7 +36,11 @@ const FLOW_RATE = 0.16
 const HISTORY_SPAN_S = 40
 const HISTORY_STEP_S = 0.25
 const STEP_S = 0.5
-/** Particles move in sub-steps of this fixed length, so a run traces the same paths at every temperature and frame rate. */
+/**
+ * Particles move in sub-steps of this fixed length. While the liquid levels are equal, as they always are in
+ * diffusion mode, a run traces the same paths at every temperature and frame rate. In osmosis mode the levels
+ * move once per frame, so paths vary slightly with frame rate; no reading depends on them there.
+ */
 const TRAVEL_STEP_S = 1 / 120
 const SEED = 11
 const MAX_FRAMES = 120
