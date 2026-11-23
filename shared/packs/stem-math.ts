@@ -1,5 +1,6 @@
 import type { ContentPack } from './types'
 import type { CurriculumTrack } from '../lessons'
+import { STAT_DATA_QUIZ, STAT_DATA_UNIT } from './lessons-statistics-data'
 
 const ALG_TRACK: CurriculumTrack = {
   id: 'track-algebra-linear-systems',
@@ -1342,12 +1343,13 @@ const STAT_TRACK: CurriculumTrack = {
   prerequisiteTrackIds: ['track-quantitative-foundations'],
   srsInterleaveDefault: true,
   units: [
+    STAT_DATA_UNIT,
     {
       id: 'stat-u1',
       title: 'Sampling Distributions, Normal Tails & Bayesian Inference',
       anchoringPhenomenon:
         'Even when individual dice or skewed wait-times look jagged, averaging dozens of observations converges onto a smooth bell curve whose width shrinks by 1/√n.',
-      capstoneQuizIndex: 2,
+      capstoneQuizIndex: 3,
       masteryGate: {
         policy: 'soft-recommended',
         minLessonCompletion: true,
@@ -1442,7 +1444,7 @@ const STAT_TRACK: CurriculumTrack = {
                 'Sample mean SD shrinks as σ/√n (4× n -> ½ error; 9× n -> ⅓ error).',
                 'Variances ALWAYS add for independent X + Y or X − Y: SD(X − Y) = sqrt(SD(X)² + SD(Y)²).',
               ],
-              nextQuizIndex: 1,
+              nextQuizIndex: 2,
               arcadeLaunch: { mode: 'certainty-vault', packId: 'probability-statistics' },
               flashcardEnroll: { autoEnroll: true, interleave: true },
             },
@@ -1575,7 +1577,7 @@ const STAT_TRACK: CurriculumTrack = {
                 'z = (x − μ)/σ counts signed standard deviations above/below mean.',
                 'p-value = P(data ≥ extreme | H₀ true)—never the probability that H₀ is true.',
               ],
-              nextQuizIndex: 0,
+              nextQuizIndex: 1,
               arcadeLaunch: { mode: 'cloze-workbench', packId: 'probability-statistics' },
               flashcardEnroll: { autoEnroll: true, interleave: true },
             },
@@ -1721,7 +1723,7 @@ const STAT_TRACK: CurriculumTrack = {
                 'Always build a 1,000-person natural-frequency table (TP, FN, FP, TN) to defeat base-rate neglect.',
                 'Posterior P(H | E) depends critically on both likelihood ratio AND prior base rate P(H).',
               ],
-              nextQuizIndex: 2,
+              nextQuizIndex: 3,
               arcadeLaunch: { mode: 'boss-raid', packId: 'probability-statistics' },
               flashcardEnroll: { autoEnroll: true, interleave: true },
             },
@@ -2341,6 +2343,7 @@ export const STEM_MATH_PACKS: ContentPack[] = [
     track: STAT_TRACK,
     units: STAT_TRACK.units,
     quizzes: [
+      STAT_DATA_QUIZ,
       {
         title: 'Z-Scores & Empirical Rule',
         description: 'Standardize observations and interpret normal bell curves.',

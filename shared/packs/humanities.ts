@@ -1,4 +1,14 @@
 import type { ContentPack } from './types'
+import {
+  ENGLISH_RHETORIC_TRACK,
+  ENGLISH_RHETORIC_UNITS,
+  SPANISH_TRACK,
+  SPANISH_UNITS,
+  US_CIVICS_TRACK,
+  US_CIVICS_UNITS,
+  WORLD_HISTORY_TRACK,
+  WORLD_HISTORY_UNITS,
+} from './lessons-humanities'
 
 export const HUMANITIES_PACKS: ContentPack[] = [
   // 13. WORLD HISTORY
@@ -15,6 +25,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: WORLD_HISTORY_TRACK,
+    units: WORLD_HISTORY_UNITS,
     quizzes: [
       {
         title: 'Trade Networks & Classical Foundations',
@@ -189,6 +201,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: US_CIVICS_TRACK,
+    units: US_CIVICS_UNITS,
     quizzes: [
       {
         title: 'Branches, Checks & Federalism',
@@ -358,6 +372,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: ENGLISH_RHETORIC_TRACK,
+    units: ENGLISH_RHETORIC_UNITS,
     quizzes: [
       {
         title: 'Rhetorical Situation & Appeals',
@@ -507,6 +523,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: false,
     gradeBand: 'HS',
+    track: SPANISH_TRACK,
+    units: SPANISH_UNITS,
     quizzes: [
       {
         title: 'Greetings, Ser vs. Estar & Present Tense',

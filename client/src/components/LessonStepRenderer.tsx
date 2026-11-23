@@ -110,6 +110,12 @@ const ARCADE_META: Record<
     emoji: '🏰',
     description: 'Strategic tower defense powered by mastery',
   },
+  'orbit-pilot': {
+    route: '/student/arcade/orbit-pilot',
+    label: 'Orbit Pilot',
+    emoji: '🛰️',
+    description: 'Fly a probe to a target orbit on limited fuel',
+  },
 }
 
 export interface LessonStepResultMeta {

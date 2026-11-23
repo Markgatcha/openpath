@@ -210,6 +210,7 @@ export function arcadeCoinsForRun(run: ArcadeRunTally): number {
       raw = run.correct * 2 + bursts * 2 + (run.bestCombo >= 4 ? 3 : 0)
       break
     case 'sim-sandbox':
+    case 'orbit-pilot':
       raw = run.correct * 3 + bursts * 2 + (run.bestCombo >= 3 ? 3 : 0)
       break
     case 'sequence-architect':

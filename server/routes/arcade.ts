@@ -26,6 +26,7 @@ const MODE_REASON: Record<ArcadeMode, string> = {
   'diagram-scout': 'Arcade: Diagram Scout',
   'cloze-workbench': 'Arcade: Cloze Workbench',
   'knowledge-bastion': 'Arcade: Knowledge Bastion',
+  'orbit-pilot': 'Arcade: Orbit Pilot',
 }
 
 function resolveCurrency(studentId: string): { currencyName: string; currencyIcon: string } {

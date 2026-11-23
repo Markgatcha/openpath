@@ -14,6 +14,7 @@ import {
   GitCommitHorizontal,
   Grid2x2,
   Play,
+  Rocket,
   Scale,
   Shield,
   Sliders,
@@ -114,6 +115,20 @@ const ARCADE_GAMES: ArcadeGameCardDef[] = [
     icon: Castle,
     emoji: '🏰',
     accent: 'from-indigo-500/20 to-rose-500/10',
+  },
+  {
+    mode: 'orbit-pilot',
+    route: '/student/arcade/orbit-pilot',
+    title: 'Orbit Pilot',
+    tagline: '3D Orbital Mechanics Flight Missions',
+    description:
+      'Fly a probe around a planet in 3D. Fire the engine with or against your direction of travel to raise, lower and circularise your orbit, and reach the target band before the fuel runs out.',
+    difficulty: 'Precision',
+    pacing: 'Timed',
+    badgeColor: 'brand',
+    icon: Rocket,
+    emoji: '🛰️',
+    accent: 'from-sky-500/20 to-violet-500/10',
   },
   {
     mode: 'streak-siege',
@@ -255,7 +270,7 @@ export function ArcadeHub() {
             <Gamepad2 className="text-brand-500" /> Educational Arcade
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-            Ten replayable STEM, CS, Economics & Humanities games powered by your FSRS
+            Eleven replayable STEM, CS, Economics & Humanities games powered by your FSRS
             spaced-repetition queue and classroom economy.
           </p>
         </div>
@@ -407,9 +422,15 @@ export function ArcadeHub() {
           <div className="flex items-center gap-1.5">
             {(
               [
-                { id: 'all', label: 'All (10)' },
-                { id: 'untimed', label: 'Untimed / Strategic (7)' },
-                { id: 'timed', label: 'Timed (3)' },
+                { id: 'all', label: `All (${ARCADE_GAMES.length})` },
+                {
+                  id: 'untimed',
+                  label: `Untimed / Strategic (${ARCADE_GAMES.filter((g) => g.pacing === 'Untimed / Strategic').length})`,
+                },
+                {
+                  id: 'timed',
+                  label: `Timed (${ARCADE_GAMES.filter((g) => g.pacing === 'Timed').length})`,
+                },
               ] as const
             ).map((opt) => (
               <button

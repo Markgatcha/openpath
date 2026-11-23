@@ -1,5 +1,11 @@
 import type { TrackUnit } from '../lessons'
 import type { ContentPack } from './types'
+import {
+  CORPORATE_FINANCE_TRACK,
+  CORPORATE_FINANCE_UNITS,
+  DATA_ANALYTICS_TRACK,
+  DATA_ANALYTICS_UNITS,
+} from './lessons-finance-analytics'
 
 const ALGO_STARTER_UNITS: TrackUnit[] = [
   {
@@ -1308,6 +1314,8 @@ export const TECH_BUSINESS_PACKS: ContentPack[] = [
     srsInterleave: true,
     gradeBand: 'College-Intro',
     prerequisitePackIds: ['personal-finance-literacy'],
+    track: CORPORATE_FINANCE_TRACK,
+    units: CORPORATE_FINANCE_UNITS,
     quizzes: [
       {
         title: 'Time Value of Money & Discounting',
@@ -1467,6 +1475,8 @@ export const TECH_BUSINESS_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'College-Intro',
+    track: DATA_ANALYTICS_TRACK,
+    units: DATA_ANALYTICS_UNITS,
     quizzes: [
       {
         title: 'Exploratory Analytics & Linear Trendlines',
