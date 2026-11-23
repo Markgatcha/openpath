@@ -60,6 +60,12 @@ const MSS_U1_LESSONS: PackLesson[] = [
         id: 'mss-u1-l1-s4',
         kind: 'narrative',
         title: 'Why Smells Spread',
+        visual: {
+          kind: 'model-2d',
+          modelId: 'diffusion-osmosis-2d',
+          initialParams: { membrane: 0, soluteLeft: 36, soluteRight: 0, tempK: 300 },
+          highlightHotspots: ['solute'],
+        },
         bodyMarkdown:
           'Open a bottle of perfume and soon the whole room smells of it. Nobody stirred the air. The perfume particles move randomly, bump into air particles and gradually spread from where there are many to where there are few. This is **diffusion**.\n\nDiffusion is faster when it is warmer, because the particles move faster. You can see this in the diffusion model that goes with this lesson: the particles start on the left and spread across. Raise the temperature, press “Restart run” and watch them spread faster.',
       },
