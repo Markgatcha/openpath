@@ -722,6 +722,147 @@ const MSS_U3_LESSONS: PackLesson[] = [
       },
     ],
   },
+  {
+    id: 'mss-u3-l3',
+    unitId: 'mss-u3-earth-space',
+    title: 'The Moon’s Phases',
+    summary: 'Explain why the Moon seems to change shape over a month, and why that has nothing to do with Earth’s shadow.',
+    estimatedMinutes: 8,
+    standards: [],
+    prerequisiteLessonIds: ['mss-u3-l1'],
+    visual: {
+      kind: 'model-3d',
+      modelId: 'moon-phases-3d',
+      initialParams: { moonDay: 3, orbitRate: 1.5, orbitTilt: 1, showRays: 1 },
+    },
+    steps: [
+      {
+        id: 'mss-u3-l3-s1',
+        kind: 'narrative',
+        title: 'Half Lit, All the Time',
+        visual: {
+          kind: 'model-3d',
+          modelId: 'moon-phases-3d',
+          initialParams: { moonDay: 3, orbitRate: 1.5, orbitTilt: 1, showRays: 1 },
+        },
+        bodyMarkdown:
+          'The Moon makes no light of its own. We see it because it reflects sunlight.\n\nThe Sun always lights **half** of the Moon: the half facing the Sun. The other half is in darkness, just like the night side of Earth.\n\nThe Moon orbits Earth about once a month. As it goes round, we look at it from a different direction, so we see a different amount of its sunlit half. That changing view is what we call the **phases** of the Moon.\n\nIn the model, drag the view around. The bright half of the Moon always faces the sunlight arrows.',
+      },
+      {
+        id: 'mss-u3-l3-s2',
+        kind: 'checkpoint',
+        title: 'How Much Is Lit?',
+        question: {
+          type: 'mcq',
+          prompt: 'During a thin crescent Moon, how much of the whole Moon is lit by the Sun?',
+          options: [
+            'Only a thin sliver',
+            'About a quarter',
+            'Half, as always',
+            'None of it',
+          ],
+          correct: 2,
+          explanation: 'Half of the Moon is always in sunlight. During a crescent we are simply looking mostly at its night side.',
+          points: 10,
+        },
+      },
+      {
+        id: 'mss-u3-l3-s3',
+        kind: 'narrative',
+        title: 'From New to Full and Back',
+        visual: {
+          kind: 'model-3d',
+          modelId: 'moon-phases-3d',
+          initialParams: { moonDay: 0, orbitRate: 1.5, orbitTilt: 1, showRays: 1 },
+        },
+        bodyMarkdown:
+          'One full cycle of phases takes about **29.5 days**.\n\n- **New Moon:** the Moon is between Earth and the Sun. Its lit side faces away from us, so we cannot see it.\n- **Waxing crescent, first quarter, waxing gibbous:** each night we see more of the lit half. "Waxing" means growing.\n- **Full Moon:** Earth is between the Sun and the Moon, and we see the whole lit half.\n- **Waning gibbous, last quarter, waning crescent:** each night we see less. "Waning" means shrinking.\n\nA "quarter" Moon looks like a half circle. It is called a quarter because the Moon is a quarter of the way round its orbit.',
+      },
+      {
+        id: 'mss-u3-l3-s4',
+        kind: 'checkpoint',
+        title: 'Where Is the Moon?',
+        question: {
+          type: 'mcq',
+          prompt: 'Where is the Moon at full Moon?',
+          options: [
+            'Between Earth and the Sun',
+            'On the far side of Earth from the Sun',
+            'Inside Earth’s shadow',
+            'Next to the Sun in the sky',
+          ],
+          correct: 1,
+          explanation: 'From Earth we then look straight at the Moon’s sunlit half. It usually passes just above or below Earth’s shadow.',
+          points: 10,
+        },
+      },
+      {
+        id: 'mss-u3-l3-s5',
+        kind: 'narrative',
+        title: 'It Is Not Earth’s Shadow',
+        visual: {
+          kind: 'model-3d',
+          modelId: 'moon-phases-3d',
+          initialParams: { moonDay: 14.8, orbitRate: 0, orbitTilt: 1, showRays: 1 },
+        },
+        bodyMarkdown:
+          'Many people think the dark part of the Moon is Earth’s shadow. It is not. Earth’s shadow points away from the Sun, so it can only reach the Moon at full Moon, when the Moon is behind Earth.\n\nWhen the Moon does pass through Earth’s shadow, we get a **lunar eclipse**, and the Moon turns a dim red. This does not happen every month, because the Moon’s orbit is tilted by about 5°. Most months the Moon passes above or below the shadow.\n\nIn the model, switch off the orbit tilt and move to the full Moon to see what would happen every month if the orbit were not tilted.',
+      },
+      {
+        id: 'mss-u3-l3-s6',
+        kind: 'checkpoint',
+        title: 'Phase or Eclipse?',
+        question: {
+          type: 'mcq',
+          prompt: 'Why is there not a lunar eclipse at every full Moon?',
+          options: [
+            'Earth’s shadow is too short to reach the Moon',
+            'The Moon’s orbit is tilted, so it usually misses Earth’s shadow',
+            'The Moon only orbits Earth a few times a year',
+            'The Sun is too bright',
+          ],
+          correct: 1,
+          explanation: 'The Moon passes through the shadow only when a full Moon falls near where its tilted orbit crosses Earth’s orbital plane.',
+          points: 10,
+        },
+      },
+      {
+        id: 'mss-u3-l3-s7',
+        kind: 'synthesis',
+        title: 'Phases Are a Point of View',
+        takeaways: [
+          'The Sun always lights half of the Moon.',
+          'Phases come from how much of that lit half faces Earth as the Moon orbits, about every 29.5 days.',
+          'Earth’s shadow causes lunar eclipses, not phases, and the Moon’s tilted orbit makes eclipses rare.',
+        ],
+        nextQuizIndex: 2,
+        flashcardEnroll: { autoEnroll: true, interleave: true },
+      },
+    ],
+    flashcardSeeds: [
+      {
+        id: 'mss-u3-l3-fc1',
+        front: 'What causes the phases of the Moon?',
+        back: 'We see different amounts of the Moon’s sunlit half as it orbits Earth.',
+        explanation: 'Not Earth’s shadow.',
+        interleave: true,
+      },
+      {
+        id: 'mss-u3-l3-fc2',
+        front: 'About how long is one full cycle of Moon phases?',
+        back: 'About 29.5 days.',
+        explanation: 'From one new Moon to the next.',
+        interleave: true,
+      },
+      {
+        id: 'mss-u3-l3-fc3',
+        front: 'What is a lunar eclipse?',
+        back: 'The Moon passing through Earth’s shadow, which can only happen at full Moon.',
+        explanation: 'It is rare because the Moon’s orbit is tilted about 5°.',
+        interleave: true,
+      },
+    ],
+  },
 ]
 
 const MSS_UNITS: TrackUnit[] = [
@@ -778,6 +919,7 @@ export const MIDDLE_SCHOOL_SCIENCE_PACK: ContentPack = {
   license: 'MIT',
   sourceAttribution: ATTRIBUTION,
   srsInterleave: true,
+  relatedModelIds: ['moon-phases-3d', 'diffusion-osmosis-2d'],
   gradeBand: 'MS',
   prerequisitePackIds: [],
   track: MSS_TRACK,

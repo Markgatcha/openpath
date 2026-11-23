@@ -159,6 +159,18 @@ export const LAB_MODELS: LabModel[] = [
     Component: lazy(() => import('./presets/SeasonsAxialTilt3D')),
   },
   {
+    id: 'moon-phases-3d',
+    title: 'Moon Phases & Eclipses',
+    subject: 'Earth & Space',
+    icon: '🌙',
+    blurb:
+      'Send the Moon round the Earth, watch the view from the ground go from new to full and back, and switch off the orbit’s tilt to see why eclipses are rare.',
+    packId: 'middle-school-science',
+    standards: 'NGSS MS-ESS1-1',
+    renderer: '3d',
+    Component: lazy(() => import('./presets/MoonPhases3D')),
+  },
+  {
     id: 'heart-lungs-circulation-3d',
     title: 'Heart & Lungs: The Double Circulation',
     subject: 'Anatomy & Physiology',

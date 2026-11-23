@@ -1462,7 +1462,7 @@ async function main() {
     ['us-civics-constitution', 3],
     ['english-rhetoric-composition', 3],
     ['conversational-spanish', 3],
-    ['middle-school-science', 6],
+    ['middle-school-science', 7],
     ['probability-statistics', 5],
     ['french-starter', 3],
     ['german-starter', 3],
