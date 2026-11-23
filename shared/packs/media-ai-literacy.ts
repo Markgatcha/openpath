@@ -657,7 +657,7 @@ const MAL_U3_LESSONS: PackLesson[] = [
     summary:
       'Decide when AI help is allowed, keep private data out of prompts, write prompts that support learning, and own the result.',
     estimatedMinutes: 9,
-    standards: ['ISTE Student 1.2.a', 'ISTE Student 1.2.d'],
+    standards: ['ISTE Student 1.2 (Digital Citizen)'],
     prerequisiteLessonIds: ['mal-u2-l2'],
     steps: [
       {
