@@ -233,11 +233,11 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         prompt:
           'All 36 solute particles start on the left of a membrane they can pass through. After a long time, what will you see?',
         options: [
-          'About half on each side, with particles still crossing both ways',
           'All of them on the right, because they move away from the crowded side',
+          'About half on each side, with particles still crossing both ways',
           'About half on each side, and then every particle stops moving',
         ],
-        correctIndex: 0,
+        correctIndex: 1,
       },
       manipulate: {
         instruction:
@@ -265,11 +265,11 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         prompt:
           'The membrane now lets only water through. The left side holds 30 solute particles and the right holds 10. Which way is the net flow of water?',
         options: [
-          'Toward the left, the side with more solute',
           'Toward the right, the side with less solute',
           'Neither way, because the solute cannot cross',
+          'Toward the left, the side with more solute',
         ],
-        correctIndex: 0,
+        correctIndex: 2,
       },
       manipulate: {
         instruction:

@@ -314,8 +314,12 @@ export const greenhouseEffect2dModel: Model2DDefinition = {
       predict: {
         prompt:
           'With Earth’s sunlight and albedo unchanged but an atmosphere that absorbs no infrared, where would the average surface temperature settle?',
-        options: ['About −18 °C', 'About +15 °C, the same as now', 'Close to absolute zero'],
-        correctIndex: 0,
+        options: [
+          'About +15 °C, the same as now',
+          'About −18 °C',
+          'Close to absolute zero',
+        ],
+        correctIndex: 1,
       },
       manipulate: {
         instruction:
@@ -343,8 +347,12 @@ export const greenhouseEffect2dModel: Model2DDefinition = {
       predict: {
         prompt:
           'The atmosphere starts absorbing more infrared and the surface warms. Once the temperature has settled, how does the infrared leaving for space compare with the sunlight absorbed?',
-        options: ['They are equal again', 'Less leaves than is absorbed, permanently', 'More leaves than is absorbed'],
-        correctIndex: 0,
+        options: [
+          'Less leaves than is absorbed, permanently',
+          'More leaves than is absorbed',
+          'They are equal again',
+        ],
+        correctIndex: 2,
       },
       manipulate: {
         instruction: 'Raise infrared absorption to 90% or more, then wait until the imbalance is under 1 W/m².',
@@ -366,7 +374,11 @@ export const greenhouseEffect2dModel: Model2DDefinition = {
       setupParams: { absorbPct: 78, albedo: 0.3, sunPct: 100 },
       predict: {
         prompt: 'Ice and cloud cover grow so the planet reflects 40% of sunlight instead of 30%. What happens to the surface temperature?',
-        options: ['It falls', 'It rises, because reflected light heats the air', 'It stays the same'],
+        options: [
+          'It falls',
+          'It rises, because reflected light heats the air',
+          'It stays the same',
+        ],
         correctIndex: 0,
       },
       manipulate: {
