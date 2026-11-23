@@ -1,5 +1,6 @@
 import type { ContentPack } from './types'
 import type { CurriculumTrack } from '../lessons'
+import { STAT_DATA_QUIZ, STAT_DATA_UNIT } from './lessons-statistics-data'
 
 const ALG_TRACK: CurriculumTrack = {
   id: 'track-algebra-linear-systems',
@@ -1342,6 +1343,7 @@ const STAT_TRACK: CurriculumTrack = {
   prerequisiteTrackIds: ['track-quantitative-foundations'],
   srsInterleaveDefault: true,
   units: [
+    STAT_DATA_UNIT,
     {
       id: 'stat-u1',
       title: 'Sampling Distributions, Normal Tails & Bayesian Inference',
@@ -2501,6 +2503,7 @@ export const STEM_MATH_PACKS: ContentPack[] = [
           },
         ],
       },
+      STAT_DATA_QUIZ,
     ],
   },
 ]
