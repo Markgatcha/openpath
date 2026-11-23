@@ -248,7 +248,6 @@ const PF_U1_LESSONS: PackLesson[] = [
           'On level ground the range is v₀² sin(2θ) / g: greatest at 45°, equal for complementary angles.',
         ],
         nextQuizIndex: 0,
-        arcadeLaunch: { mode: 'sim-sandbox', packId: 'physics-foundations' },
         flashcardEnroll: { autoEnroll: true, interleave: true },
       },
     ],
