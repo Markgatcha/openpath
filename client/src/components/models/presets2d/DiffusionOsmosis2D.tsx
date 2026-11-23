@@ -108,6 +108,7 @@ function drawPanel(
   s: Snapshot,
   clock: number,
   history: Sample[],
+  waterOnly: boolean,
   rich: boolean,
   glow: boolean,
 ) {
@@ -150,10 +151,20 @@ function drawPanel(
   })
 
   const gap = Math.abs(s.leftConc - s.rightConc)
-  const settled = Math.abs(s.waterFlow) < 1
-  const state =
-    gap < 3 ? 'Concentrations equal' : settled ? 'Held apart by the level difference' : 'Water is moving'
-  label(ctx, state, left, 132, gap < 3 || settled ? PALETTE_CSS.emerald : WATER_COLOR, 'left', 11)
+  const flowing = Math.abs(s.waterFlow) >= 1
+  let state = 'Concentrations equal'
+  let steady = true
+  if (!waterOnly) {
+    // Counts fluctuate at equilibrium, so allow the same margin the challenge uses.
+    steady = !flowing && Math.abs(s.left - s.right) <= 8
+    state = steady ? 'Mixed: crossings balance' : 'Solute is diffusing'
+  } else if (flowing) {
+    steady = false
+    state = 'Water is moving'
+  } else if (gap >= 3) {
+    state = 'Held apart by the level difference'
+  }
+  label(ctx, state, left, 132, steady ? PALETTE_CSS.emerald : WATER_COLOR, 'left', 11)
 
   const tEnd = Math.max(clock, HISTORY_SPAN_S)
   const box: PlotBox = {
@@ -687,7 +698,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         label(c, 'start level', TANK_L - 10, TANK_BOTTOM - BASE_DEPTH - 5, PALETTE_CSS.slate, 'left', 9)
         label(c, `${fmt(s.tempK)} K`, MEM_X, VIEW_H - 16, PALETTE_CSS.slate)
 
-        drawPanel(c, s, clock, history, quality.rich, quality.glow)
+        drawPanel(c, s, clock, history, waterOnly, quality.rich, quality.glow)
       },
       readouts: (p) => {
         sync(p)
