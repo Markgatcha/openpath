@@ -1,5 +1,10 @@
 import type { ContentPack } from './types'
-import { WORLD_HISTORY_TRACK, WORLD_HISTORY_UNITS } from './lessons-humanities'
+import {
+  US_CIVICS_TRACK,
+  US_CIVICS_UNITS,
+  WORLD_HISTORY_TRACK,
+  WORLD_HISTORY_UNITS,
+} from './lessons-humanities'
 
 export const HUMANITIES_PACKS: ContentPack[] = [
   // 13. WORLD HISTORY
@@ -192,6 +197,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: US_CIVICS_TRACK,
+    units: US_CIVICS_UNITS,
     quizzes: [
       {
         title: 'Branches, Checks & Federalism',

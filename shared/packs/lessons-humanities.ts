@@ -184,12 +184,12 @@ const WH_REVOLUTIONS: PackLesson = {
         type: 'mcq',
         prompt: 'Which of these was NOT a reason Britain industrialised early?',
         options: [
-          'A warm climate suited to growing cotton at home',
           'Large deposits of coal and iron',
+          'A warm climate suited to growing cotton at home',
           'Canals and ports for cheap transport',
           'Capital to invest in machines',
         ],
-        correct: 0,
+        correct: 1,
         explanation: 'Britain cannot grow cotton. It imported raw cotton, much of it grown by enslaved people in the Americas.',
         points: 10,
       },
@@ -377,4 +377,374 @@ export const WORLD_HISTORY_TRACK: CurriculumTrack = {
   prerequisiteTrackIds: [],
   srsInterleaveDefault: true,
   units: WH_UNITS,
+}
+
+// ── US Civics ──────────────────────────────────────────────────
+
+const CIV_BRANCHES: PackLesson = {
+  id: 'civ-u1-l1',
+  unitId: 'civ-u1-structure',
+  title: 'Three Branches, Checks & Federalism',
+  summary: 'Learn who makes, enforces and interprets federal law, how each branch limits the others, and how power is shared with the states.',
+  estimatedMinutes: 9,
+  standards: [],
+  prerequisiteLessonIds: [],
+  steps: [
+    {
+      id: 'civ-u1-l1-s1',
+      kind: 'narrative',
+      title: 'Separation of Powers',
+      bodyMarkdown:
+        'The Constitution splits the federal government into three branches so that no single group holds all the power.\n\n- **Legislative (Congress):** makes the laws. It has two chambers, the House of Representatives and the Senate.\n- **Executive (the President):** carries out and enforces the laws.\n- **Judicial (the federal courts):** interprets the laws and decides cases under them.\n\nEach branch can also block the others. These **checks and balances** include:\n\n- The President can **veto** a bill. Congress can override the veto with a **two-thirds** vote in both chambers.\n- The President nominates federal judges, but the **Senate** must confirm them.\n- The courts can strike down laws that violate the Constitution.\n- The House can impeach a president or judge; the Senate holds the trial.',
+      callout: {
+        tone: 'key-idea',
+        text: 'Separation of powers divides the jobs. Checks and balances give each branch a way to stop the others.',
+      },
+    },
+    {
+      id: 'civ-u1-l1-s2',
+      kind: 'checkpoint',
+      title: 'Which Branch?',
+      question: {
+        type: 'mcq',
+        prompt: 'The President rejects a bill passed by Congress. What is this check called?',
+        options: [
+          'Judicial review',
+          'Impeachment',
+          'A veto',
+          'A filibuster',
+        ],
+        correct: 2,
+        explanation: 'A veto sends the bill back. Congress can still pass it with a two-thirds vote in both chambers.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u1-l1-s3',
+      kind: 'narrative',
+      title: 'How a Bill Becomes Law',
+      bodyMarkdown:
+        '1. A member of Congress **introduces** the bill.\n2. A **committee** studies it, changes it and votes on whether to send it on.\n3. The full chamber **debates and votes**.\n4. The **other chamber** repeats the process. Both must pass identical text.\n5. The **President** signs it into law or vetoes it.\n\nMost bills never get past the committee stage.',
+    },
+    {
+      id: 'civ-u1-l1-s4',
+      kind: 'narrative',
+      title: 'Federalism',
+      bodyMarkdown:
+        '**Federalism** divides power between the national government and the states.\n\n- Some powers belong to the national government, such as coining money and declaring war.\n- Some are shared, such as taxing.\n- The **Tenth Amendment** says that powers not given to the federal government, and not denied to the states, are reserved to the states or to the people. Schools, most criminal law and elections are largely run by states for this reason.',
+    },
+    {
+      id: 'civ-u1-l1-s5',
+      kind: 'checkpoint',
+      title: 'Order the Steps',
+      question: {
+        type: 'order',
+        prompt: 'Order these steps in a bill becoming law:',
+        options: ['Bill is introduced', 'Committee reviews it', 'Both chambers pass it', 'President signs it'],
+        correct: [0, 1, 2, 3],
+        explanation: 'Introduction, committee, passage by both chambers, then the President.',
+        points: 15,
+      },
+    },
+    {
+      id: 'civ-u1-l1-s6',
+      kind: 'synthesis',
+      title: 'Divided Power',
+      takeaways: [
+        'Congress makes laws, the President enforces them and the courts interpret them.',
+        'A veto can be overridden by two-thirds of both chambers; the Senate confirms judges.',
+        'Under federalism, the Tenth Amendment reserves undelegated powers to the states or the people.',
+      ],
+      nextQuizIndex: 0,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'civ-u1-l1-fc1',
+      front: 'What vote overrides a presidential veto?',
+      back: 'Two-thirds of both the House and the Senate.',
+      explanation: 'It is a check by Congress on the President.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u1-l1-fc2',
+      front: 'What does the Tenth Amendment say?',
+      back: 'Powers not delegated to the federal government are reserved to the states or the people.',
+      explanation: 'It is the constitutional basis of state powers.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u1-l1-fc3',
+      front: 'Who confirms federal judges?',
+      back: 'The Senate, by majority vote, after the President nominates them.',
+      explanation: 'A check shared between two branches.',
+      interleave: true,
+    },
+  ],
+}
+
+const CIV_FOUNDING: PackLesson = {
+  id: 'civ-u2-l1',
+  unitId: 'civ-u2-founding-ideas',
+  title: 'From the Articles to the Federalist Papers',
+  summary: 'See why the first national government failed and how Madison and Hamilton argued for the Constitution that replaced it.',
+  estimatedMinutes: 9,
+  standards: [],
+  prerequisiteLessonIds: ['civ-u1-l1'],
+  steps: [
+    {
+      id: 'civ-u2-l1-s1',
+      kind: 'narrative',
+      title: 'A Government Too Weak',
+      bodyMarkdown:
+        'The first national government ran under the **Articles of Confederation** (in force from 1781). Fearing a new tyranny, its authors made the centre very weak:\n\n- Congress could not **tax**. It could only ask the states for money.\n- It could not **regulate trade** between the states.\n- There was no president and no national courts.\n- Changing the Articles needed the agreement of **all thirteen** states.\n\nUnable to pay its debts or keep order, the government was replaced. Delegates met in Philadelphia in **1787** and wrote the Constitution.',
+    },
+    {
+      id: 'civ-u2-l1-s2',
+      kind: 'checkpoint',
+      title: 'Weakness of the Articles',
+      question: {
+        type: 'mcq',
+        prompt: 'Which power did Congress lack under the Articles of Confederation?',
+        options: [
+          'The power to levy taxes',
+          'The power to declare war',
+          'The power to make treaties',
+          'The power to run a post office',
+        ],
+        correct: 0,
+        explanation: 'Congress could only request money from the states, and they often did not pay.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u2-l1-s3',
+      kind: 'narrative',
+      title: 'The Case for the Constitution',
+      bodyMarkdown:
+        'To win support for the new Constitution, Alexander Hamilton, James Madison and John Jay wrote the **Federalist Papers**. Three are especially important.\n\n- **Federalist No. 10 (Madison):** groups with their own interests, called **factions**, are unavoidable. A **large republic** controls them best, because with so many competing groups none can easily form a majority and oppress the rest.\n- **Federalist No. 51 (Madison):** power must be divided so that each branch can resist the others. "Ambition must be made to counteract ambition."\n- **Federalist No. 78 (Hamilton):** the courts need independence. Judges should hold office for life during good behaviour, and may void laws that conflict with the Constitution.\n\nOpponents, the **Anti-Federalists**, feared that a strong central government would swallow the states and threaten liberty. Their pressure produced the promise of a Bill of Rights.',
+      callout: {
+        tone: 'key-idea',
+        text: 'Madison did not try to make people agree. He designed a system in which rival interests would hold each other in check.',
+      },
+    },
+    {
+      id: 'civ-u2-l1-s4',
+      kind: 'checkpoint',
+      title: 'Match the Essay',
+      question: {
+        type: 'mcq',
+        prompt: 'Which essay argues that separating power among branches lets each one check the others?',
+        options: [
+          'Federalist No. 10',
+          'Federalist No. 78',
+          'Brutus No. 1',
+          'Federalist No. 51',
+        ],
+        correct: 3,
+        explanation: 'No. 51 explains checks and balances. No. 10 deals with factions and No. 78 with the judiciary.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u2-l1-s5',
+      kind: 'checkpoint',
+      title: 'Madison on Factions',
+      question: {
+        type: 'truefalse',
+        prompt: 'In Federalist No. 10, Madison argues that factions should be eliminated by banning political groups.',
+        correct: false,
+        explanation: 'He says removing the causes of faction would destroy liberty. His remedy is a large republic with many competing interests.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u2-l1-s6',
+      kind: 'synthesis',
+      title: 'Founding Arguments',
+      takeaways: [
+        'The Articles of Confederation gave Congress no power to tax or to regulate interstate trade.',
+        'Federalist 10: a large republic controls factions. Federalist 51: checks and balances. Federalist 78: an independent judiciary.',
+        'Anti-Federalist objections led to the Bill of Rights.',
+      ],
+      nextQuizIndex: 1,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'civ-u2-l1-fc1',
+      front: 'What is the argument of Federalist No. 10?',
+      back: 'A large republic best controls the dangers of faction.',
+      explanation: 'Many competing interests make an oppressive majority unlikely.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u2-l1-fc2',
+      front: 'Which essay defends life tenure for judges and judicial review?',
+      back: 'Federalist No. 78, by Alexander Hamilton.',
+      explanation: 'It calls the judiciary the least dangerous branch.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u2-l1-fc3',
+      front: 'Name two weaknesses of the Articles of Confederation.',
+      back: 'Congress could not tax and could not regulate trade between states.',
+      explanation: 'There was also no executive and no national court system.',
+      interleave: true,
+    },
+  ],
+}
+
+const CIV_LIBERTIES: PackLesson = {
+  id: 'civ-u3-l1',
+  unitId: 'civ-u3-rights-courts',
+  title: 'Civil Liberties & Landmark Cases',
+  summary: 'Find out how the Bill of Rights came to bind the states, and meet the cases and amendments that widened rights and the vote.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: ['civ-u2-l1'],
+  steps: [
+    {
+      id: 'civ-u3-l1-s1',
+      kind: 'narrative',
+      title: 'The Court Claims Its Power',
+      bodyMarkdown:
+        'The Constitution does not say outright that courts may cancel laws. In **Marbury v. Madison (1803)**, the Supreme Court ruled that when a law conflicts with the Constitution, the Constitution wins, and it is the courts’ job to say so. This power is **judicial review**.\n\nThe first ten amendments, the **Bill of Rights** (1791), protect freedoms such as speech, religion and a fair trial. At first they limited only the **federal** government. A state could, in principle, restrict speech without breaking the First Amendment.',
+    },
+    {
+      id: 'civ-u3-l1-s2',
+      kind: 'narrative',
+      title: 'Applying Rights to the States',
+      bodyMarkdown:
+        'The **Fourteenth Amendment** (1868) says no state may take away life, liberty or property "without due process of law". During the twentieth century the Supreme Court used this **Due Process Clause** to apply most of the Bill of Rights to the states, one right at a time. The doctrine is called **selective incorporation**.\n\nTwo landmark examples:\n\n- **Gideon v. Wainwright (1963):** a state must provide a lawyer to a defendant charged with a serious crime who cannot afford one. The Sixth Amendment right to counsel now binds the states.\n- **Brown v. Board of Education (1954):** racially segregated public schools violate the Fourteenth Amendment’s guarantee of equal protection.',
+      callout: {
+        tone: 'key-idea',
+        text: 'Selective incorporation is why your state government, not only Washington, must respect the Bill of Rights.',
+      },
+    },
+    {
+      id: 'civ-u3-l1-s3',
+      kind: 'checkpoint',
+      title: 'Name the Doctrine',
+      question: {
+        type: 'mcq',
+        prompt: 'A state law is struck down for violating freedom of speech. Which amendment makes the First Amendment apply to that state?',
+        options: [
+          'The Tenth Amendment',
+          'The Fourteenth Amendment',
+          'The Fifth Amendment',
+          'The Nineteenth Amendment',
+        ],
+        correct: 1,
+        explanation: 'Its Due Process Clause is the route by which Bill of Rights protections are applied to the states.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u3-l1-s4',
+      kind: 'narrative',
+      title: 'Widening the Vote',
+      bodyMarkdown:
+        'Four amendments extended the right to vote:\n\n- **Fifteenth (1870):** the vote cannot be denied because of race.\n- **Nineteenth (1920):** it cannot be denied because of sex.\n- **Twenty-fourth (1964):** no poll tax in federal elections.\n- **Twenty-sixth (1971):** citizens aged 18 and over can vote.\n\nA right on paper is not always a right in practice. Despite the Fifteenth Amendment, many Black Americans were kept from voting until the Voting Rights Act of 1965.',
+    },
+    {
+      id: 'civ-u3-l1-s5',
+      kind: 'checkpoint',
+      title: 'Gideon’s Right',
+      question: {
+        type: 'mcq',
+        prompt: 'What did Gideon v. Wainwright require of the states?',
+        options: [
+          'To provide a lawyer for defendants who cannot afford one in serious criminal cases',
+          'To read suspects their rights on arrest',
+          'To end segregation in public schools',
+          'To allow students to wear armbands in protest',
+        ],
+        correct: 0,
+        explanation: 'The Court held that the right to counsel is fundamental to a fair trial.',
+        points: 10,
+      },
+    },
+    {
+      id: 'civ-u3-l1-s6',
+      kind: 'synthesis',
+      title: 'Rights in Practice',
+      takeaways: [
+        'Marbury v. Madison (1803) established judicial review.',
+        'Selective incorporation applies the Bill of Rights to the states through the Fourteenth Amendment.',
+        'The 15th, 19th, 24th and 26th Amendments widened the vote, in that order.',
+      ],
+      nextQuizIndex: 2,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'civ-u3-l1-fc1',
+      front: 'What did Marbury v. Madison establish?',
+      back: 'Judicial review: courts can strike down laws that conflict with the Constitution.',
+      explanation: 'Decided in 1803.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u3-l1-fc2',
+      front: 'What is selective incorporation?',
+      back: 'Applying Bill of Rights protections to the states, case by case, through the Fourteenth Amendment.',
+      explanation: 'It relies on the Due Process Clause.',
+      interleave: true,
+    },
+    {
+      id: 'civ-u3-l1-fc3',
+      front: 'Which amendment lowered the voting age to 18?',
+      back: 'The Twenty-sixth (1971).',
+      explanation: 'It followed the 15th, 19th and 24th in widening the vote.',
+      interleave: true,
+    },
+  ],
+}
+
+const CIV_UNITS: TrackUnit[] = [
+  {
+    id: 'civ-u1-structure',
+    title: 'Branches & Federalism',
+    anchoringPhenomenon: 'A president can refuse to sign a bill that most of Congress voted for, and Congress can still make it law.',
+    capstoneQuizIndex: 0,
+    masteryGate: GATE,
+    lessons: [CIV_BRANCHES],
+  },
+  {
+    id: 'civ-u2-founding-ideas',
+    title: 'Founding Documents',
+    anchoringPhenomenon: 'The first government of the United States lasted less than a decade before its own leaders replaced it.',
+    capstoneQuizIndex: 1,
+    masteryGate: GATE,
+    lessons: [CIV_FOUNDING],
+  },
+  {
+    id: 'civ-u3-rights-courts',
+    title: 'Rights & the Courts',
+    anchoringPhenomenon: 'A man too poor to hire a lawyer wrote to the Supreme Court in pencil from his prison cell, and won.',
+    capstoneQuizIndex: 2,
+    masteryGate: GATE,
+    lessons: [CIV_LIBERTIES],
+  },
+]
+
+export const US_CIVICS_UNITS = CIV_UNITS
+
+export const US_CIVICS_TRACK: CurriculumTrack = {
+  id: 'track-us-civics-constitution',
+  slug: 'us-civics-constitution',
+  packId: 'us-civics-constitution',
+  title: 'US Civics: Constitutional Architecture',
+  category: 'History',
+  subject: 'Civics',
+  gradeBand: 'HS',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  prerequisiteTrackIds: [],
+  srsInterleaveDefault: true,
+  units: CIV_UNITS,
 }
