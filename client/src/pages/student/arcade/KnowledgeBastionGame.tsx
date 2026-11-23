@@ -1030,10 +1030,6 @@ export function KnowledgeBastionGame() {
     let lastTs = performance.now()
     const shouldDraw = createFrameLimiter(maxFps)
     const loop = (now: number) => {
-      if (!shouldDraw(now)) {
-        rafId = window.requestAnimationFrame(loop)
-        return
-      }
       const rawDt = Math.min(80, Math.max(0, now - lastTs))
       lastTs = now
       if (!simPausedRef.current) {
@@ -1044,7 +1040,9 @@ export function KnowledgeBastionGame() {
           return
         }
       }
-      drawBoard()
+      // Only drawing is capped: the simulation steps every frame so scores
+      // do not depend on the graphics tier.
+      if (shouldDraw(now)) drawBoard()
       rafId = window.requestAnimationFrame(loop)
     }
     rafId = window.requestAnimationFrame(loop)
