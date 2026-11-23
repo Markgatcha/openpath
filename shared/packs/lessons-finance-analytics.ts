@@ -308,12 +308,12 @@ const CF_CAPITAL: PackLesson = {
         type: 'mcq',
         prompt: 'A company’s cost of capital is 9%. A project has an IRR of 7%. What should the company do?',
         options: [
-          'Reject it, because it returns less than the cost of capital',
           'Accept it, because the IRR is positive',
+          'Reject it, because it returns less than the cost of capital',
           'Accept it, because 7% is close to 9%',
           'Borrow more to raise the IRR',
         ],
-        correct: 0,
+        correct: 1,
         explanation: 'At a 9% discount rate this project’s NPV is negative. It would return less than investors require.',
         points: 10,
       },
@@ -470,8 +470,13 @@ const DA_TRENDS: PackLesson = {
       question: {
         type: 'mcq',
         prompt: 'Which correlation coefficient shows the strongest linear relationship?',
-        options: ['r = −0.85', 'r = +0.70', 'r = +0.10', 'r = −0.40'],
-        correct: 0,
+        options: [
+          'r = +0.70',
+          'r = +0.10',
+          'r = −0.85',
+          'r = −0.40',
+        ],
+        correct: 2,
         explanation: 'Strength is the size of r without its sign. 0.85 is the largest.',
         points: 10,
       },
@@ -528,12 +533,7 @@ const DA_CLASSIFY: PackLesson = {
       kind: 'narrative',
       title: 'Four Kinds of Outcome',
       bodyMarkdown:
-        'A classifier that answers yes or no can be right or wrong in two ways each.\n\n- **True positive (TP):** the model says yes and the answer really is yes.
-- **False positive (FP):** the model says yes but the answer is no. A false alarm.
-- **False negative (FN):** the model says no but the answer is yes. A miss.
-- **True negative (TN):** the model says no and the answer really is no.
-
-Two scores come from these counts:\n\n- **Precision** = TP ÷ (TP + FP). Of everything the model flagged, how much was right?\n- **Recall** = TP ÷ (TP + FN). Of everything that should have been flagged, how much did it find?\n\nAccuracy alone can mislead. If 1% of transactions are fraud, a model that never flags anything is 99% accurate and useless.',
+        'A classifier that answers yes or no can be right or wrong in two ways each.\n\n- **True positive (TP):** the model says yes and the answer really is yes.\n- **False positive (FP):** the model says yes but the answer is no. A false alarm.\n- **False negative (FN):** the model says no but the answer is yes. A miss.\n- **True negative (TN):** the model says no and the answer really is no.\n\nTwo scores come from these counts:\n\n- **Precision** = TP ÷ (TP + FP). Of everything the model flagged, how much was right?\n- **Recall** = TP ÷ (TP + FN). Of everything that should have been flagged, how much did it find?\n\nAccuracy alone can mislead. If 1% of transactions are fraud, a model that never flags anything is 99% accurate and useless.',
       callout: {
         tone: 'key-idea',
         text: 'Precision is about the flags the model raised. Recall is about the cases that were really there.',
@@ -590,7 +590,12 @@ Two scores come from these counts:\n\n- **Precision** = TP ÷ (TP + FP). Of ever
       question: {
         type: 'mcq',
         prompt: 'You want a list of every customer, including those who have never placed an order. Customers is the left table. Which join do you use?',
-        options: ['LEFT JOIN', 'INNER JOIN', 'No join; use HAVING', 'No join; use WHERE'],
+        options: [
+          'LEFT JOIN',
+          'INNER JOIN',
+          'No join; use HAVING',
+          'No join; use WHERE',
+        ],
         correct: 0,
         explanation: 'A LEFT JOIN keeps all customers and shows NULL for the order columns of those without orders. An INNER JOIN would drop them.',
         points: 10,
@@ -632,4 +637,169 @@ Two scores come from these counts:\n\n- **Precision** = TP ÷ (TP + FP). Of ever
       interleave: true,
     },
   ],
+}
+
+const DA_GENERALISE: PackLesson = {
+  id: 'da-u3-l1',
+  unitId: 'da-u3-generalisation',
+  title: 'Overfitting, Regularisation & A/B Tests',
+  summary: 'Tell a model that has learned a pattern from one that has memorised its data, and run an experiment you can trust.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: ['da-u2-l1'],
+  steps: [
+    {
+      id: 'da-u3-l1-s1',
+      kind: 'narrative',
+      title: 'Memorising Is Not Learning',
+      bodyMarkdown:
+        'A model is useful only if it works on data it has never seen. That is why data is split: the model learns from a **training set** and is judged on a separate **validation set**.\n\n- **Overfitting:** the model is too flexible and memorises noise in the training data. Training score is excellent; validation score is much worse.\n- **Underfitting:** the model is too simple to capture the pattern. Both scores are poor.\n\nThis is the **bias–variance trade-off**. A simple model has high bias: it misses the pattern in the same way every time. A very flexible model has high variance: its answers swing with whichever data it happened to see.',
+      callout: {
+        tone: 'key-idea',
+        text: 'A large gap between training and validation scores is the sign of overfitting.',
+      },
+    },
+    {
+      id: 'da-u3-l1-s2',
+      kind: 'checkpoint',
+      title: 'Diagnose the Model',
+      question: {
+        type: 'mcq',
+        prompt: 'A model scores 62% on its training data and 60% on validation data. What is the most likely problem?',
+        options: [
+          'Overfitting: it has memorised the training data',
+          'Data leakage from the validation set',
+          'Nothing; the model is ready to use',
+          'Underfitting: it is too simple to capture the pattern',
+        ],
+        correct: 3,
+        explanation: 'Both scores are low and close together. The model has not learned the pattern even on the data it trained on.',
+        points: 10,
+      },
+    },
+    {
+      id: 'da-u3-l1-s3',
+      kind: 'narrative',
+      title: 'Keeping a Model Simple',
+      bodyMarkdown:
+        '**Regularisation** fights overfitting by adding a penalty for large coefficients, so the model prefers simpler explanations.\n\n- **L2 (Ridge)** penalises the squares of the coefficients. It shrinks them all towards zero but rarely makes any exactly zero.\n- **L1 (Lasso)** penalises their absolute values. It pushes the least useful coefficients all the way to zero, which removes those features from the model.\n\nModels often represent items as lists of numbers called **vectors**. The **dot product** multiplies matching entries and adds the results: (a, b) · (c, d) = ac + bd. A larger dot product means the two vectors point in more similar directions.',
+    },
+    {
+      id: 'da-u3-l1-s4',
+      kind: 'checkpoint',
+      title: 'Dot Product',
+      question: {
+        type: 'fill',
+        prompt: 'What is the dot product of the vectors (2, 3) and (4, 1)?',
+        correct: '11',
+        alternatives: ['eleven'],
+        explanation: '2 × 4 + 3 × 1 = 8 + 3 = 11.',
+        points: 15,
+      },
+    },
+    {
+      id: 'da-u3-l1-s5',
+      kind: 'narrative',
+      title: 'Experiments You Can Trust',
+      bodyMarkdown:
+        'An **A/B test** shows version A to one random group and version B to another, then compares a result such as sign-up rate.\n\nThe **p-value** is the probability of seeing a difference at least this large if the two versions were really the same. By convention, a result with p below 0.05 is called statistically significant.\n\nThat 5% error rate holds only if you decide the sample size in advance and look once. If you check every day and stop the first time p dips below 0.05, random swings give you many chances to be fooled, and the real false-positive rate climbs well above 5%. This mistake is called **peeking**.',
+    },
+    {
+      id: 'da-u3-l1-s6',
+      kind: 'checkpoint',
+      title: 'Lasso or Ridge?',
+      question: {
+        type: 'mcq',
+        prompt: 'You have 200 input features and suspect most are useless. Which method can remove features by setting their coefficients exactly to zero?',
+        options: [
+          'L2 (Ridge) regularisation',
+          'L1 (Lasso) regularisation',
+          'Adding more features',
+          'Training for longer',
+        ],
+        correct: 1,
+        explanation: 'The L1 penalty drives weak coefficients to exactly zero. L2 only shrinks them.',
+        points: 10,
+      },
+    },
+    {
+      id: 'da-u3-l1-s7',
+      kind: 'synthesis',
+      title: 'Models That Generalise',
+      takeaways: [
+        'High training score with a low validation score means overfitting.',
+        'Regularisation penalises large coefficients; L1 can set them to zero.',
+        'Fix the sample size of an A/B test in advance; stopping early on a good p-value inflates false positives.',
+      ],
+      nextQuizIndex: 2,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'da-u3-l1-fc1',
+      front: 'How do you recognise overfitting?',
+      back: 'The model scores far better on training data than on validation data.',
+      explanation: 'It has memorised noise instead of the pattern.',
+      interleave: true,
+    },
+    {
+      id: 'da-u3-l1-fc2',
+      front: 'What does L1 (Lasso) do that L2 (Ridge) does not?',
+      back: 'It sets some coefficients exactly to zero, removing those features.',
+      explanation: 'L2 shrinks coefficients but keeps them non-zero.',
+      interleave: true,
+    },
+    {
+      id: 'da-u3-l1-fc3',
+      front: 'Why is peeking at an A/B test a problem?',
+      back: 'Stopping as soon as p < 0.05 gives chance many tries, so false positives exceed 5%.',
+      explanation: 'Decide the sample size before the test starts.',
+      interleave: true,
+    },
+  ],
+}
+
+const DA_UNITS: TrackUnit[] = [
+  {
+    id: 'da-u1-exploring-data',
+    title: 'Exploring Data',
+    anchoringPhenomenon: 'Ice-cream sales and sunburn cases rise and fall together, yet neither causes the other.',
+    capstoneQuizIndex: 0,
+    masteryGate: GATE,
+    lessons: [DA_TRENDS],
+  },
+  {
+    id: 'da-u2-classification-joins',
+    title: 'Classification & Joins',
+    anchoringPhenomenon: 'A fraud detector that never flags anything is right 99% of the time.',
+    capstoneQuizIndex: 1,
+    masteryGate: GATE,
+    lessons: [DA_CLASSIFY],
+  },
+  {
+    id: 'da-u3-generalisation',
+    title: 'Generalisation & Experiments',
+    anchoringPhenomenon: 'A student who memorises last year’s exam answers can score 100% on that paper and fail the new one.',
+    capstoneQuizIndex: 2,
+    masteryGate: GATE,
+    lessons: [DA_GENERALISE],
+  },
+]
+
+export const DATA_ANALYTICS_UNITS = DA_UNITS
+
+export const DATA_ANALYTICS_TRACK: CurriculumTrack = {
+  id: 'track-data-analytics',
+  slug: 'data-analytics',
+  packId: 'data-analytics',
+  title: 'Data Analytics: Regression, SQL & Modeling',
+  category: 'CS',
+  subject: 'Data Science',
+  gradeBand: 'College-Intro',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  prerequisiteTrackIds: [],
+  srsInterleaveDefault: true,
+  units: DA_UNITS,
 }
