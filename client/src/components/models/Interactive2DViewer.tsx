@@ -666,9 +666,11 @@ function DragHandleButton({
         if (event.currentTarget.hasPointerCapture(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId)
         }
+        handle.onDragEnd?.()
       }}
       onPointerCancel={() => {
         draggingRef.current = false
+        handle.onDragEnd?.()
       }}
       onKeyDown={(event) => {
         if (disabled) return
@@ -685,6 +687,7 @@ function DragHandleButton({
           Math.max(0, Math.min(viewWidth, pos.x + dx)),
           Math.max(0, Math.min(viewHeight, pos.y + dy)),
         )
+        handle.onDragEnd?.()
       }}
       className={cn(
         'absolute z-10 flex h-5 w-5 cursor-grab items-center justify-center rounded-full border-2 bg-ink-950/90 shadow-lg transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 active:cursor-grabbing',

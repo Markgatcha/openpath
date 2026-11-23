@@ -47,6 +47,8 @@ export interface DragHandle2D {
   label: string
   getPos: (params: Params) => { x: number; y: number }
   onDrag: (x: number, y: number, params: Params) => Partial<Params>
+  /** Called when a pointer drag or keyboard nudge finishes. */
+  onDragEnd?: () => void
   stepPx?: number
   color?: string
   ariaValueText?: (params: Params) => string

@@ -19,7 +19,7 @@ const GRAVITIES = [
 
 const SPANS = [20, 50, 100, 200, 500, 1000, 2000] as const
 
-function solve(p: Params) {
+function solve(p: Params, lockedSpan?: number) {
   const v0 = p.speed ?? 20
   const angleDeg = p.angleDeg ?? 45
   const h = p.height ?? 0
@@ -37,7 +37,7 @@ function solve(p: Params) {
   // One metre is the same number of pixels on both axes, so the drawn
   // launch angle is the real one.
   const need = Math.max(range * 1.1, (maxHeight * 1.15 * PLOT_W) / PLOT_H, 20)
-  const span = SPANS.find((s) => s >= need) ?? SPANS[SPANS.length - 1]
+  const span = lockedSpan ?? SPANS.find((s) => s >= need) ?? SPANS[SPANS.length - 1]
   const scale = PLOT_W / span
   return {
     v0,
@@ -223,7 +223,11 @@ export const projectileMotion2dModel: Model2DDefinition = {
   build: (ctx, initial) => {
     const { quality } = ctx
     let t = 0
-    let cur = solve(initial)
+    // The zoom is held while the aim handle is dragged; otherwise a zoom
+    // change would move an elevated launcher out from under the pointer.
+    let dragSpan: number | undefined
+    const view = (p: Params) => solve(p, dragSpan)
+    let cur = view(initial)
 
     const starCount = quality.count(70)
     const stars = Array.from({ length: starCount }, (_, i) => ({
@@ -287,13 +291,14 @@ export const projectileMotion2dModel: Model2DDefinition = {
           label: 'Launcher aim: angle and speed',
           color: PALETTE_CSS.amber,
           getPos: (p) => {
-            const s = solve(p)
+            const s = view(p)
             const len = 40 + s.v0 * VEC_PX
             const o = worldToPx(s, 0, s.h)
             return { x: o.x + Math.cos(s.rad) * len, y: o.y - Math.sin(s.rad) * len }
           },
           onDrag: (px, py, p) => {
-            const s = solve(p)
+            const s = view(p)
+            dragSpan = s.span
             const o = worldToPx(s, 0, s.h)
             const deg = (Math.atan2(o.y - py, px - o.x) * 180) / Math.PI
             const dist = Math.hypot(px - o.x, py - o.y)
@@ -302,24 +307,27 @@ export const projectileMotion2dModel: Model2DDefinition = {
               speed: Math.max(5, Math.min(30, Math.round(((dist - 40) / VEC_PX) * 2) / 2)),
             }
           },
+          onDragEnd: () => {
+            dragSpan = undefined
+          },
           ariaValueText: (p) => `${p.angleDeg}° at ${p.speed} m/s`,
         },
       ],
       update: (p, dt) => {
-        cur = solve(p)
+        cur = view(p)
         t += dt
         if (t > cur.flightTime + LAND_HOLD_S) t = 0
       },
       step: (p, direction) => {
-        cur = solve(p)
+        cur = view(p)
         t = Math.max(0, Math.min(cur.flightTime, t + (direction * cur.flightTime) / 12))
       },
       reset: (p) => {
-        cur = solve(p)
+        cur = view(p)
         t = 0
       },
       renderCanvas: (c, p, elapsed, reducedMotion) => {
-        cur = solve(p)
+        cur = view(p)
         const s = cur
         if (t > s.flightTime + LAND_HOLD_S) t = 0
         const showComponents = p.showComponents === 1
@@ -598,7 +606,7 @@ export const projectileMotion2dModel: Model2DDefinition = {
         )
       },
       readouts: (p) => {
-        const s = solve(p)
+        const s = view(p)
         return [
           { label: 'Range R', value: `${fmt(s.range)} m` },
           { label: 'Max height H', value: `${fmt(s.maxHeight)} m` },
@@ -609,7 +617,7 @@ export const projectileMotion2dModel: Model2DDefinition = {
         ]
       },
       metrics: (p) => {
-        const s = solve(p)
+        const s = view(p)
         return {
           v0: s.v0,
           angleDeg: s.angleDeg,
