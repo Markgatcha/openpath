@@ -57,14 +57,14 @@ function sincSq(x: number): number {
   return s * s
 }
 
-function build({ scene, palette, quality }: SceneContext, initial: Params) {
+function build({ scene, palette }: SceneContext, initial: Params) {
   const root = new THREE.Group()
   scene.add(root)
 
   const barrierZ = -2.1
 
   // Wave surface mesh (x in [-4.2, 4.2], z in [-4.2, 4.2])
-  const waveGeo = new THREE.PlaneGeometry(8.4, 8.4, quality.segments(GRID_SEG), quality.segments(GRID_SEG))
+  const waveGeo = new THREE.PlaneGeometry(8.4, 8.4, GRID_SEG, GRID_SEG)
   waveGeo.rotateX(-Math.PI / 2)
   const posAttr = waveGeo.getAttribute('position') as THREE.BufferAttribute
   const colors = new Float32Array(posAttr.count * 3)
@@ -91,7 +91,7 @@ function build({ scene, palette, quality }: SceneContext, initial: Params) {
   root.add(leftWall, centerWall, rightWall)
 
   // Absorption screen at z = screenZ with vertex-colored vertical fringe bands
-  const screenSegX = quality.segments(96)
+  const screenSegX = 96
   const screenGeo = new THREE.PlaneGeometry(8.4, 2.2, screenSegX, 2)
   const screenPos = screenGeo.getAttribute('position') as THREE.BufferAttribute
   const screenColors = new Float32Array(screenPos.count * 3)
