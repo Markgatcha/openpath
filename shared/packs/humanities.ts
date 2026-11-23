@@ -1,4 +1,5 @@
 import type { ContentPack } from './types'
+import { WORLD_HISTORY_TRACK, WORLD_HISTORY_UNITS } from './lessons-humanities'
 
 export const HUMANITIES_PACKS: ContentPack[] = [
   // 13. WORLD HISTORY
@@ -15,6 +16,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: true,
     gradeBand: 'HS',
+    track: WORLD_HISTORY_TRACK,
+    units: WORLD_HISTORY_UNITS,
     quizzes: [
       {
         title: 'Trade Networks & Classical Foundations',
