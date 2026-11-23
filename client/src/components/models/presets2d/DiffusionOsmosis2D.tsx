@@ -522,7 +522,8 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         history.push({ t: clock, left: conc(left, true), right: conc(right, false) })
         while (history.length > 2 && history[0].t < clock - HISTORY_SPAN_S) history.shift()
       }
-      if (clock - frames[frames.length - 1].clock >= STEP_S) saveFrame()
+      // The tolerance keeps a manual step, which sums 30 sub-steps, from landing just short.
+      if (clock - frames[frames.length - 1].clock >= STEP_S - 1e-6) saveFrame()
     }
 
     /** Step back to the last saved frame before the current instant. */
