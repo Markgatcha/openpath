@@ -159,7 +159,8 @@ export const projectileMotion2dModel: Model2DDefinition = {
       },
       manipulate: {
         instruction: 'Keep h = 0 and change only the angle until the range is within 0.5% of its maximum v₀²/g.',
-        evaluate: (p, m) => {
+        evaluate: (p) => {
+          const m = solve(p)
           const best = (m.v0 * m.v0) / m.g
           return {
             passed: (p.height ?? 0) === 0 && m.range >= best * 0.995,
@@ -182,7 +183,8 @@ export const projectileMotion2dModel: Model2DDefinition = {
       },
       manipulate: {
         instruction: 'Keep h = 0 and raise the angle above 45° until the range matches the 30° shot again.',
-        evaluate: (p, m) => {
+        evaluate: (p) => {
+          const m = solve(p)
           const target = (m.v0 * m.v0 * Math.sin(Math.PI / 3)) / m.g
           return {
             passed: (p.height ?? 0) === 0 && m.angleDeg > 45 && Math.abs(m.range - target) < 0.6,
@@ -205,10 +207,13 @@ export const projectileMotion2dModel: Model2DDefinition = {
       },
       manipulate: {
         instruction: 'Switch gravity to the Moon and launch at 20 m/s or more so the range passes 240 m.',
-        evaluate: (p, m) => ({
-          passed: Math.round(p.gravity ?? 0) === 1 && m.range > 240,
-          feedback: `Range ${fmt(m.range)} m with g = ${m.g} m/s².`,
-        }),
+        evaluate: (p) => {
+          const m = solve(p)
+          return {
+            passed: m.gravity === 1 && m.range > 240,
+            feedback: `Range ${fmt(m.range)} m with g = ${m.g} m/s².`,
+          }
+        },
       },
       explain:
         'Both the time of flight (2v₀ sin θ / g) and the range (v₀² sin 2θ / g) are proportional to 1/g. Horizontal speed is untouched; the projectile simply stays up six times longer.',
