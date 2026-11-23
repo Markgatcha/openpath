@@ -372,6 +372,13 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
     }
     reseed(initial)
 
+    /** The viewer does not call `update` while paused, so every entry point checks the solute sliders. */
+    const sync = (p: Params) => {
+      if (Math.round(p.soluteLeft ?? 0) !== seededLeft || Math.round(p.soluteRight ?? 0) !== seededRight) {
+        reseed(p)
+      }
+    }
+
     /** Move one particle; `crosses` says whether it may pass through a membrane pore. */
     const move = (d: Dot, dt: number, radius: number, crosses: boolean) => {
       const wasLeft = isLeft(d)
@@ -465,9 +472,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       hotspots,
       reset: (p) => reseed(p),
       update: (p, dt) => {
-        if (Math.round(p.soluteLeft ?? 0) !== seededLeft || Math.round(p.soluteRight ?? 0) !== seededRight) {
-          reseed(p)
-        }
+        sync(p)
         const step = Math.min(dt, 0.05)
         if (step <= 0) return
         const temp = p.tempK ?? 300
@@ -495,6 +500,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         }
       },
       renderCanvas: (c, p, elapsed, reducedMotion) => {
+        sync(p)
         const s = snapshot(p)
         const waterOnly = osmosisOnly(p)
         const yL = surfaceY(true)
@@ -684,6 +690,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         drawPanel(c, s, clock, history, quality.rich, quality.glow)
       },
       readouts: (p) => {
+        sync(p)
         const s = snapshot(p)
         const direction = Math.abs(s.waterFlow) < 1 ? 'none' : s.waterFlow > 0 ? 'toward the left' : 'toward the right'
         return [
@@ -695,6 +702,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         ]
       },
       metrics: (p) => {
+        sync(p)
         const s = snapshot(p)
         return {
           leftCount: s.left,
