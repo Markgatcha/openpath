@@ -158,6 +158,18 @@ export const LAB_MODELS: LabModel[] = [
     renderer: '3d',
     Component: lazy(() => import('./presets/SeasonsAxialTilt3D')),
   },
+  {
+    id: 'heart-lungs-circulation-3d',
+    title: 'Heart & Lungs: The Double Circulation',
+    subject: 'Anatomy & Physiology',
+    icon: '🫀',
+    blurb:
+      'Watch four chambers beat in sequence and follow blood round both circuits as it picks up oxygen in the lungs and delivers it to the body.',
+    packId: 'anatomy-physiology',
+    standards: 'NGSS HS-LS1-2',
+    renderer: '3d',
+    Component: lazy(() => import('./presets/HeartLungsCirculation3D')),
+  },
   // ── 14 Interactive 2D Simulations (Zero-Three Lightweight) ───
   {
     id: 'compound-growth-npv-2d',
