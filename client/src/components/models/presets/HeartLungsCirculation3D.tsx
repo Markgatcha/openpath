@@ -117,6 +117,23 @@ function bump(phase: number, start: number, end: number): number {
   return s * s
 }
 
+const EJECT_START = 0.14
+const EJECT_END = 0.44
+
+/**
+ * Blood moved since phase 0, for any number of beats forwards or backwards. It is the integral of the
+ * relative flow `0.55 + 1.5 * bump(phase, EJECT_START, EJECT_END)`: a steady trickle plus a surge during ejection.
+ */
+function surgeIntegral(phase: number): number {
+  const beats = Math.floor(phase)
+  const x = phase - beats
+  const span = EJECT_END - EJECT_START
+  const into = Math.min(Math.max(x - EJECT_START, 0), span)
+  const ejected = into / 2 - (span / (4 * Math.PI)) * Math.sin((2 * Math.PI * into) / span)
+  const perBeat = 0.55 + 1.5 * (span / 2)
+  return beats * perBeat + 0.55 * x + 1.5 * ejected
+}
+
 /** Simplified left-ventricle pressure (mmHg) over one beat. */
 function lvPressure(phase: number): number {
   if (phase < 0.12) return 6 + 6 * bump(phase, 0, 0.12)
@@ -436,12 +453,14 @@ function build({ scene, palette, quality }: SceneContext, params: Params) {
   }
 
   const advance = (p: Params, dt: number) => {
-    beat = (beat + (dt * (p.heartRate ?? 70)) / 60) % 1
-    breath = (breath + (dt * (p.breathRate ?? 14)) / 60) % 1
-    // Flow follows cardiac output and surges while the ventricles eject.
-    const surge = 0.55 + 1.5 * bump(beat, 0.14, 0.44)
-    const du = dt * 0.014 * cardiacOutput(p) * surge
-    for (let i = 0; i < cellCount; i += 1) cellU[i] = (cellU[i] + du) % 1
+    const heartRate = p.heartRate ?? 70
+    const nextBeat = beat + (dt * heartRate) / 60
+    // Flow follows cardiac output and surges while the ventricles eject. Integrating the surge over the
+    // beat makes the distance depend only on where the beat starts and ends, so stepping back undoes a step forward.
+    const du = 0.014 * cardiacOutput(p) * (60 / heartRate) * (surgeIntegral(nextBeat) - surgeIntegral(beat))
+    beat = ((nextBeat % 1) + 1) % 1
+    breath = ((((breath + (dt * (p.breathRate ?? 14)) / 60) % 1) + 1) % 1
+    for (let i = 0; i < cellCount; i += 1) cellU[i] = (((cellU[i] + du) % 1) + 1) % 1
   }
 
   draw(params)
@@ -529,9 +548,6 @@ function build({ scene, palette, quality }: SceneContext, params: Params) {
     step(p: Params, direction: 1 | -1) {
       // An eighth of a heartbeat per step, forwards or backwards.
       advance(p, (direction * 60) / (p.heartRate ?? 70) / 8)
-      beat = (beat + 1) % 1
-      breath = (breath + 1) % 1
-      for (let i = 0; i < cellCount; i += 1) cellU[i] = (cellU[i] + 1) % 1
       draw(p)
     },
     readouts: (p: Params) => [
