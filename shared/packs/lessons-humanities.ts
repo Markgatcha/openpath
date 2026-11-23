@@ -1335,11 +1335,11 @@ const ES_PAST: PackLesson = {
       title: 'Por or Para?',
       question: {
         type: 'mcq',
-        prompt: 'Complete: "Salimos mañana ______ Barcelona."',
+        prompt: 'Barcelona is where you are going. Complete: "Salimos mañana ______ Barcelona."',
         options: [
           'para',
           'por',
-          'de',
+          'sin',
           'en',
         ],
         correct: 0,
