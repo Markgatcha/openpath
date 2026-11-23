@@ -449,7 +449,7 @@ const GC_U2_LESSONS: PackLesson[] = [
           challengeId: 'osmosis-direction',
         },
         observeInstruction:
-          'Watch the two liquid levels and the “net water flow” arrow. Notice that the flow slows and stops even though the two concentrations are still different.',
+          'Watch the two liquid levels and the “net water flow” arrow. Notice that the flow slows and stops even though the two concentrations are still different. Then change the solute so the right side holds more than the left, and watch the right-hand level rise instead.',
         explainPrompt: 'Why does the water stop moving before the concentrations are equal?',
         explainOptions: [
           'The membrane pores become blocked with solute',
