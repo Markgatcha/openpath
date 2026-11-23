@@ -1065,7 +1065,7 @@ export const PHYSICS_FOUNDATIONS_PACK: ContentPack = {
       ],
     },
     {
-      title: 'Forces & Newton’s Laws',
+      title: 'Dynamics: Forces & Newton’s Laws',
       description: 'Net force, third-law pairs, apparent weight, and friction on level ground and ramps.',
       subject: 'Physics',
       difficulty: 'medium',
