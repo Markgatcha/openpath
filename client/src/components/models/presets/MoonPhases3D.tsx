@@ -193,7 +193,9 @@ export const moonPhases3dModel: ModelDefinition = {
           'Keep the orbit paused and drag "Days since new Moon" to the full Moon (at least 98% lit). Check that Earth’s shadow passes below the Moon and misses it.',
         evaluate: (_p, m) => ({
           passed: m.illum >= 98 && m.eclipsed === 0,
-          feedback: `Day ${m.day.toFixed(1)}: ${m.illum.toFixed(0)}% lit, ${m.eclipsed ? 'inside' : 'outside'} Earth’s shadow.`,
+          feedback: m.eclipsed
+            ? `Day ${m.day.toFixed(1)}: the Moon is inside Earth’s shadow, so no direct sunlight reaches it.`
+            : `Day ${m.day.toFixed(1)}: ${m.illum.toFixed(0)}% lit, outside Earth’s shadow.`,
         }),
       },
       explain:
@@ -453,14 +455,15 @@ export const moonPhases3dModel: ModelDefinition = {
         ctx.fillText(m.eclipsed ? 'Lunar eclipse' : phaseName(simDay), textX, h * 0.5 - 16)
         ctx.fillStyle = '#94a3b8'
         ctx.font = '11px system-ui, sans-serif'
-        ctx.fillText(`${m.illum.toFixed(0)}% lit`, textX, h * 0.5 + 2)
+        ctx.fillText(m.eclipsed ? 'In Earth’s shadow' : `${m.illum.toFixed(0)}% lit`, textX, h * 0.5 + 2)
         ctx.fillText(`Day ${m.day.toFixed(1)}`, textX, h * 0.5 + 18)
       },
       readouts: (p) => {
         const m = computeMoon(p, simDay)
         return [
           { label: 'Phase', value: m.eclipsed ? 'Full Moon (eclipsed)' : phaseName(simDay) },
-          { label: 'Lit part we see', value: `${m.illum.toFixed(0)}%` },
+          // During an eclipse the face turned to us gets no direct sunlight, so a percentage would mislead.
+          { label: 'Lit part we see', value: m.eclipsed ? 'In Earth’s shadow' : `${m.illum.toFixed(0)}%` },
           { label: 'Days since new Moon', value: `${m.day.toFixed(1)} of ${SYNODIC_DAYS}` },
           { label: 'Moonrise (approx.)', value: formatClock(m.riseHour) },
         ]
