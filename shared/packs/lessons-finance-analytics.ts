@@ -216,7 +216,7 @@ const CF_RISK_RETURN: PackLesson = {
       id: 'cf-u2-l1-fc1',
       front: 'What does beta measure?',
       back: 'How sensitive an asset’s return is to movements in the overall market.',
-      explanation: 'β = 1 moves with the market; β = 0 is risk-free.',
+      explanation: 'β = 1 moves with the market; β = 0 does not move with it at all, though it can still carry risk of its own.',
       interleave: true,
     },
     {
