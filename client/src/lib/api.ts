@@ -1,6 +1,7 @@
 import type {
   AiGenerateInput,
   AiSettingsInput,
+  ArcadeRunInput,
   AssignmentCreateInput,
   AssignmentUpdateInput,
   AttemptAnswerInput,
@@ -8,6 +9,7 @@ import type {
   ClassroomCreateInput,
   EconomySettingsInput,
   JoinClassroomInput,
+  LessonProgressSubmitInput,
   LevelRewardsInput,
   LinkChildInput,
   LoginInput,
@@ -17,6 +19,7 @@ import type {
   QuestionInput,
   QuizCreateInput,
   QuizUpdateInput,
+  RaceMode,
   RegisterInput,
   ShopItemCreateInput,
   ShopItemUpdateInput,
@@ -24,30 +27,45 @@ import type {
   StartAttemptInput,
 } from '@shared/schemas'
 import type { Cosmetics } from '@shared/economy'
+import type { Confidence } from '@shared/confidence'
 import type {
   AiQuestionDraft,
   AiStatusDTO,
+  AnswerResultDTO,
+  ArcadeRunResultDTO,
+  ArcadeSummaryDTO,
+  SiegeCardDTO,
   AssignmentDTO,
   AssignmentRosterDTO,
   AttemptFinishDTO,
+  AttemptReviewQuestionDTO,
   AttemptSummaryDTO,
   BadgeDTO,
   ChildDetailDTO,
   ClassroomDTO,
   CoinTxDTO,
+  CurriculumTrackDTO,
   EconomyDTO,
   LeaderboardEntryDTO,
+  LessonDetailDTO,
+  LessonProgressDTO,
   LevelRewardDTO,
   NotificationDTO,
   QuizAnalyticsDTO,
   QuizDTO,
+  RacePlayerDTO,
+  RaceQuestionDTO,
+  RaceRoomDTO,
+  RaceRevealDTO,
   ShopItemDTO,
   SrsCardDTO,
+  SrsState,
   SrsStatsDTO,
   StudentDashboardDTO,
   StudentQuestionDTO,
   StudentSummaryDTO,
   TeacherQuestionDTO,
+  TrackDetailDTO,
   UserDTO,
 } from '@shared/types'
 import { useAuth } from '../store/auth'
@@ -102,6 +120,21 @@ function patch<T>(path: string, body?: unknown): Promise<T> {
 
 function del<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' })
+}
+
+type SrsFilterArg = {
+  quizId?: string
+  packId?: string
+  queryKey?: readonly unknown[]
+}
+
+function srsPath(base: string, arg?: SrsFilterArg): string {
+  if (!arg || 'queryKey' in arg) return base
+  const search = new URLSearchParams()
+  if (arg.quizId) search.set('quizId', arg.quizId)
+  if (arg.packId) search.set('packId', arg.packId)
+  const qs = search.toString()
+  return `${base}${qs ? `?${qs}` : ''}`
 }
 
 /** Authenticated file download that triggers the browser's save dialog. */
@@ -218,22 +251,42 @@ export const api = {
     get: (id: string) =>
       request<{
         attempt: AttemptSummaryDTO
-        breakdown: {
-          questionId: string
-          correct: boolean
-          correctAnswer: unknown
-          explanation: string
-          points: number
-          earnedPoints: number
-          combo: number
-        }[]
+        breakdown: AnswerResultDTO[]
+        questions: AttemptReviewQuestionDTO[]
         answers: {
           questionId: string
           response: unknown
           correct: boolean
           msTaken: number
+          confidence: Confidence | null
         }[]
       }>(`/attempts/${id}`),
+  },
+
+  // ── Live races ──────────────────────────────────────────────
+  // Races are ephemeral (no coins, no XP, no persisted attempts):
+  // REST only creates rooms and drives the host's controls, all
+  // live play rides the WebSocket (see lib/race-socket.ts).
+  races: {
+    create: (input: { quizId: string; mode?: RaceMode; squadSize?: number }) =>
+      post<{ code: string }>('/races', input),
+    setMode: (code: string, input: { mode: RaceMode; squadSize?: number }) =>
+      post<{ ok: true }>(`/races/${code}/mode`, input),
+    get: (code: string) =>
+      request<{
+        room: RaceRoomDTO
+        question: RaceQuestionDTO | null
+        /** Present only while the reveal phase is on screen. */
+        reveal: RaceRevealDTO | null
+        /** Present only once the race is over. */
+        standings: RacePlayerDTO[] | null
+        isHost: boolean
+        you: RacePlayerDTO
+      }>(`/races/${code}`),
+    start: (code: string) => post<{ ok: true }>(`/races/${code}/start`),
+    reveal: (code: string) => post<{ ok: true }>(`/races/${code}/reveal`),
+    next: (code: string) => post<{ ok: true }>(`/races/${code}/next`),
+    end: (code: string) => post<{ ok: true }>(`/races/${code}/end`),
   },
 
   // ── Community ────────────────────────────────────────────────
@@ -281,19 +334,42 @@ export const api = {
 
   // ── Spaced repetition ─────────────────────────────────────
   srs: {
-    stats: () => request<SrsStatsDTO>('/srs/stats'),
-    due: () => request<{ cards: SrsCardDTO[]; today: string }>('/srs/due'),
+    stats: (arg?: SrsFilterArg) =>
+      request<SrsStatsDTO>(srsPath('/srs/stats', arg)),
+    due: (arg?: SrsFilterArg) =>
+      request<{ cards: SrsCardDTO[]; today: string }>(srsPath('/srs/due', arg)),
     review: (input: SrsReviewInput) =>
+      post<{ state: SrsState; answer: string }>('/srs/review', input),
+    siege: (arg?: SrsFilterArg) =>
+      request<{ cards: SiegeCardDTO[]; today: string }>(srsPath('/srs/siege', arg)),
+  },
+
+  // ── Lessons & Curriculum Tracks ─────────────────────────────
+  lessons: {
+    tracks: (params?: { category?: string; q?: string }) => {
+      const search = new URLSearchParams()
+      if (params?.category) search.set('category', params.category)
+      if (params?.q) search.set('q', params.q)
+      const qs = search.toString()
+      return request<{ tracks: CurriculumTrackDTO[] }>(
+        `/tracks${qs ? `?${qs}` : ''}`,
+      )
+    },
+    track: (id: string) => request<TrackDetailDTO>(`/tracks/${id}`),
+    get: (id: string) => request<LessonDetailDTO>(`/lessons/${id}`),
+    submitProgress: (id: string, input: LessonProgressSubmitInput) =>
       post<{
-        state: {
-          ease: number
-          intervalDays: number
-          reps: number
-          lapses: number
-          dueDate: string
-        }
-        answer: string
-      }>('/srs/review', input),
+        progress: LessonProgressDTO
+        enrolledFlashcards: number
+        unlockedLessonIds: string[]
+      }>(`/lessons/${id}/progress`, input),
+  },
+
+  // ── Arcade ─────────────────────────────────────────────────
+  arcade: {
+    summary: () => request<ArcadeSummaryDTO>('/arcade/summary'),
+    submitRun: (input: ArcadeRunInput) =>
+      post<ArcadeRunResultDTO>('/arcade/runs', input),
   },
 
   // ── Assignments ────────────────────────────────────────────
@@ -320,7 +396,12 @@ export const api = {
           name: string
           description: string
           subject: string
+          category?: string
           icon: string
+          license?: string
+          srsInterleave?: boolean
+          gradeBand?: string
+          lessonCount?: number
           quizzes: {
             title: string
             description: string

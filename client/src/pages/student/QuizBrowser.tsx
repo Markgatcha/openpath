@@ -77,7 +77,7 @@ function QuizCard({ quiz }: { quiz: QuizDTO }) {
           <Play size={15} />
           {attempted ? 'Play again' : 'Start quest'}
         </Link>
-        <Link to={`/student/flashcards/${quiz.id}`} className="btn-ghost">
+        <Link to={`/student/flashcards?quizId=${quiz.id}`} className="btn-ghost">
           <Layers size={15} />
           Drill
         </Link>

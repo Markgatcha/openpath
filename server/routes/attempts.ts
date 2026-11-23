@@ -7,7 +7,10 @@ import { badRequest, forbidden, notFound, parse } from '../lib/http'
 import { checkAssignmentRules } from '../lib/assignments'
 import { awardCoins, grantLevelRewards } from '../lib/economy'
 import { notifyWorkCompleted } from '../lib/notifications'
-import { toAttemptSummaryDTO, toStudentQuestionDTO } from '../lib/mappers'
+import { studentCanSeeQuiz } from '../lib/quiz-access'
+import { toAttemptSummaryDTO, toStudentQuestionDTO, figureGeometryFor } from '../lib/mappers'
+import { ensureAttemptVariants, type VariantMap } from '../lib/variants'
+import { parseConfidence } from '../../shared/confidence'
 import { quizDTO } from './quizzes'
 import {
   AttemptAnswerSchema,
@@ -40,16 +43,6 @@ function getQuiz(id: string): QuizRow {
     | undefined
   if (!row) throw notFound('Quiz not found')
   return row
-}
-
-function studentCanSeeQuiz(studentId: string, quiz: QuizRow): boolean {
-  if (quiz.published !== 1) return false
-  if (!quiz.classroom_id) return true
-  return !!db
-    .prepare(
-      'SELECT 1 FROM classroom_members WHERE classroom_id = ? AND student_id = ?',
-    )
-    .get(quiz.classroom_id, studentId)
 }
 
 function questionsFor(quizId: string): QuestionRow[] {
@@ -189,6 +182,7 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       duration_sec: 0,
       created_at: new Date().toISOString(),
       finished_at: null,
+      variants_json: null,
     }
 
     if (!existing) {
@@ -197,8 +191,11 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       ).run(attempt.id, quiz.id, student.id)
     }
 
-    const questions: StudentQuestionDTO[] = questionsFor(quiz.id).map(
-      toStudentQuestionDTO,
+    // Parameterized figure questions get per-attempt numbers here; a
+    // resumed attempt reuses the variants it was started with.
+    const variants = ensureAttemptVariants(attempt)
+    const questions: StudentQuestionDTO[] = questionsFor(quiz.id).map((row) =>
+      toStudentQuestionDTO(row, variants[row.id]?.givens),
     )
 
     return reply.status(existing ? 200 : 201).send({
@@ -238,10 +235,13 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       })
     }
 
-    const correct = gradeAnswer(question, input.response)
+    // Parameterized figures grade against the numbers this attempt drew.
+    const variants = ensureAttemptVariants(attempt)
+    const variant = variants[question.id] ?? null
+    const correct = gradeAnswer(question, input.response, variant?.answer ?? null)
     db.prepare(
-      `INSERT INTO attempt_answers (id, attempt_id, question_id, response_json, correct, ms_taken)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO attempt_answers (id, attempt_id, question_id, response_json, correct, ms_taken, confidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       randomUUID(),
       attempt.id,
@@ -249,6 +249,8 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       JSON.stringify(input.response),
       correct ? 1 : 0,
       input.msTaken,
+      // Optional self-rating; null when the student skipped the prompt.
+      input.confidence ?? null,
     )
 
     // Live combo = consecutive correct answers ending at this one.
@@ -265,7 +267,7 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
     return reply.status(201).send({
       alreadyAnswered: false,
       correct,
-      correctAnswer: JSON.parse(question.correct_json),
+      correctAnswer: variant?.answer ?? JSON.parse(question.correct_json),
       explanation: question.explanation,
       points: question.points,
       combo,
@@ -299,7 +301,7 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
         newLevel: null,
         streakDays: user.streak_days,
         newBadges: [],
-        breakdown: buildBreakdown(questions, answers),
+        breakdown: buildBreakdown(questions, answers, ensureAttemptVariants(attempt)),
         comboBest: attempt.combo_best,
         avgMs: answers.length > 0
           ? answers.reduce((sum, a) => sum + a.ms_taken, 0) / answers.length
@@ -441,7 +443,7 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
       newLevel: leveledUp,
       streakDays,
       newBadges,
-      breakdown: buildBreakdown(questions, answers),
+      breakdown: buildBreakdown(questions, answers, ensureAttemptVariants(attempt)),
       comboBest,
       avgMs,
       coinsEarned,
@@ -490,12 +492,25 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
 
     return {
       attempt: toAttemptSummaryDTO(attempt, quiz.title, quiz.subject),
-      breakdown: buildBreakdown(questionsFor(quiz.id), answers),
+      breakdown: buildBreakdown(
+        questionsFor(quiz.id),
+        answers,
+        ensureAttemptVariants(attempt),
+      ),
+      // Review mode renders each question; answers never leak past the
+      // breakdown, which only carries the correct keys.
+      questions: questionsFor(quiz.id).map((row) => ({
+        id: row.id,
+        type: row.type,
+        prompt: row.prompt,
+        options: row.options_json ? JSON.parse(row.options_json) : null,
+      })),
       answers: answers.map((a) => ({
         questionId: a.question_id,
         response: JSON.parse(a.response_json),
         correct: a.correct === 1,
         msTaken: a.ms_taken,
+        confidence: parseConfidence(a.confidence),
       })),
     }
   })
@@ -504,19 +519,26 @@ export const attemptRoutes: FastifyPluginAsync = async (app) => {
 function buildBreakdown(
   questions: QuestionRow[],
   answers: AttemptAnswerRow[],
+  variants: VariantMap = {},
 ): AnswerResultDTO[] {
   const byQuestion = new Map(answers.map((a) => [a.question_id, a]))
   return questions.map((question) => {
     const answer = byQuestion.get(question.id)
     const isCorrect = answer?.correct === 1
+    const variant = variants[question.id] ?? null
     return {
       questionId: question.id,
       correct: isCorrect,
-      correctAnswer: JSON.parse(question.correct_json),
+      // Parameterized figures reveal the key this attempt actually drew.
+      correctAnswer: variant?.answer ?? JSON.parse(question.correct_json),
       explanation: question.explanation,
       points: question.points,
       earnedPoints: isCorrect ? question.points : 0,
       combo: 0,
+      figure: figureGeometryFor(question, variant?.givens),
+      // Self-rating carried through so the review can show how the
+      // student felt next to what actually happened.
+      confidence: parseConfidence(answer?.confidence),
     }
   })
 }

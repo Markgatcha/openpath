@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, Clock, FileSpreadsheet, Target, Users } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button, Card, Chip, EmptyState, ProgressBar, Spinner, useToast } from '@/components/ui'
+import { ConfidenceSummaryView, ReviewLink } from '@/pages/AttemptReview'
 import { cn, formatDate, formatDuration, pct } from '@/lib/utils'
 
 export function Analytics() {
@@ -184,6 +185,28 @@ export function Analytics() {
         )}
       </Card>
 
+      {/* Confidence calibration — the metacognition signal: who knew
+          the material vs. who was guessing their way to points. */}
+      <Card className="p-6">
+        <h2 className="mb-1 font-display text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Confidence check
+        </h2>
+        <p className="mb-4 text-xs text-slate-400">
+          “Did you know it or guess it?” — self-ratings collected per answer,
+          across {data.confidence.tagged} tagged answer
+          {data.confidence.tagged === 1 ? '' : 's'}.
+        </p>
+        {data.confidence.tagged === 0 ? (
+          <EmptyState
+            icon="🧠"
+            title="No confidence data yet"
+            description="Students can tag an answer as guessed, unsure, fairly-sure, or certain before submitting. The split shows up here."
+          />
+        ) : (
+          <ConfidenceSummaryView summary={data.confidence} />
+        )}
+      </Card>
+
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Question accuracy */}
         <Card className="p-6">
@@ -270,7 +293,8 @@ export function Analytics() {
                   <th className="pb-2 pr-4">Score</th>
                   <th className="pb-2 pr-4">Accuracy</th>
                   <th className="pb-2 pr-4">Time</th>
-                  <th className="pb-2">Finished</th>
+                  <th className="pb-2 pr-4">Finished</th>
+                  <th className="pb-2">Review</th>
                 </tr>
               </thead>
               <tbody>
@@ -300,8 +324,11 @@ export function Analytics() {
                     <td className="py-2.5 pr-4 text-slate-500 dark:text-slate-400">
                       {formatDuration(attempt.durationSec)}
                     </td>
-                    <td className="py-2.5 text-slate-400">
+                    <td className="py-2.5 pr-4 text-slate-400">
                       {formatDate(attempt.finishedAt)}
+                    </td>
+                    <td className="py-2.5">
+                      <ReviewLink attemptId={attempt.id} />
                     </td>
                   </tr>
                 ))}

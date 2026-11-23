@@ -5,6 +5,7 @@ import cors from '@fastify/cors'
 import rateLimit from '@fastify/rate-limit'
 import fastifyStatic from '@fastify/static'
 import jwt from '@fastify/jwt'
+import websocket from '@fastify/websocket'
 import { env } from './env'
 import { migrate } from './db'
 import { HttpError } from './lib/http'
@@ -21,6 +22,9 @@ import { packRoutes } from './routes/packs'
 import { economyRoutes } from './routes/economy'
 import { exportRoutes, importRoutes } from './routes/import-export'
 import { notificationRoutes } from './routes/notifications'
+import { raceRoutes } from './routes/race'
+import { arcadeRoutes } from './routes/arcade'
+import { lessonRoutes, trackRoutes } from './routes/lessons'
 import { seedIfEmpty } from './seed'
 
 async function main(): Promise<void> {
@@ -33,6 +37,8 @@ async function main(): Promise<void> {
   await app.register(cors, { origin: true })
   await app.register(jwt, { secret: env.JWT_SECRET })
   await app.register(rateLimit, { max: 300, timeWindow: '1 minute' })
+  // Live race mode: WebSocket upgrades under /api/races/:code/live.
+  await app.register(websocket)
 
   app.setErrorHandler((error: FastifyError, _request, reply) => {
     if (error instanceof HttpError) {
@@ -70,6 +76,10 @@ async function main(): Promise<void> {
   await app.register(importRoutes, { prefix: '/api/import' })
   await app.register(exportRoutes, { prefix: '/api/export' })
   await app.register(notificationRoutes, { prefix: '/api/notifications' })
+  await app.register(raceRoutes, { prefix: '/api/races' })
+  await app.register(arcadeRoutes, { prefix: '/api/arcade' })
+  await app.register(trackRoutes, { prefix: '/api/tracks' })
+  await app.register(lessonRoutes, { prefix: '/api/lessons' })
 
   // Production: serve the built web client from the same port.
   const webDir = path.join(__dirname, '..', '..', 'dist', 'web')

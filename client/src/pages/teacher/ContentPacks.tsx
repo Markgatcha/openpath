@@ -1,16 +1,18 @@
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Download, Sparkles } from 'lucide-react'
+import { Box, Download, Sparkles } from 'lucide-react'
 import { api } from '@/lib/api'
-import { Button, Card, Chip, Spinner, useToast } from '@/components/ui'
-import { EmptyState } from '@/components/ui'
+import { Button, Card, Chip, EmptyState, Select, Spinner, useToast } from '@/components/ui'
 import { subjectEmoji } from '@/lib/utils'
+import { SUBJECT_GROUPS } from '@shared/packs'
 
 interface PackQuizSummary {
   title: string
   description: string
   difficulty: string
   questionCount: number
+  modelId?: string
 }
 
 interface PackSummary {
@@ -18,7 +20,10 @@ interface PackSummary {
   name: string
   description: string
   subject: string
+  category?: string
   icon: string
+  modelId?: string
+  standards?: string
   quizzes: PackQuizSummary[]
 }
 
@@ -31,6 +36,8 @@ const DIFFICULTY_COLORS: Record<string, 'emerald' | 'amber' | 'rose'> = {
 export function ContentPacks() {
   const queryClient = useQueryClient()
   const toast = useToast()
+  const [category, setCategory] = useState<string>('All')
+
   const { data, isLoading } = useQuery({
     queryKey: ['packs'],
     queryFn: api.packs.list,
@@ -57,26 +64,42 @@ export function ContentPacks() {
     )
   }
 
-  const packs = data?.packs ?? []
+  const allPacks = (data?.packs ?? []) as PackSummary[]
+  const packs =
+    category === 'All'
+      ? allPacks
+      : allPacks.filter((pack) => pack.category === category || pack.subject === category)
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-extrabold text-slate-900 dark:text-white">
-          Content packs
-        </h1>
-        <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-          Ready-made quiz sets, cloned straight into your library as drafts.
-          Edit everything, publish when you like — a pack is a starting point,
-          not a contract.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-extrabold text-slate-900 dark:text-white">
+            Content packs ({allPacks.length})
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+            {allPacks.length} curriculum-aligned multi-tier packs (Easy, Medium, Hard) cloned straight into your
+            library as editable drafts, paired with interactive 2D &amp; 3D Model Lab simulations and guided lessons.
+          </p>
+        </div>
+
+        <div className="w-48">
+          <Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by discipline">
+            <option value="All">All disciplines ({allPacks.length})</option>
+            {SUBJECT_GROUPS.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       {packs.length === 0 ? (
         <EmptyState
           icon="📦"
-          title="No packs available"
-          description="The registry is empty. Check back after the next release."
+          title="No packs match that filter"
+          description="Try choosing All disciplines to browse the full 16-pack catalog."
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -87,14 +110,21 @@ export function ContentPacks() {
                   {pack.icon}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
-                    {pack.name}
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-base font-bold text-slate-900 dark:text-white">
+                      {pack.name}
+                    </h2>
+                  </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {subjectEmoji(pack.subject)} {pack.subject} ·{' '}
-                    {pack.quizzes.length} quiz{pack.quizzes.length === 1 ? '' : 'zes'}
+                    {subjectEmoji(pack.subject)} {pack.subject} · {pack.quizzes.length} quizzes
+                    {pack.standards ? ` · ${pack.standards}` : ''}
                   </p>
                 </div>
+                {pack.modelId && (
+                  <Chip color="brand">
+                    <Box size={11} /> 3D: {pack.modelId}
+                  </Chip>
+                )}
               </div>
 
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
@@ -112,7 +142,7 @@ export function ContentPacks() {
                         {quiz.title}
                       </p>
                       <p className="truncate text-xs text-slate-400">
-                        {quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'}
+                        {quiz.questionCount} question{quiz.questionCount === 1 ? '' : 's'} — {quiz.description}
                       </p>
                     </div>
                     <Chip color={DIFFICULTY_COLORS[quiz.difficulty] ?? 'slate'}>
@@ -122,7 +152,7 @@ export function ContentPacks() {
                 ))}
               </ul>
 
-              <Button className="w-full" onClick={() => void install(pack)}>
+              <Button className="mt-auto w-full" onClick={() => void install(pack)}>
                 <Download size={16} /> Add to my library
               </Button>
             </motion.div>
@@ -133,8 +163,8 @@ export function ContentPacks() {
       <Card className="flex items-start gap-3 p-5">
         <Sparkles size={18} className="mt-0.5 shrink-0 text-gold-500" />
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Looking for more? Packs ship with the app, so new content arrives with
-          every release — no store, no accounts, no tracking.
+          Every content pack ships offline inside OpenPath — zero cloud accounts, zero telemetry,
+          and full support for parametric figures and 3D Lab simulations.
         </p>
       </Card>
     </div>

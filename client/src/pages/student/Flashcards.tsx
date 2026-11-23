@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   CalendarCheck,
@@ -13,11 +13,13 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Button, Card, ProgressBar, useToast } from '@/components/ui'
+import { FigureCanvas } from '@/components/FigureCanvas'
 import { cn, subjectEmoji } from '@/lib/utils'
 import {
   GRADES,
   GRADE_LABELS,
   intervalPreview,
+  isoDay,
   type ReviewGrade,
   type SrsState,
 } from '@shared/srs'
@@ -33,17 +35,26 @@ const GRADE_STYLES: Record<ReviewGrade, string> = {
 export function Flashcards() {
   const queryClient = useQueryClient()
   const toast = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const quizId = searchParams.get('quizId') ?? undefined
+  const packId = searchParams.get('packId') ?? undefined
+  const srsFilter = quizId || packId ? { quizId, packId } : undefined
+  const filterKey = `${quizId ?? ''}|${packId ?? ''}`
 
   const [mode, setMode] = useState<'review' | 'browse'>('review')
-  const [queue, setQueue] = useState<SrsCardDTO[] | null>(null)
+  const [queueState, setQueueState] = useState<{ key: string; cards: SrsCardDTO[] } | null>(
+    null,
+  )
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [grading, setGrading] = useState(false)
   const [sessionDone, setSessionDone] = useState(0)
 
+  const queue = queueState?.key === filterKey ? queueState.cards : null
+
   const { data: stats } = useQuery({
-    queryKey: ['srs-stats'],
-    queryFn: api.srs.stats,
+    queryKey: ['srs-stats', quizId ?? null, packId ?? null],
+    queryFn: () => api.srs.stats(srsFilter),
   })
   const { data: quizzes } = useQuery({
     queryKey: ['quizzes'],
@@ -51,8 +62,8 @@ export function Flashcards() {
   })
 
   const startReview = async () => {
-    const result = await api.srs.due()
-    setQueue(result.cards)
+    const result = await api.srs.due(srsFilter)
+    setQueueState({ key: filterKey, cards: result.cards })
     setIndex(0)
     setRevealed(false)
     if (result.cards.length === 0) {
@@ -73,7 +84,7 @@ export function Flashcards() {
       if (index + 1 < (queue?.length ?? 0)) {
         setIndex((current) => current + 1)
       } else {
-        setQueue([])
+        setQueueState({ key: filterKey, cards: [] })
       }
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Could not save review', 'error')
@@ -82,15 +93,16 @@ export function Flashcards() {
     }
   }
 
-  const previewState: SrsState = card?.state
-    ? {
-        ease: card.state.ease,
-        intervalDays: card.state.intervalDays,
-        reps: card.state.reps,
-        lapses: card.state.lapses,
-        dueDate: card.state.dueDate,
-      }
-    : { ease: 2.5, intervalDays: 0, reps: 0, lapses: 0, dueDate: '' }
+  // FSRS preview state: the card's own memory model (or a fresh card),
+  // handed to intervalPreview() for the grade-button labels.
+  const previewState: SrsState = card?.state ?? {
+    stability: 0,
+    difficulty: 0,
+    reps: 0,
+    lapses: 0,
+    dueDate: isoDay(),
+    lastReviewedAt: null,
+  }
 
   // ── Browse mode (free study, no scheduling) ──────────────────
   if (mode === 'browse') {
@@ -142,6 +154,25 @@ export function Flashcards() {
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Spaced repetition: hard cards come back sooner, easy cards later.
           </p>
+          {(quizId || packId) && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              <span className="chip bg-brand-500/15 text-brand-700 dark:text-brand-300">
+                {quizId ? 'Filtered to selected quiz' : `Pack filter: ${packId}`}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setQueueState(null)
+                  setIndex(0)
+                  setRevealed(false)
+                  setSearchParams({})
+                }}
+                className="font-semibold text-brand-600 underline hover:text-brand-500 dark:text-brand-300"
+              >
+                Show all decks
+              </button>
+            </div>
+          )}
         </div>
         <Button variant="ghost" onClick={() => setMode('browse')}>
           <Layers size={15} /> Decks
@@ -219,7 +250,7 @@ export function Flashcards() {
             <Button variant="ghost" onClick={() => void startReview()}>
               <RotateCcw size={15} /> Check for more
             </Button>
-            <Button variant="ghost" onClick={() => setQueue(null)}>
+            <Button variant="ghost" onClick={() => setQueueState(null)}>
               Done for now
             </Button>
           </div>
@@ -265,6 +296,11 @@ export function Flashcards() {
                 <p className="font-display text-lg font-bold leading-relaxed text-slate-900 dark:text-white">
                   {card.prompt}
                 </p>
+                {card.figure && (
+                  <div className="flex justify-center py-2">
+                    <FigureCanvas geometry={card.figure} size={220} />
+                  </div>
+                )}
 
                 {!revealed ? (
                   <Button className="mt-auto self-start" onClick={() => setRevealed(true)}>

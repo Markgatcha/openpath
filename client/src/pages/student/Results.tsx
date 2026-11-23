@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { Card, Spinner } from '@/components/ui'
 import { ScoreRing } from '@/components/gamified'
 import { fireConfetti } from '@/lib/confetti'
+import { AttemptReviewList, ConfidenceCard } from '@/pages/AttemptReview'
 import { cn, formatDuration, formatDate, subjectEmoji } from '@/lib/utils'
 import type { AttemptFinishDTO } from '@shared/types'
 
@@ -15,10 +16,11 @@ export function Results() {
   const location = useLocation()
   const finish = (location.state as { finish?: AttemptFinishDTO } | null)?.finish
 
+  // Always fetch the detail: even after a fresh run the review section
+  // wants each question's prompt and the student's stored answers.
   const { data, isLoading } = useQuery({
     queryKey: ['attempt', attemptId],
     queryFn: () => api.attempts.get(attemptId),
-    enabled: !finish,
   })
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function Results() {
     }
   }, [finish])
 
-  if (isLoading) {
+  if (isLoading && !finish) {
     return (
       <div className="grid min-h-[60vh] place-items-center">
         <Spinner className="h-8 w-8" />
@@ -48,7 +50,6 @@ export function Results() {
   }
 
   const attempt = finish?.attempt ?? data!.attempt
-  const breakdown = finish?.breakdown ?? data!.breakdown
   const accuracy = attempt.accuracy
   const grade =
     accuracy >= 0.9
@@ -196,45 +197,27 @@ export function Results() {
         </Card>
       )}
 
-      {/* Breakdown */}
+      {/* Confidence calibration — "did you know it or guess it?"
+          Renders nothing when the run carried no self-ratings. */}
+      {data && <ConfidenceCard answers={data.answers} />}
+
+      {/* Breakdown — the full attempt review: your answer vs the key,
+          tolerance notes, and figures redrawn as the student saw them. */}
       <Card className="p-6">
         <h2 className="mb-4 font-display text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Question breakdown
         </h2>
-        <ul className="flex flex-col gap-3">
-          {breakdown.map((item, index) => (
-            <li
-              key={item.questionId}
-              className={cn(
-                'rounded-xl border p-4',
-                item.correct
-                  ? 'border-emerald-300/60 bg-emerald-500/5 dark:border-emerald-500/30'
-                  : 'border-rose-300/60 bg-rose-500/5 dark:border-rose-500/30',
-              )}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  Q{index + 1}
-                </span>
-                <span
-                  className={cn(
-                    'chip font-bold',
-                    item.correct
-                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300'
-                      : 'bg-rose-500/15 text-rose-600 dark:text-rose-300',
-                  )}
-                >
-                  {item.correct ? `+${item.earnedPoints}` : '0'} / {item.points}
-                </span>
-              </div>
-              {item.explanation && (
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  {item.explanation}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
+        {data ? (
+          <AttemptReviewList
+            questions={data.questions}
+            breakdown={data.breakdown}
+            answers={data.answers}
+          />
+        ) : (
+          <div className="grid place-items-center py-6">
+            <Spinner className="h-6 w-6" />
+          </div>
+        )}
         <p className="mt-4 text-center text-xs text-slate-400">
           Completed {formatDate(attempt.finishedAt ?? attempt.createdAt)}
         </p>

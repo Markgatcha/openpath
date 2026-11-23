@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AnimatePresence, motion, Reorder } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowRight,
   Check,
   Flag,
-  GripVertical,
   Lightbulb,
   Trophy,
   X,
@@ -13,7 +12,16 @@ import {
 import { api } from '@/lib/api'
 import { Button, Card, Spinner, useToast } from '@/components/ui'
 import { ComboMeter, TimerRing } from '@/components/gamified'
-import { FigureCanvas } from '@/components/FigureCanvas'
+import {
+  FillAnswer,
+  FigureAnswer,
+  OrderAnswer,
+} from '@/components/AnswerInputs'
+import {
+  CONFIDENCE_LABELS,
+  CONFIDENCE_LEVELS,
+  type Confidence,
+} from '@shared/confidence'
 import { cn } from '@/lib/utils'
 import type { StudentQuestionDTO } from '@shared/types'
 import type { AttemptFinishDTO } from '@shared/types'
@@ -28,6 +36,8 @@ interface LastResult {
   points: number
   combo: number
   correctAnswer?: unknown
+  /** The self-rating this answer was submitted with (echoed in feedback). */
+  confidence: Confidence | null
 }
 
 export function QuizPlayer() {
@@ -43,6 +53,8 @@ export function QuizPlayer() {
   const [phase, setPhase] = useState<Phase>('answering')
   const [lastResult, setLastResult] = useState<LastResult | null>(null)
   const [combo, setCombo] = useState(0)
+  /** Confidence self-rating for the current question (null = not tagged). */
+  const [confidence, setConfidence] = useState<Confidence | null>(null)
   const [xpFloat, setXpFloat] = useState<{ id: number; points: number } | null>(null)
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,6 +64,16 @@ export function QuizPlayer() {
   const floatSeq = useRef(0)
 
   const question = questions[index]
+
+  // Reset the confidence picker whenever the question changes, using
+  // React's documented "adjust state during render" pattern: comparing
+  // against the previous question and setting state in the same pass
+  // avoids an extra commit (and keeps effects free of state writes).
+  const [shownQuestion, setShownQuestion] = useState(question)
+  if (question !== shownQuestion) {
+    setShownQuestion(question)
+    setConfidence(null)
+  }
 
   // Load (or resume) the attempt once when the quiz opens. All state
   // updates happen after the await, inside the async body.
@@ -116,13 +138,15 @@ export function QuizPlayer() {
     async (response: number | boolean | string | number[]) => {
       if (!attemptId || !question || phase !== 'answering') return
       const msTaken = questionStartRef.current
-      ? Date.now() - questionStartRef.current
-      : 0
+        ? Date.now() - questionStartRef.current
+        : 0
       try {
         const result = await api.attempts.answer(attemptId, {
           questionId: question.id,
           response,
           msTaken,
+          // The self-rating chosen before submitting; null when skipped.
+          confidence,
         })
         setLastResult({
           correct: result.correct,
@@ -130,6 +154,7 @@ export function QuizPlayer() {
           points: question.points,
           combo: result.combo ?? 0,
           correctAnswer: result.correctAnswer,
+          confidence,
         })
         setCombo(result.combo ?? 0)
         setPhase('feedback')
@@ -141,7 +166,7 @@ export function QuizPlayer() {
         toast(err instanceof Error ? err.message : 'Answer rejected', 'error')
       }
     },
-    [attemptId, question, phase, toast],
+    [attemptId, question, phase, toast, confidence],
   )
 
   const next = useCallback(() => {
@@ -288,6 +313,14 @@ export function QuizPlayer() {
               {question.prompt}
             </h2>
 
+            {/* Confidence self-rating — only while answering. The rating
+                must happen BEFORE the reveal, or the metacognition
+                signal is worthless: once the student sees "Correct!"
+                they will always claim they knew it. */}
+            {phase === 'answering' && (
+              <ConfidencePicker value={confidence} onChange={setConfidence} />
+            )}
+
             {/* Answer area */}
             <div className="mt-6">
               {question.type === 'mcq' && question.options && (
@@ -395,6 +428,27 @@ export function QuizPlayer() {
                         🔥 {combo} in a row
                       </span>
                     )}
+                    {/* Echo the self-rating so students connect how they
+                        felt with how it turned out — the calibration
+                        lesson lands right here, at the reveal. */}
+                    {lastResult.confidence && (
+                      <span
+                        className={cn(
+                          'chip',
+                          lastResult.confidence === 'certain' && !lastResult.correct
+                            ? 'bg-rose-500/15 text-rose-500'
+                            : lastResult.confidence === 'guessed' && lastResult.correct
+                              ? 'bg-amber-500/15 text-amber-500'
+                              : 'bg-slate-500/10 text-slate-500 dark:text-slate-300',
+                        )}
+                      >
+                        {lastResult.confidence === 'certain' && !lastResult.correct
+                          ? `⚠️ ${CONFIDENCE_LABELS[lastResult.confidence]} — overconfident`
+                          : lastResult.confidence === 'guessed' && lastResult.correct
+                            ? `🎲 ${CONFIDENCE_LABELS[lastResult.confidence]} — lucky guess`
+                            : `You felt: ${CONFIDENCE_LABELS[lastResult.confidence]}`}
+                      </span>
+                    )}
                   </div>
                   {!lastResult.correct &&
                     lastResult.correctAnswer !== undefined && (
@@ -455,95 +509,6 @@ export function QuizPlayer() {
   )
 }
 
-// ── Fill-in-the-blank input ────────────────────────────────────
-// Owns its input state and is keyed by question id, so every question
-// starts with a fresh, empty field (no effect-based resets).
-function FillAnswer({
-  disabled,
-  onSubmit,
-}: {
-  disabled: boolean
-  onSubmit: (value: string) => void
-}) {
-  const [value, setValue] = useState('')
-  return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (value.trim()) onSubmit(value.trim())
-      }}
-      className="flex gap-2"
-    >
-      <input
-        autoFocus
-        className="input"
-        placeholder="Type your answer…"
-        value={value}
-        disabled={disabled}
-        onChange={(event) => setValue(event.target.value)}
-      />
-      <Button type="submit" disabled={disabled || !value.trim()}>
-        Submit
-      </Button>
-    </form>
-  )
-}
-
-// ── Drag-to-rank answer ────────────────────────────────────────
-// Owns the current ordering and is keyed by question id.
-function OrderAnswer({
-  question,
-  disabled,
-  onSubmit,
-}: {
-  question: StudentQuestionDTO
-  disabled: boolean
-  onSubmit: (indices: number[]) => void
-}) {
-  const options = question.options ?? []
-  const [order, setOrder] = useState(options)
-
-  return (
-    <div className="flex flex-col gap-2">
-      <p className="text-xs text-slate-400">
-        Drag to rank — first item at the top, last at the bottom.
-      </p>
-      <Reorder.Group
-        axis="y"
-        values={order}
-        onReorder={setOrder}
-        className="flex flex-col gap-2"
-      >
-        {order.map((option) => (
-          <Reorder.Item
-            key={option}
-            value={option}
-            className={cn(
-              'flex cursor-grab items-center gap-3 rounded-xl border border-slate-200 bg-white p-3.5 text-sm font-semibold text-slate-800 active:cursor-grabbing',
-              'dark:border-white/10 dark:bg-white/5 dark:text-slate-100',
-              disabled && 'pointer-events-none opacity-80',
-            )}
-          >
-            <GripVertical size={16} className="text-slate-400" />
-            <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-500/15 text-xs font-bold text-brand-600 dark:text-brand-300">
-              {order.indexOf(option) + 1}
-            </span>
-            {option}
-          </Reorder.Item>
-        ))}
-      </Reorder.Group>
-      {!disabled && (
-        <Button
-          className="mt-2 self-start"
-          onClick={() => onSubmit(order.map((option) => options.indexOf(option)))}
-        >
-          Lock in order
-        </Button>
-      )}
-    </div>
-  )
-}
-
 /** Render a stored correct answer for the feedback screen (never raw objects). */
 function formatAnswer(value: unknown): string {
   if (typeof value === 'string') return value
@@ -552,47 +517,51 @@ function formatAnswer(value: unknown): string {
   return ''
 }
 
-// ── Figure answer (numeric entry with tolerance) ────────────────
-function FigureAnswer({
-  question,
-  disabled,
-  onSubmit,
+// ── Confidence self-rating ──────────────────────────────────────
+// "How sure are you?" — asked before the answer is graded, so the
+// tag reflects honest metacognition rather than hindsight. Real
+// radio inputs (visually hidden inside the chip labels) give free
+// arrow-key navigation and screen-reader semantics; nothing is
+// preselected, so skipping the prompt stays one tap away.
+function ConfidencePicker({
+  value,
+  onChange,
 }: {
-  question: StudentQuestionDTO
-  disabled: boolean
-  onSubmit: (value: number) => void
+  value: Confidence | null
+  onChange: (value: Confidence) => void
 }) {
-  const [value, setValue] = useState('')
-
   return (
-    <div className="flex flex-col items-center gap-5">
-      {question.figure && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
-          <FigureCanvas geometry={question.figure} size={250} />
-        </div>
-      )}
-      <form
-        onSubmit={(event) => {
-          event.preventDefault()
-          const parsed = Number(value)
-          if (value.trim() !== '' && Number.isFinite(parsed)) onSubmit(parsed)
-        }}
-        className="flex w-full max-w-xs gap-2"
-      >
-        <input
-          autoFocus
-          type="number"
-          step="any"
-          className="input"
-          placeholder="Your answer (number)"
-          value={value}
-          disabled={disabled}
-          onChange={(event) => setValue(event.target.value)}
-        />
-        <Button type="submit" disabled={disabled || value.trim() === ''}>
-          Submit
-        </Button>
-      </form>
-    </div>
+    <fieldset className="mt-5">
+      <legend className="text-xs font-bold uppercase tracking-wide text-slate-400">
+        How sure are you?
+      </legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {CONFIDENCE_LEVELS.map((level) => {
+          const active = value === level
+          return (
+            <label
+              key={level}
+              className={cn(
+                'cursor-pointer select-none rounded-full border px-3.5 py-1.5 text-sm font-semibold transition',
+                'focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-500',
+                active
+                  ? 'border-brand-500 bg-brand-500/15 text-brand-600 dark:text-brand-300'
+                  : 'border-slate-200 text-slate-500 hover:border-brand-400 hover:text-brand-500 dark:border-white/10 dark:text-slate-400 dark:hover:text-brand-300',
+              )}
+            >
+              <input
+                type="radio"
+                name="confidence"
+                value={level}
+                checked={active}
+                onChange={() => onChange(level)}
+                className="sr-only"
+              />
+              {CONFIDENCE_LABELS[level]}
+            </label>
+          )
+        })}
+      </div>
+    </fieldset>
   )
 }

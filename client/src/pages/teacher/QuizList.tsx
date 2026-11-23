@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   BarChart3,
@@ -12,6 +12,7 @@ import {
   HardDriveDownload,
   Pencil,
   Plus,
+  Radio,
   Trash2,
   Upload,
 } from 'lucide-react'
@@ -46,6 +47,7 @@ const SUBJECTS = [
 export function QuizList() {
   const queryClient = useQueryClient()
   const toast = useToast()
+  const navigate = useNavigate()
   const { data, isLoading } = useQuery({
     queryKey: ['quizzes'],
     queryFn: api.quizzes.list,
@@ -129,6 +131,18 @@ export function QuizList() {
       toast('Duplicated as a new draft.', 'success')
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Failed', 'error')
+    }
+  }
+
+  // Spin up an ephemeral race room and open the host console. The
+  // room lives in server memory for the length of the event only —
+  // no coins, no XP, no attempt rows (see server/lib/race.ts).
+  const startRace = async (quizId: string) => {
+    try {
+      const result = await api.races.create({ quizId })
+      void navigate(`/race/${result.code}/host`)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Could not start a race', 'error')
     }
   }
 
@@ -242,6 +256,17 @@ export function QuizList() {
                   >
                     <BarChart3 size={15} />
                   </Link>
+                  {/* Live race: only published quizzes can be raced —
+                      private drafts never reach a student's roster. */}
+                  {quiz.published && (
+                    <button
+                      onClick={() => void startRace(quiz.id)}
+                      className="btn-ghost px-3 py-2"
+                      title="Start a live race"
+                    >
+                      <Radio size={15} />
+                    </button>
+                  )}
                   <button
                     onClick={() => void publishToggle(quiz.id, !quiz.published)}
                     className="btn-ghost px-3 py-2"

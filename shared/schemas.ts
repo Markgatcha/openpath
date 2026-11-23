@@ -13,6 +13,21 @@ export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 export const DifficultySchema = z.enum(DIFFICULTIES)
 export type Difficulty = z.infer<typeof DifficultySchema>
 
+// ── Confidence (metacognition self-rating) ─────────────────────
+// Students may tag each answer with how sure they felt *before*
+// seeing whether it was right. The tags feed "knew it vs. guessed
+// it" calibration views for students and teachers. Nullable at
+// every layer: skipping the prompt is always allowed, so answers
+// without a tag stay valid forever.
+export const CONFIDENCE_LEVELS = [
+  'guessed',
+  'unsure',
+  'fairly-sure',
+  'certain',
+] as const
+export const ConfidenceSchema = z.enum(CONFIDENCE_LEVELS)
+export type Confidence = z.infer<typeof ConfidenceSchema>
+
 // ── Cosmetic paints (used by profile updates and the shop) ────
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 
@@ -78,18 +93,17 @@ export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>
 const pointsField = z.number().int().min(1).max(100).default(10)
 const explanationField = z.string().max(500).default('')
 
+import { FIGURE_TEMPLATES, ROUNDINGS } from './figure'
+
 export const FigureSpecSchema = z.object({
-  template: z.enum([
-    'triangle-sas',
-    'triangle-sss',
-    'triangle-asa',
-    'right-triangle',
-    'circle',
-    'trapezoid',
-  ]),
+  template: z.enum(FIGURE_TEMPLATES),
   givens: z.record(z.string(), z.number()),
-  ask: z.string().min(1).max(30),
-  rounding: z.enum(['integer', 'tenth', 'hundredth', 'thousandth', 'exact']),
+  ask: z.string().min(1).max(40),
+  rounding: z.enum(ROUNDINGS),
+  // Optional per-given [min, max] pair. When present the question is
+  // parameterized: every attempt samples fresh numbers (seeded per
+  // attempt) so retakes never reuse the same values. See shared/figure.ts.
+  ranges: z.record(z.string(), z.tuple([z.number(), z.number()])).optional(),
 })
 export type FigureSpec = z.infer<typeof FigureSpecSchema>
 
@@ -169,8 +183,24 @@ export const AttemptAnswerSchema = z.object({
     z.array(z.number()),
   ]),
   msTaken: z.number().int().min(0).max(3600000),
+  // Optional self-rating captured before the answer is graded.
+  // nullish() (not optional()) so an explicit null — "skipped the
+  // prompt" — is accepted just like an omitted key.
+  confidence: ConfidenceSchema.nullish(),
 })
 export type AttemptAnswerInput = z.infer<typeof AttemptAnswerSchema>
+
+// ── Live race mode ─────────────────────────────────────────────
+export const RACE_MODES = ['classic', 'squad-sync', 'classroom-siege'] as const
+export const RaceModeSchema = z.enum(RACE_MODES)
+export type RaceMode = z.infer<typeof RaceModeSchema>
+
+export const CreateRaceSchema = z.object({
+  quizId: z.string().min(1),
+  mode: RaceModeSchema.default('classic'),
+  squadSize: z.number().int().min(2).max(5).optional(),
+})
+export type CreateRaceInput = z.infer<typeof CreateRaceSchema>
 
 // ── Classrooms & parent links ─────────────────────────────────
 export const ClassroomCreateSchema = z.object({
@@ -212,6 +242,7 @@ export const AssignmentCreateSchema = z
     dueDate: dateField,
     availableFrom: dateField,
     maxAttempts: z.number().int().min(0).max(20).default(0),
+    requiredLessonId: z.string().min(1).max(120).nullable().optional(),
   })
   .refine((data) => Boolean(data.classroomId || data.studentId), {
     message: 'Assign to a classroom or to a student',
@@ -235,6 +266,7 @@ export const AssignmentUpdateSchema = z.object({
     .nullable()
     .optional(),
   maxAttempts: z.number().int().min(0).max(20).optional(),
+  requiredLessonId: z.string().min(1).max(120).nullable().optional(),
 })
 export type AssignmentUpdateInput = z.infer<typeof AssignmentUpdateSchema>
 
@@ -242,6 +274,7 @@ export type AssignmentUpdateInput = z.infer<typeof AssignmentUpdateSchema>
 export const PackInstallSchema = z.object({
   packId: z.string().min(1).max(60),
   confirmDuplicates: z.boolean().default(false),
+  difficulties: z.array(DifficultySchema).min(1).max(3).optional(),
 })
 export type PackInstallInput = z.infer<typeof PackInstallSchema>
 
@@ -325,3 +358,69 @@ export const AiSettingsSchema = z.object({
   enabled: z.boolean().default(true),
 })
 export type AiSettingsInput = z.infer<typeof AiSettingsSchema>
+
+// ── Arcade (solo game modes) ──────────────────────────────────
+// Arcade runs are client-simulated games; the server only sees the
+// final tally. Every bound below exists so a hand-crafted payload can't
+// mint coins: the refinements keep the tally internally consistent, and
+// the route adds a plausibility check on duration plus a daily cap.
+export const ARCADE_MODES = [
+  'streak-siege',
+  'speed-match',
+  'step-detective',
+  'sim-sandbox',
+  'sequence-architect',
+  'boss-raid',
+  'certainty-vault',
+  'diagram-scout',
+  'cloze-workbench',
+  'knowledge-bastion',
+] as const
+export const ArcadeModeSchema = z.enum(ARCADE_MODES)
+export type ArcadeMode = z.infer<typeof ArcadeModeSchema>
+
+export const ArcadeRunSchema = z
+  .object({
+    mode: ArcadeModeSchema,
+    /** Correct answers (Siege) or matched pairs (Speed Match). */
+    correct: z.number().int().min(0).max(500),
+    /** Every answer / match attempt, right or wrong. */
+    attempts: z.number().int().min(0).max(1000),
+    bestCombo: z.number().int().min(0).max(500),
+    /** How many times the combo crossed a burst threshold. */
+    comboBursts: z.number().int().min(0).max(200),
+    score: z.number().int().min(0).max(10_000_000),
+    durationMs: z.number().int().min(0).max(3_600_000),
+    deckId: z.string().min(1).max(60).optional(),
+    /** Optional certainty/depth telemetry for newer arcade modes (0-100 quality). */
+    qualityScore: z.number().int().min(0).max(100).optional(),
+    /** Deeply defended concepts (Knowledge Bastion) or restored cards (Cloze). */
+    deepUnits: z.number().int().min(0).max(500).optional(),
+    /** Calibrated high-certainty hits (Certainty Vault). */
+    confidentHits: z.number().int().min(0).max(500).optional(),
+  })
+  .refine((run) => run.correct <= run.attempts, {
+    message: 'correct cannot exceed attempts',
+  })
+  .refine((run) => run.bestCombo <= run.correct, {
+    message: 'bestCombo cannot exceed correct',
+  })
+  .refine((run) => run.comboBursts <= Math.floor(run.correct / 3), {
+    message: 'comboBursts is out of range',
+  })
+export type ArcadeRunInput = z.infer<typeof ArcadeRunSchema>
+
+// ── Lessons & Structured Curriculum ───────────────────────────
+export const LessonProgressSubmitSchema = z.object({
+  stepId: z.string().min(1).max(120).optional(),
+  stepIndex: z.number().int().min(0).max(100).optional(),
+  completedSteps: z.array(z.string().min(1).max(120)).max(100).optional(),
+  completed: z.boolean().optional(),
+  checkpointCorrectCount: z.number().int().min(0).max(50).optional(),
+  checkpointTotalCount: z.number().int().min(0).max(50).optional(),
+  challengeCompleted: z.boolean().optional(),
+  score: z.number().min(0).max(100).optional(),
+  timeSpentSec: z.number().int().min(0).max(86_400).optional(),
+  enrollFlashcards: z.boolean().optional(),
+})
+export type LessonProgressSubmitInput = z.infer<typeof LessonProgressSubmitSchema>

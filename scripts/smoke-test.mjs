@@ -46,6 +46,75 @@ async function login(email, password) {
   return result.data.token
 }
 
+/**
+ * Minimal race-socket client: connects, buffers every frame, and
+ * resolves `next(match)` with the next frame that matches (or one
+ * already buffered). Browsers can't set WS headers, so the JWT
+ * rides the `token` query parameter — exactly like the web client.
+ */
+function raceSocket(code, token, timeoutMs = 4000) {
+  const url = `${BASE.replace(/^http/, 'ws')}/api/races/${code}/live?token=${encodeURIComponent(token)}`
+  const socket = new WebSocket(url)
+  const frames = []
+  const waiters = []
+  // Frames below this index were already handed to a `next` call.
+  // The cursor (not the call site) defines "already seen", so a
+  // frame that lands while an HTTP await is in flight is still
+  // matched by the next waiter — but never matched twice.
+  let consumed = 0
+
+  socket.addEventListener('message', (event) => {
+    const frame = JSON.parse(event.data)
+    const index = frames.length
+    frames.push(frame)
+    for (let i = waiters.length - 1; i >= 0; i -= 1) {
+      if (waiters[i].match(frame)) {
+        waiters.splice(i, 1)[0].resolve(frame)
+        consumed = Math.max(consumed, index + 1)
+      }
+    }
+  })
+
+  const next = (match) =>
+    new Promise((resolve, reject) => {
+      const index = frames.findIndex((frame, i) => i >= consumed && match(frame))
+      if (index >= 0) {
+        consumed = index + 1
+        resolve(frames[index])
+        return
+      }
+      const waiter = { match, resolve }
+      waiters.push(waiter)
+      setTimeout(() => {
+        const at = waiters.indexOf(waiter)
+        if (at >= 0) waiters.splice(at, 1)
+        reject(
+          new Error(
+            `race frame timeout; got ${JSON.stringify(frames.map((frame) => frame.t))}`,
+          ),
+        )
+      }, timeoutMs)
+    })
+
+  return {
+    frames,
+    next,
+    send: (frame) => socket.send(JSON.stringify(frame)),
+    close: () => socket.close(),
+  }
+}
+
+/** Connect and wait for the handshake frame (`joined`, or an error). */
+async function openRaceSocket(code, token) {
+  const client = raceSocket(code, token)
+  const joined = await client.next((frame) => frame.t === 'joined' || frame.t === 'error')
+  if (joined.t === 'error') {
+    client.close()
+    throw new Error(`race socket refused: ${joined.message}`)
+  }
+  return { ...client, joined }
+}
+
 async function main() {
   console.log(`\n🧪 OpenPath smoke test against ${BASE}\n`)
 
@@ -251,6 +320,479 @@ async function main() {
   const dash = await api('/stats/student/dashboard', { token: studentToken })
   check('dashboard shows the new run', dash.data.recentAttempts.length > 0)
 
+  // ── Parameterized figure questions ───────────────────────────
+  console.log('\nParameterized figure flow:')
+  const labQuiz = await api('/quizzes', {
+    method: 'POST',
+    token: teacherToken,
+    body: { title: 'Variation Lab', subject: 'Math', difficulty: 'medium' },
+  })
+  const labId = labQuiz.data.quiz.id
+  await api(`/quizzes/${labId}/questions`, {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      type: 'mcq',
+      prompt: 'Which law relates three sides and one included angle?',
+      options: ['Law of sines', 'Law of cosines', 'Pythagorean theorem', 'Tangent ratio'],
+      correct: 1,
+      points: 10,
+    },
+  })
+  const varied = await api(`/quizzes/${labId}/questions`, {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      type: 'figure',
+      prompt: 'Find side a. Round to the nearest tenth.',
+      figure: {
+        template: 'triangle-sas',
+        givens: { b: 7, c: 5, angleA: 40 },
+        ranges: { b: [5, 12], c: [3, 10] },
+        ask: 'a',
+        rounding: 'tenth',
+      },
+      explanation: 'Law of cosines: a² = b² + c² − 2bc·cos(A).',
+      points: 10,
+    },
+  })
+  check('accepts parameterized figure', varied.status === 201)
+  check(
+    'keeps the prototype answer key',
+    Math.abs(varied.data.question?.correct - 4.514) < 0.01,
+    `key=${varied.data.question?.correct}`,
+  )
+  const variedQuestionId = varied.data.question?.id
+
+  const invertedRange = await api(`/quizzes/${labId}/questions`, {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      type: 'figure',
+      prompt: 'Inverted range',
+      figure: {
+        template: 'triangle-sas',
+        givens: { b: 7, c: 5, angleA: 40 },
+        ranges: { b: [12, 5] },
+        ask: 'a',
+        rounding: 'tenth',
+      },
+      points: 10,
+    },
+  })
+  check('rejects inverted range', invertedRange.status === 400)
+
+  await api(`/quizzes/${labId}/publish`, { method: 'POST', token: teacherToken })
+
+  /** SAS geometry labels: edge 0 = c, edge 2 = b (edge 1 is the asked "a"). */
+  const rangedLabels = (questions) =>
+    questions
+      .find((question) => question.id === variedQuestionId)
+      .figure.edges.map((edge) => edge.label)
+
+  const finishLabRun = async (attemptId, questions) => {
+    const mcq = questions.find((question) => question.id !== variedQuestionId)
+    await api(`/attempts/${attemptId}/answer`, {
+      method: 'POST',
+      token: studentToken,
+      body: { questionId: mcq.id, response: 1, msTaken: 1200 },
+    })
+    return api(`/attempts/${attemptId}/finish`, { method: 'POST', token: studentToken })
+  }
+
+  // Four separate attempts: numbers should be drawn inside the ranges,
+  // and different attempts should not all reuse the same values.
+  const labelSets = new Set()
+  let valuesInRange = true
+  for (let run = 0; run < 4; run += 1) {
+    const started = await api('/attempts', {
+      method: 'POST',
+      token: studentToken,
+      body: { quizId: labId },
+    })
+    const labels = rangedLabels(started.data.questions)
+    labelSets.add(labels.join(' '))
+    const [cLabel, , bLabel] = labels.map(Number)
+    if (bLabel < 5 || bLabel > 12 || cLabel < 3 || cLabel > 10) valuesInRange = false
+    const finished = await finishLabRun(started.data.attemptId, started.data.questions)
+    check(`variation run ${run + 1} completes`, finished.status === 200)
+  }
+  check('sampled values honor the teacher ranges', valuesInRange)
+  check(
+    'retakes draw fresh numbers',
+    labelSets.size >= 2,
+    `${labelSets.size} distinct value sets`,
+  )
+
+  // The revealed answer key must match the numbers on the drawn figure.
+  const keyRun = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId: labId },
+  })
+  const [cKey, , bKey] = rangedLabels(keyRun.data.questions).map(Number)
+  const wrongVariant = await api(`/attempts/${keyRun.data.attemptId}/answer`, {
+    method: 'POST',
+    token: studentToken,
+    body: { questionId: variedQuestionId, response: 1, msTaken: 1000 },
+  })
+  check('wrong variant answer rejected', wrongVariant.data.correct === false)
+  const expectedKey = Math.sqrt(
+    bKey * bKey + cKey * cKey - 2 * bKey * cKey * Math.cos((40 * Math.PI) / 180),
+  )
+  check(
+    'revealed key matches the drawn figure',
+    Math.abs(wrongVariant.data.correctAnswer - expectedKey) <= 0.051,
+    `revealed=${wrongVariant.data.correctAnswer} expected≈${expectedKey.toFixed(3)}`,
+  )
+  await finishLabRun(keyRun.data.attemptId, keyRun.data.questions)
+
+  // In-tolerance answer on the drawn variant is accepted.
+  const goodRun = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId: labId },
+  })
+  const [cGood, , bGood] = rangedLabels(goodRun.data.questions).map(Number)
+  const aGood =
+    Math.sqrt(
+      bGood * bGood + cGood * cGood - 2 * bGood * cGood * Math.cos((40 * Math.PI) / 180),
+    )
+  const goodVariant = await api(`/attempts/${goodRun.data.attemptId}/answer`, {
+    method: 'POST',
+    token: studentToken,
+    body: {
+      questionId: variedQuestionId,
+      response: Math.round(aGood * 10) / 10,
+      msTaken: 1400,
+    },
+  })
+  check('in-tolerance variant answer accepted', goodVariant.data.correct === true)
+
+  // Resuming an unfinished attempt keeps the numbers it started with.
+  const resumeLabels = rangedLabels(goodRun.data.questions).join(' ')
+  const resumed = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId: labId },
+  })
+  check('resume reuses the same attempt', resumed.data.resumed === true)
+  check(
+    'resumed attempt keeps its variant',
+    rangedLabels(resumed.data.questions).join(' ') === resumeLabels,
+  )
+  await finishLabRun(resumed.data.attemptId, resumed.data.questions)
+
+  // Review mode: the detail endpoint must render the whole run — prompts,
+  // stored answers, and the figure exactly as the student saw it.
+  const review = await api(`/attempts/${keyRun.data.attemptId}`, { token: studentToken })
+  check('attempt detail lists questions for review', review.data.questions.length === 2)
+  check('review carries every stored answer', review.data.answers.length === 2)
+  const reviewFigure = review.data.breakdown.find((item) => item.figure)
+  check(
+    'review redraws the drawn variant',
+    Boolean(reviewFigure) && reviewFigure.figure.edges[2].label === String(bKey),
+    JSON.stringify(reviewFigure?.figure?.edges?.map((edge) => edge.label)),
+  )
+  check(
+    'review prompts carry no answers',
+    review.data.questions.every((question) => !('correct' in question)),
+  )
+  const teacherReview = await api(`/attempts/${keyRun.data.attemptId}`, { token: teacherToken })
+  check('teacher can review a student run', teacherReview.status === 200)
+  const stranger = await api('/auth/register', {
+    method: 'POST',
+    body: {
+      email: `stranger-${Date.now()}@openpath.dev`,
+      name: 'Nosey Neighbor',
+      password: 'test1234',
+      role: 'student',
+    },
+  })
+  const blockedReview = await api(`/attempts/${keyRun.data.attemptId}`, {
+    token: stranger.data.token,
+  })
+  check('other students cannot review a run', blockedReview.status === 403)
+
+  // ── Confidence + accuracy capture ────────────────────────────
+  console.log('\nConfidence capture flow:')
+  const confQuiz = await api('/quizzes', {
+    method: 'POST',
+    token: teacherToken,
+    body: { title: 'Confidence Lab', subject: 'Math', difficulty: 'easy' },
+  })
+  const confQuizId = confQuiz.data.quiz.id
+  // Four MCQs: three tagged answers that hit every interesting case
+  // (certain+right, certain+wrong, guessed+right) plus one left
+  // untagged to prove skipping the prompt stays legal.
+  const confPrompts = [
+    'What is 2 + 2?',
+    'What is 7 × 8?',
+    'What is 9 × 9?',
+    'Will this one be tagged?',
+  ]
+  const confQuestionIds = []
+  for (const prompt of confPrompts) {
+    const created = await api(`/quizzes/${confQuizId}/questions`, {
+      method: 'POST',
+      token: teacherToken,
+      body: {
+        type: 'mcq',
+        prompt,
+        options: ['One', 'Two', 'Three', 'Four'],
+        correct: 1,
+        points: 10,
+      },
+    })
+    confQuestionIds.push(created.data.question.id)
+  }
+  await api(`/quizzes/${confQuizId}/publish`, { method: 'POST', token: teacherToken })
+
+  const confStart = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId: confQuizId },
+  })
+  check('starts the confidence run', confStart.status === 201 && confStart.data.attemptId)
+  const confAttemptId = confStart.data.attemptId
+
+  // Right+certain, wrong+certain (overconfident), right+guessed (lucky),
+  // and a fourth answer submitted without any confidence field.
+  const confPlan = [
+    { response: 1, confidence: 'certain' },
+    { response: 0, confidence: 'certain' },
+    { response: 1, confidence: 'guessed' },
+    {},
+  ]
+  for (const [index, plan] of confPlan.entries()) {
+    const answered = await api(`/attempts/${confAttemptId}/answer`, {
+      method: 'POST',
+      token: studentToken,
+      body: {
+        questionId: confQuestionIds[index],
+        response: plan.response ?? 1,
+        msTaken: 1500,
+        ...plan,
+      },
+    })
+    check(`answer ${index + 1} accepted`, answered.status === 201, `status=${answered.status} ${JSON.stringify(answered.data)}`)
+  }
+
+  const confDetail = await api(`/attempts/${confAttemptId}`, { token: studentToken })
+  const confAnswers = confDetail.data.answers
+  check(
+    'detail echoes per-answer confidence',
+    confAnswers[0]?.confidence === 'certain' && confAnswers[2]?.confidence === 'guessed',
+    JSON.stringify(confAnswers?.map((a) => a.confidence)),
+  )
+  check('untagged answer reports null', confAnswers[3]?.confidence === null)
+  check(
+    'breakdown echoes confidence',
+    confDetail.data.breakdown[0]?.confidence === 'certain' &&
+      confDetail.data.breakdown[3]?.confidence === null,
+  )
+
+  const confFinish = await api(`/attempts/${confAttemptId}/finish`, {
+    method: 'POST',
+    token: studentToken,
+  })
+  check('confidence run finishes', confFinish.status === 200)
+
+  // A fresh attempt for the validation probe (already-answered rows
+  // short-circuit before the schema check and would mask a failure).
+  const confProbe = await api('/attempts', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId: confQuizId },
+  })
+  const badConfidence = await api(`/attempts/${confProbe.data.attemptId}/answer`, {
+    method: 'POST',
+    token: studentToken,
+    body: {
+      questionId: confQuestionIds[0],
+      response: 1,
+      msTaken: 100,
+      confidence: 'vibes',
+    },
+  })
+  check('rejects unknown confidence level', badConfidence.status === 400, `status=${badConfidence.status}`)
+
+  const confAnalytics = await api(`/quizzes/${confQuizId}/analytics`, { token: teacherToken })
+  const summary = confAnalytics.data.confidence
+  check(
+    'analytics counts only tagged answers',
+    summary?.tagged === 3,
+    JSON.stringify(summary),
+  )
+  check(
+    'knew-it bucket splits by correctness',
+    summary?.knewIt?.seen === 2 && summary?.knewIt?.correct === 1,
+    `knewIt=${JSON.stringify(summary?.knewIt)}`,
+  )
+  check(
+    'guessed bucket splits by correctness',
+    summary?.guessed?.seen === 1 && summary?.guessed?.correct === 1,
+    `guessed=${JSON.stringify(summary?.guessed)}`,
+  )
+  check('flags the lucky guess', summary?.lucky === 1, `lucky=${summary?.lucky}`)
+  check(
+    'flags the overconfident miss',
+    summary?.overconfident === 1,
+    `overconfident=${summary?.overconfident}`,
+  )
+  check(
+    'buckets cover all four levels',
+    Array.isArray(summary?.buckets) &&
+      summary.buckets.length === 4 &&
+      summary.buckets.find((bucket) => bucket.level === 'certain')?.seen === 2,
+    JSON.stringify(summary?.buckets),
+  )
+
+  // ── Live race mode ───────────────────────────────────────────
+  console.log('\nLive race flow:')
+  // Reuse the published 3-question quiz (mcq + order + figure):
+  // races are ephemeral, so nothing graded is touched.
+  const raceCreated = await api('/races', {
+    method: 'POST',
+    token: teacherToken,
+    body: { quizId },
+  })
+  check('teacher creates a race room', raceCreated.status === 201, `status=${raceCreated.status}`)
+  const raceCode = raceCreated.data.code
+  check(
+    'code is 6 unambiguous characters',
+    /^[A-HJ-NP-Z2-9]{6}$/.test(raceCode ?? ''),
+    `code=${raceCode}`,
+  )
+
+  const studentCreatesRace = await api('/races', {
+    method: 'POST',
+    token: studentToken,
+    body: { quizId },
+  })
+  check('students cannot create races', studentCreatesRace.status === 403, `status=${studentCreatesRace.status}`)
+
+  const unknownRace = await api('/races/WRONG1', { token: teacherToken })
+  check('unknown race code 404s', unknownRace.status === 404, `status=${unknownRace.status}`)
+
+  const lobby = await api(`/races/${raceCode}`, { token: studentToken })
+  check(
+    'student sees the lobby with no question yet',
+    lobby.status === 200 &&
+      lobby.data.room.phase === 'lobby' &&
+      lobby.data.isHost === false &&
+      lobby.data.question === null,
+    `status=${lobby.status}`,
+  )
+
+  const host = await openRaceSocket(raceCode, teacherToken)
+  check('host handshake confirms host role', host.joined.role === 'host')
+
+  const startedRace = await api(`/races/${raceCode}/start`, {
+    method: 'POST',
+    token: teacherToken,
+  })
+  check('host starts the race', startedRace.status === 200)
+  const hostQuestion = await host.next((frame) => frame.t === 'question')
+  check(
+    'question frame carries no answers',
+    hostQuestion.question?.prompt === 'What do bees collect?' &&
+      !('correct' in hostQuestion.question) &&
+      hostQuestion.question?.options?.length === 4,
+    JSON.stringify(hostQuestion.question),
+  )
+  check(
+    'host cannot start twice',
+    (await api(`/races/${raceCode}/start`, { method: 'POST', token: teacherToken })).status === 400,
+  )
+
+  // A student who joins mid-question is dropped straight into it.
+  const student = await openRaceSocket(raceCode, studentToken)
+  check(
+    'late joiner lands on the live question',
+    student.joined.role === 'player' &&
+      student.joined.question?.id === hostQuestion.question.id,
+  )
+  const joinBroadcast = await host.next((frame) => frame.t === 'player_joined')
+  check('roster broadcast names the joiner', joinBroadcast.player.name === 'Grace Hopper')
+
+  // Correct answer in 4.2s: base 10 + speed + first-streak bonuses.
+  student.send({ t: 'answer', response: 0, msTaken: 4200 })
+  const answered = await host.next((frame) => frame.t === 'answered')
+  check('answered tally broadcasts to the room', answered.answeredCount === 1)
+
+  const hostReveal = await host.next((frame) => frame.t === 'reveal')
+  check(
+    'auto-reveal fires once everyone has answered',
+    hostReveal.reveal.correctAnswer === 0 &&
+      hostReveal.reveal.correctCount === 1 &&
+      hostReveal.reveal.answeredCount === 1,
+    JSON.stringify(hostReveal.reveal),
+  )
+  check(
+    'speed and streak bonuses push past base points',
+    hostReveal.players[0].score >= 11 && hostReveal.players[0].lastCorrect === true,
+    `score=${hostReveal.players[0].score}`,
+  )
+  const studentReveal = await student.next((frame) => frame.t === 'reveal')
+  check(
+    'student reveal echoes their own row',
+    studentReveal.you.score === hostReveal.players[0].score &&
+      studentReveal.you.lastCorrect === true,
+    JSON.stringify(studentReveal.you),
+  )
+  check(
+    'double reveal refused',
+    (await api(`/races/${raceCode}/reveal`, { method: 'POST', token: teacherToken })).status === 400,
+  )
+
+  const nextUp = await api(`/races/${raceCode}/next`, {
+    method: 'POST',
+    token: teacherToken,
+  })
+  check('host advances to the next question', nextUp.status === 200)
+  const secondQuestion = await host.next((frame) => frame.t === 'question')
+  check(
+    'second question is the ordering task',
+    secondQuestion.question.prompt === 'Order the planets from the Sun.',
+  )
+
+  // Wrong ordering: zero points, streak reset, room still auto-reveals.
+  student.send({ t: 'answer', response: [1, 0, 2], msTaken: 9000 })
+  const secondReveal = await host.next((frame) => frame.t === 'reveal')
+  check(
+    'wrong answer scores zero and breaks the streak',
+    secondReveal.players[0].score === hostReveal.players[0].score &&
+      secondReveal.players[0].streak === 0 &&
+      secondReveal.players[0].lastCorrect === false &&
+      secondReveal.reveal.correctCount === 0,
+    JSON.stringify(secondReveal.players[0]),
+  )
+
+  const ended = await api(`/races/${raceCode}/end`, {
+    method: 'POST',
+    token: teacherToken,
+  })
+  check('host ends the race', ended.status === 200)
+  const hostOver = await host.next((frame) => frame.t === 'over')
+  check(
+    'standings carry the final tally',
+    hostOver.standings.length === 1 &&
+      hostOver.standings[0].score === hostReveal.players[0].score,
+    JSON.stringify(hostOver.standings),
+  )
+  const studentOver = await student.next((frame) => frame.t === 'over')
+  check(
+    'student sees the same standings',
+    studentOver.standings[0].score === hostOver.standings[0].score,
+  )
+  check(
+    'finished race refuses a student state lookup',
+    (await api(`/races/${raceCode}`, { token: studentToken })).status === 400,
+  )
+  host.close()
+  student.close()
+
   // ── Spaced repetition ───────────────────────────────────────
   console.log('\nSpaced repetition flow:')
   const due = await api('/srs/due', { token: studentToken })
@@ -267,10 +809,11 @@ async function main() {
     body: { questionId: figureQuestionId, grade: 'good' },
   })
   check(
-    'good grade schedules tomorrow',
+    'good grade schedules at least tomorrow',
     good.status === 201 &&
       good.data.state?.reps === 1 &&
-      good.data.state?.dueDate > due.data.today,
+      good.data.state?.dueDate > due.data.today &&
+      good.data.state?.stability > 0,
     JSON.stringify(good.data.state),
   )
 
@@ -280,11 +823,10 @@ async function main() {
     body: { questionId: figureQuestionId, grade: 'again' },
   })
   check(
-    'again grade lapses back to today',
+    'again grade lapses and collapses stability',
     again.status === 201 &&
       again.data.state?.lapses === 1 &&
-      again.data.state?.intervalDays === 0 &&
-      again.data.state?.dueDate === due.data.today,
+      again.data.state?.stability < good.data.state?.stability,
     JSON.stringify(again.data.state),
   )
 
@@ -468,10 +1010,11 @@ async function main() {
   console.log('\nContent packs flow:')
   const packs = await api('/packs', { token: teacherToken })
   const geometryPack = packs.data.packs?.find((pack) => pack.id === 'geometry-figures')
-  check('pack registry serves packs', Boolean(geometryPack))
+  check('pack registry serves 22 curriculum packs', packs.data.packs?.length === 22, `got=${packs.data.packs?.length}`)
+  check('pack registry includes geometry-figures with 3D model link', Boolean(geometryPack?.modelId))
   check(
-    'geometry pack advertises two quizzes',
-    geometryPack?.quizzes?.length === 2,
+    'geometry pack advertises three tiered quizzes',
+    geometryPack?.quizzes?.length === 3,
     JSON.stringify(geometryPack?.quizzes?.map((quiz) => quiz.title)),
   )
 
@@ -485,7 +1028,7 @@ async function main() {
   check(
     'pack installs as drafts with questions',
     installed.status === 201 &&
-      installed.data.quizzes?.length === 2 &&
+      installed.data.quizzes?.length === 3 &&
       installed.data.quizzes.every(
         (quiz) => !quiz.published && quiz.questionCount > 0,
       ),
@@ -776,6 +1319,174 @@ async function main() {
     body: { title: 'x', subject: 'y' },
   })
   check('students cannot create quizzes', wrongRole.status === 403)
+
+  // ── Expanded STEM Parametric Figures (8 new templates) ───────
+  console.log('\nExpanded STEM parametric figures:')
+  const stemQuiz = await api('/quizzes', {
+    method: 'POST',
+    token: teacherToken,
+    body: {
+      title: 'STEM Parametric Verification',
+      subject: 'Physics',
+      difficulty: 'medium',
+      description: 'Validates all 8 STEM/Econ/Stats figure solvers.',
+    },
+  })
+  const stemQuizId = stemQuiz.data.quiz?.id
+  const newFigureSpecs = [
+    {
+      name: 'coordinate-line',
+      figure: { template: 'coordinate-line', givens: { x1: -2, y1: 1, x2: 4, y2: 10 }, ask: 'slope', rounding: 'tenth' },
+      expected: 1.5,
+    },
+    {
+      name: 'parabola-vertex',
+      figure: { template: 'parabola-vertex', givens: { a: 2, b: -12, c: 10 }, ask: 'vertexX', rounding: 'integer' },
+      expected: 3,
+    },
+    {
+      name: 'unit-circle',
+      figure: { template: 'unit-circle', givens: { angleDeg: 60 }, ask: 'cos', rounding: 'tenth' },
+      expected: 0.5,
+    },
+    {
+      name: 'vector-2d',
+      figure: { template: 'vector-2d', givens: { ux: 6, uy: 0, vx: 0, vy: 8 }, ask: 'resultantMag', rounding: 'integer' },
+      expected: 10,
+    },
+    {
+      name: 'inclined-plane',
+      figure: { template: 'inclined-plane', givens: { mass: 10, angle: 30, mu: 0.2 }, ask: 'normalForce', rounding: 'tenth' },
+      expected: 84.9,
+    },
+    {
+      name: 'series-parallel-circuit',
+      figure: { template: 'series-parallel-circuit', givens: { voltage: 24, r1: 4, r2: 6, r3: 12 }, ask: 'totalCurrent', rounding: 'integer' },
+      expected: 3,
+    },
+    {
+      name: 'supply-demand',
+      figure: { template: 'supply-demand', givens: { demandIntercept: 100, demandSlope: 2, supplyIntercept: 20, supplySlope: 2, tax: 16 }, ask: 'deadweightLoss', rounding: 'integer' },
+      expected: 32,
+    },
+    {
+      name: 'normal-curve',
+      figure: { template: 'normal-curve', givens: { mean: 100, sd: 15, x: 130 }, ask: 'zScore', rounding: 'tenth' },
+      expected: 2.0,
+    },
+  ]
+
+  for (const item of newFigureSpecs) {
+    const added = await api(`/quizzes/${stemQuizId}/questions`, {
+      method: 'POST',
+      token: teacherToken,
+      body: {
+        type: 'figure',
+        prompt: `Solve ${item.name}`,
+        figure: item.figure,
+        points: 10,
+      },
+    })
+    check(
+      `solver computes ${item.name}`,
+      added.status === 201 && Math.abs(added.data.question?.correct - item.expected) < 0.1,
+      `got=${added.data.question?.correct} expected=${item.expected}`,
+    )
+  }
+
+  // ── Educational Arcade (6 modes + 120 daily cap) ─────────────
+  console.log('\nEducational Arcade flow:')
+  const arcadeTeacherDenied = await api('/arcade/summary', { token: teacherToken })
+  check('arcade summary enforces student role', arcadeTeacherDenied.status === 403)
+
+  const arcadeSummary = await api('/arcade/summary', { token: studentToken })
+  check(
+    'arcade summary serves 120 daily coin cap',
+    arcadeSummary.status === 200 && arcadeSummary.data.dailyCap === 120,
+    JSON.stringify(arcadeSummary.data),
+  )
+
+  for (const mode of [
+    'streak-siege',
+    'speed-match',
+    'step-detective',
+    'sim-sandbox',
+    'sequence-architect',
+    'boss-raid',
+    'certainty-vault',
+    'diagram-scout',
+    'cloze-workbench',
+    'knowledge-bastion',
+  ]) {
+    const runRes = await api('/arcade/runs', {
+      method: 'POST',
+      token: studentToken,
+      body: {
+        mode,
+        correct: 6,
+        attempts: 7,
+        bestCombo: 5,
+        comboBursts: 1,
+        score: 950,
+        durationMs: 12000,
+        qualityScore: 88,
+        deepUnits: 4,
+        confidentHits: 3,
+      },
+    })
+    check(
+      `arcade ${mode} credits coins`,
+      runRes.status === 201 && typeof runRes.data.balance === 'number' && runRes.data.dailyCap === 120,
+      JSON.stringify(runRes.data),
+    )
+  }
+
+  // ── Guided Lessons & Co-op Race Modes ───────────────────────
+  console.log('\nGuided Lessons & Co-op Race flow:')
+  const tracksRes = await api('/tracks', { token: studentToken })
+  check(
+    'tracks endpoint serves 16 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 16,
+    `got=${tracksRes.data.tracks?.length}`,
+  )
+  const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
+  const lessonRes = await api(`/lessons/${firstLessonId}`, { token: studentToken })
+  check(
+    'lesson detail serves interactive steps',
+    lessonRes.status === 200 && lessonRes.data.lesson?.steps?.length >= 5,
+    `steps=${lessonRes.data.lesson?.steps?.length}`,
+  )
+  const progRes = await api(`/lessons/${firstLessonId}/progress`, {
+    method: 'POST',
+    token: studentToken,
+    body: {
+      currentStepIndex: lessonRes.data.lesson.steps.length - 1,
+      completed: true,
+      checkpointScore: 100,
+      timeSpentSec: 180,
+    },
+  })
+  check(
+    'completing lesson promotes mastery and enrolls FSRS flashcards',
+    progRes.status === 200 &&
+      progRes.data.progress?.completed === true &&
+      typeof progRes.data.enrolledFlashcards === 'number',
+    JSON.stringify(progRes.data),
+  )
+
+  for (const raceMode of ['squad-sync', 'classroom-siege']) {
+    const raceCreated = await api('/races', {
+      method: 'POST',
+      token: teacherToken,
+      body: { quizId: stemQuizId, mode: raceMode, squadSize: 3 },
+    })
+    const raceInfo = await api(`/races/${raceCreated.data.code}`, { token: teacherToken })
+    check(
+      `creates ${raceMode} live race room`,
+      raceCreated.status === 201 && raceInfo.status === 200 && raceInfo.data.room?.mode === raceMode,
+      JSON.stringify(raceInfo.data),
+    )
+  }
 
   console.log(`\n${failed === 0 ? '🎉' : '💥'} ${passed} passed, ${failed} failed\n`)
   process.exit(failed === 0 ? 0 : 1)

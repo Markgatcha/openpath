@@ -20,6 +20,8 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8787',
         changeOrigin: true,
+        // Live race mode speaks WebSocket under /api — let upgrades through.
+        ws: true,
       },
     },
   },
@@ -32,6 +34,7 @@ export default defineConfig({
         // so the app chunk stays lean and cacheable.
         manualChunks(id: string): string | undefined {
           if (!id.includes('node_modules')) return undefined
+          if (/[\\/]node_modules[\\/]three[\\/]/.test(id)) return 'three-vendor'
           if (/[\\/]node_modules[\\/](recharts|d3-|victory)/.test(id)) return 'charts'
           if (/[\\/]node_modules[\\/](framer-motion|motion-)/.test(id)) return 'motion'
           if (

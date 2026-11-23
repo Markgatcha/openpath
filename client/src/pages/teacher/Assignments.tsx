@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
+  BookOpen,
   CalendarClock,
   CalendarPlus,
   Check,
@@ -14,14 +15,15 @@ import { api } from '@/lib/api'
 import {
   Button,
   Chip,
+  EmptyState,
   Field,
   Input,
   Modal,
   Select,
   Spinner,
+  Toggle,
   useToast,
 } from '@/components/ui'
-import { EmptyState } from '@/components/ui'
 import type { AssignmentDTO } from '@shared/types'
 
 function dueChip(assignment: AssignmentDTO) {
@@ -163,6 +165,12 @@ export function Assignments() {
                   <Users size={11} /> {assignment.completedCount}/
                   {assignment.assignedCount} done
                 </Chip>
+                {assignment.requiredLessonId && (
+                  <Chip color="brand">
+                    <BookOpen size={11} /> Require:{' '}
+                    {assignment.requiredLessonTitle ?? assignment.requiredLessonId}
+                  </Chip>
+                )}
               </div>
             </motion.div>
           ))}
@@ -206,14 +214,22 @@ function AssignmentModal({
     queryKey: ['classrooms'],
     queryFn: api.classrooms.list,
   })
+  const { data: trackData } = useQuery({
+    queryKey: ['tracks'],
+    queryFn: () => api.lessons.tracks(),
+  })
   const classrooms = useMemo(
     () => classroomData?.classrooms ?? [],
     [classroomData],
   )
   const quizzes = quizData?.quizzes ?? []
+  const tracks = useMemo(() => trackData?.tracks ?? [], [trackData])
 
   const [target, setTarget] = useState<'classroom' | 'student'>(
     assignment?.studentId ? 'student' : 'classroom',
+  )
+  const [requireLesson, setRequireLesson] = useState(
+    Boolean(assignment?.requiredLessonId),
   )
   const [form, setForm] = useState({
     quizId: assignment?.quizId ?? '',
@@ -223,6 +239,7 @@ function AssignmentModal({
     dueDate: assignment?.dueDate ?? '',
     availableFrom: assignment?.availableFrom ?? '',
     maxAttempts: String(assignment?.maxAttempts ?? 0),
+    requiredLessonId: assignment?.requiredLessonId ?? '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -251,6 +268,10 @@ function AssignmentModal({
       toast('Pick a quiz first.', 'error')
       return
     }
+    if (requireLesson && !form.requiredLessonId) {
+      toast('Pick a unit lesson or turn off the lesson requirement.', 'error')
+      return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -261,6 +282,8 @@ function AssignmentModal({
         dueDate: form.dueDate || null,
         availableFrom: form.availableFrom || null,
         maxAttempts: Number(form.maxAttempts) || 0,
+        requiredLessonId:
+          requireLesson && form.requiredLessonId ? form.requiredLessonId : null,
       }
       if (assignment) {
         await api.assignments.update(assignment.id, payload)
@@ -390,6 +413,47 @@ function AssignmentModal({
             }
           />
         </Field>
+
+        {tracks.length > 0 && (
+          <div className="flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5 dark:border-white/10 dark:bg-white/[0.02]">
+            <Toggle
+              checked={requireLesson}
+              onChange={(checked) => {
+                setRequireLesson(checked)
+                if (!checked) {
+                  setForm({ ...form, requiredLessonId: '' })
+                }
+              }}
+              label="Require unit lesson before attempt"
+            />
+            {requireLesson && (
+              <Field
+                label="Required unit lesson"
+                hint="Students must complete this guided micro-lesson before starting the quiz."
+              >
+                <Select
+                  value={form.requiredLessonId}
+                  onChange={(event) =>
+                    setForm({ ...form, requiredLessonId: event.target.value })
+                  }
+                >
+                  <option value="">Pick a lesson…</option>
+                  {tracks.map((track) => (
+                    <optgroup key={track.id} label={`${track.title} (${track.subject})`}>
+                      {track.units.flatMap((unit) =>
+                        unit.lessons.map((lesson) => (
+                          <option key={lesson.id} value={lesson.id}>
+                            {unit.title} — {lesson.title}
+                          </option>
+                        )),
+                      )}
+                    </optgroup>
+                  ))}
+                </Select>
+              </Field>
+            )}
+          </div>
+        )}
 
         <Button className="w-full" onClick={submit} disabled={saving}>
           <Check size={16} />

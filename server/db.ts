@@ -324,6 +324,164 @@ const migrations: Migration[] = [
         ON notifications(user_id, created_at DESC);
     `,
   },
+  {
+    // Spaced repetition v2: FSRS memory model (stability + difficulty +
+    // last review time) next to the legacy SM-2 columns, which stay in
+    // place (kept current for any external readers) but are no longer
+    // authoritative. Existing rows are backfilled: the SM-2 interval
+    // becomes the initial stability, and SM-2 ease (1.3–2.8, higher =
+    // easier) maps linearly onto FSRS difficulty (1–10, higher = harder).
+    version: 7,
+    sql: `
+      ALTER TABLE flashcard_states ADD COLUMN stability REAL NOT NULL DEFAULT 0;
+      ALTER TABLE flashcard_states ADD COLUMN difficulty REAL NOT NULL DEFAULT 0;
+      ALTER TABLE flashcard_states ADD COLUMN last_reviewed_at TEXT;
+
+      UPDATE flashcard_states SET
+        stability = MAX(interval_days, 0.001),
+        difficulty = MIN(10, MAX(1, 9 - (ease - 1.3) * 4)),
+        last_reviewed_at = updated_at;
+    `,
+  },
+  {
+    // Figure questions v2: per-attempt sampled variants for parameterized
+    // figures. JSON map of questionId → { givens, answer } holding the
+    // exact numbers the student saw and the key computed from them, so
+    // grading, the answer reveal, and the review breakdown all agree.
+    // NULL means "no varying figure questions in this attempt".
+    version: 8,
+    sql: `
+      ALTER TABLE attempts ADD COLUMN variants_json TEXT;
+    `,
+  },
+  {
+    // Confidence + accuracy capture: an optional per-answer self-rating
+    // ("did you know it or guess it?"), one of the levels in
+    // shared/confidence.ts. NULL means the student skipped the prompt —
+    // untagged answers stay first-class forever, and the calibration
+    // aggregates simply ignore them.
+    version: 9,
+    sql: `
+      ALTER TABLE attempt_answers ADD COLUMN confidence TEXT;
+    `,
+  },
+  {
+    // Interactive Lessons, Curriculum Tracks, Pack Metadata, Mastery Gating & Lesson Flashcards.
+    version: 10,
+    sql: `
+      ALTER TABLE quizzes ADD COLUMN pack_id TEXT;
+      ALTER TABLE quizzes ADD COLUMN model_id TEXT;
+      ALTER TABLE quizzes ADD COLUMN standards TEXT;
+      ALTER TABLE quizzes ADD COLUMN lesson_id TEXT;
+      ALTER TABLE quizzes ADD COLUMN srs_interleave INTEGER NOT NULL DEFAULT 1;
+
+      ALTER TABLE assignments ADD COLUMN required_lesson_id TEXT;
+
+      CREATE TABLE IF NOT EXISTS curriculum_tracks (
+        id TEXT PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        pack_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        grade_band TEXT NOT NULL DEFAULT 'HS',
+        license TEXT NOT NULL DEFAULT 'MIT',
+        source_attribution TEXT NOT NULL DEFAULT '',
+        prerequisite_track_ids_json TEXT NOT NULL DEFAULT '[]',
+        srs_interleave_default INTEGER NOT NULL DEFAULT 1,
+        units_json TEXT NOT NULL DEFAULT '[]',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS lessons (
+        id TEXT PRIMARY KEY,
+        track_id TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        pack_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT NOT NULL DEFAULT '',
+        estimated_minutes INTEGER NOT NULL DEFAULT 10,
+        standards_json TEXT NOT NULL DEFAULT '[]',
+        prerequisite_lesson_ids_json TEXT NOT NULL DEFAULT '[]',
+        visual_json TEXT,
+        steps_json TEXT NOT NULL DEFAULT '[]',
+        flashcard_seeds_json TEXT NOT NULL DEFAULT '[]',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lessons_track
+        ON lessons(track_id, sort_order);
+      CREATE INDEX IF NOT EXISTS idx_lessons_pack
+        ON lessons(pack_id);
+
+      CREATE TABLE IF NOT EXISTS lesson_progress (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lesson_id TEXT NOT NULL,
+        track_id TEXT NOT NULL,
+        pack_id TEXT NOT NULL,
+        completed INTEGER NOT NULL DEFAULT 0,
+        completed_steps_json TEXT NOT NULL DEFAULT '[]',
+        highest_step_index INTEGER NOT NULL DEFAULT 0,
+        checkpoint_correct_count INTEGER NOT NULL DEFAULT 0,
+        checkpoint_total_count INTEGER NOT NULL DEFAULT 0,
+        challenge_completed INTEGER NOT NULL DEFAULT 0,
+        mastery_level TEXT NOT NULL DEFAULT 'unstarted',
+        score_pct REAL NOT NULL DEFAULT 0,
+        time_spent_sec INTEGER NOT NULL DEFAULT 0,
+        completed_at TEXT,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, lesson_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lesson_progress_user
+        ON lesson_progress(user_id, track_id);
+
+      CREATE TABLE IF NOT EXISTS skill_mastery (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        skill_id TEXT NOT NULL,
+        level TEXT NOT NULL DEFAULT 'unstarted',
+        score_pct REAL NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, skill_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_skill_mastery_user
+        ON skill_mastery(user_id);
+
+      CREATE TABLE IF NOT EXISTS lesson_flashcards (
+        id TEXT PRIMARY KEY,
+        lesson_id TEXT NOT NULL,
+        track_id TEXT NOT NULL,
+        pack_id TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        front TEXT NOT NULL,
+        back TEXT NOT NULL,
+        explanation TEXT NOT NULL DEFAULT '',
+        interleave INTEGER NOT NULL DEFAULT 1
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lesson_flashcards_lesson
+        ON lesson_flashcards(lesson_id);
+
+      CREATE TABLE IF NOT EXISTS lesson_flashcard_states (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        flashcard_id TEXT NOT NULL REFERENCES lesson_flashcards(id) ON DELETE CASCADE,
+        stability REAL NOT NULL DEFAULT 0,
+        difficulty REAL NOT NULL DEFAULT 0,
+        reps INTEGER NOT NULL DEFAULT 0,
+        lapses INTEGER NOT NULL DEFAULT 0,
+        due_date TEXT NOT NULL,
+        last_reviewed_at TEXT,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, flashcard_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_lesson_flashcard_states_due
+        ON lesson_flashcard_states(user_id, due_date);
+    `,
+  },
 ]
 
 export function migrate(): void {

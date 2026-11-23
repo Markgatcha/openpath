@@ -4,16 +4,20 @@ import { motion } from 'framer-motion'
 import {
   Award,
   BarChart3,
+  BookOpen,
   BookOpenCheck,
+  Box,
   CalendarDays,
   CalendarClock,
   Check,
   Clock,
   Flame,
+  Gamepad2,
   Lock,
   Play,
   Trophy,
 } from 'lucide-react'
+import { dailyLabModel } from '@/components/models/catalog'
 import { api } from '@/lib/api'
 import { useAuth } from '@/store/auth'
 import { Button, Card, Chip, EmptyState, ProgressBar, Spinner } from '@/components/ui'
@@ -26,6 +30,7 @@ import {
   pct,
   subjectEmoji,
 } from '@/lib/utils'
+import { ReviewLink } from '@/pages/AttemptReview'
 import type { AssignmentDueDTO, QuizDTO } from '@shared/types'
 
 function greeting(): string {
@@ -90,6 +95,10 @@ export function StudentDashboard() {
     queryKey: ['student-dashboard'],
     queryFn: api.stats.studentDashboard,
   })
+  const { data: tracksData } = useQuery({
+    queryKey: ['tracks'],
+    queryFn: () => api.lessons.tracks(),
+  })
 
   if (isLoading || !data || !user) {
     return (
@@ -98,6 +107,13 @@ export function StudentDashboard() {
       </div>
     )
   }
+
+  const tracks = tracksData?.tracks ?? []
+  const totalLessons = tracks.reduce((sum, t) => sum + t.totalLessons, 0)
+  const completedLessons = tracks.reduce((sum, t) => sum + t.completedLessons, 0)
+  const nextLesson = tracks
+    .flatMap((t) => t.units.flatMap((u) => u.lessons))
+    .find((l) => l.unlocked && !l.completed)
 
   const goalPct = Math.min(1, data.minutesToday / data.dailyGoalMinutes)
   const weekTotal = data.weeklyMinutes.reduce((sum, day) => sum + day.minutes, 0)
@@ -191,6 +207,75 @@ export function StudentDashboard() {
               : `${data.dailyGoalMinutes - data.minutesToday} more minutes to hit today’s goal.`}
           </p>
         </Card>
+      </div>
+
+      {/* Guided Lessons + Educational Arcade + Model Lab Spotlights */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link
+          to={nextLesson ? `/student/lessons/${nextLesson.id}` : '/student/lessons'}
+          className="card card-hover flex items-center justify-between gap-4 border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-5"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-500">
+              <BookOpen size={24} />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-extrabold text-slate-900 dark:text-white">
+                Guided Lessons
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {totalLessons > 0
+                  ? `${completedLessons}/${totalLessons} lessons finished${nextLesson ? ` · Up next: ${nextLesson.title}` : ''}`
+                  : 'Structured interactive micro-lessons with inline labs & worked examples.'}
+              </p>
+            </div>
+          </div>
+          <span className="chip shrink-0 bg-emerald-500/20 text-emerald-700 dark:text-emerald-200">
+            Learn →
+          </span>
+        </Link>
+
+        <Link
+          to="/student/arcade"
+          className="card card-hover flex items-center justify-between gap-4 border-brand-500/25 bg-gradient-to-br from-brand-500/10 to-violet-500/5 p-5"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand-500/15 text-brand-500">
+              <Gamepad2 size={24} />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-extrabold text-slate-900 dark:text-white">
+                Educational Arcade
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Practice games across your flashcard &amp; quiz decks — up to 120 coins/day!
+              </p>
+            </div>
+          </div>
+          <span className="chip shrink-0 bg-brand-500 text-white">Play →</span>
+        </Link>
+
+        <Link
+          to={`/student/lab/${dailyLabModel().id}`}
+          className="card card-hover flex items-center justify-between gap-4 border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-emerald-500/5 p-5"
+        >
+          <div className="flex items-center gap-3.5">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-cyan-500/15 text-cyan-500">
+              <Box size={24} />
+            </span>
+            <div>
+              <h2 className="font-display text-base font-extrabold text-slate-900 dark:text-white">
+                Model Lab: {dailyLabModel().title}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Interactive 2D &amp; 3D STEM labs across Biology, Physics, CS, Math &amp; Economics.
+              </p>
+            </div>
+          </div>
+          <span className="chip shrink-0 bg-cyan-500/20 text-cyan-700 dark:text-cyan-200">
+            Inspect →
+          </span>
+        </Link>
       </div>
 
       {/* Weekly minutes */}
@@ -314,6 +399,7 @@ export function StudentDashboard() {
                     <span className="chip bg-brand-500/15 text-brand-600 dark:text-brand-300">
                       +{attempt.xpEarned} XP
                     </span>
+                    <ReviewLink attemptId={attempt.id} />
                   </div>
                 </li>
               ))}
@@ -449,6 +535,10 @@ function AssignmentsDue({ assignments }: { assignments: AssignmentDueDTO[] }) {
                   <Chip color="emerald">
                     <Check size={11} /> done
                   </Chip>
+                ) : item.requiredLessonId && item.lessonCompleted === false ? (
+                  <Chip color="amber">
+                    <Lock size={11} /> Finish lesson first
+                  </Chip>
                 ) : item.locked ? (
                   <Chip color="slate">
                     <Lock size={11} /> opens {item.availableFrom}
@@ -469,29 +559,41 @@ function AssignmentsDue({ assignments }: { assignments: AssignmentDueDTO[] }) {
                 )}
               </div>
 
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-xs text-slate-400">
                   {item.maxAttempts === 0
                     ? `${item.attemptsUsed} attempt${item.attemptsUsed === 1 ? '' : 's'} · unlimited`
                     : `${item.attemptsUsed}/${item.maxAttempts} attempts used`}
                   {item.bestScore !== null && ` · best ${item.bestScore}`}
                 </span>
-                <Link
-                  to={`/student/play/${item.quizId}`}
-                  className={blocked ? 'pointer-events-none' : undefined}
-                  aria-disabled={blocked}
-                >
-                  <Button variant={blocked ? 'ghost' : 'primary'} disabled={blocked}>
-                    <Play size={14} />
-                    {item.completed
-                      ? 'Replay'
-                      : attemptsLeft <= 0
-                        ? 'No attempts left'
-                        : item.locked
-                          ? 'Locked'
-                          : 'Start'}
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {item.requiredLessonId && item.lessonCompleted === false && (
+                    <Link to={`/student/lessons/${item.requiredLessonId}`}>
+                      <Button variant="ghost">
+                        <BookOpen size={14} />
+                        {item.requiredLessonTitle
+                          ? `Lesson: ${item.requiredLessonTitle}`
+                          : 'Open lesson'}
+                      </Button>
+                    </Link>
+                  )}
+                  <Link
+                    to={`/student/play/${item.quizId}`}
+                    className={blocked ? 'pointer-events-none' : undefined}
+                    aria-disabled={blocked}
+                  >
+                    <Button variant={blocked ? 'ghost' : 'primary'} disabled={blocked}>
+                      <Play size={14} />
+                      {item.completed
+                        ? 'Replay'
+                        : attemptsLeft <= 0
+                          ? 'No attempts left'
+                          : item.locked
+                            ? 'Locked'
+                            : 'Start'}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </Card>
           )

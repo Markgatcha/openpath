@@ -86,8 +86,8 @@ export const assignmentRoutes: FastifyPluginAsync = async (app) => {
     const id = randomUUID()
     db.prepare(
       `INSERT INTO assignments
-         (id, quiz_id, classroom_id, student_id, title, due_date, available_from, max_attempts, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         (id, quiz_id, classroom_id, student_id, title, due_date, available_from, max_attempts, required_lesson_id, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       input.quizId,
@@ -97,6 +97,7 @@ export const assignmentRoutes: FastifyPluginAsync = async (app) => {
       input.dueDate,
       input.availableFrom,
       input.maxAttempts,
+      input.requiredLessonId ?? null,
       teacher.id,
     )
 
@@ -154,10 +155,15 @@ export const assignmentRoutes: FastifyPluginAsync = async (app) => {
       throw badRequest('The due date cannot be before the opening date')
     }
 
+    const requiredLessonId =
+      input.requiredLessonId === undefined
+        ? (assignment.required_lesson_id ?? null)
+        : input.requiredLessonId
+
     db.prepare(
       `UPDATE assignments
        SET classroom_id = ?, student_id = ?, title = ?, due_date = ?,
-           available_from = ?, max_attempts = ?
+           available_from = ?, max_attempts = ?, required_lesson_id = ?
        WHERE id = ?`,
     ).run(
       classroomId,
@@ -166,6 +172,7 @@ export const assignmentRoutes: FastifyPluginAsync = async (app) => {
       dueDate,
       availableFrom,
       input.maxAttempts ?? assignment.max_attempts,
+      requiredLessonId,
       assignment.id,
     )
     return { assignment: toAssignmentDTO(getAssignment(assignment.id)) }

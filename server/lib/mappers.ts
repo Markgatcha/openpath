@@ -1,4 +1,4 @@
-import { buildFigureGeometry } from '../../shared/figure'
+import { buildFigureGeometry, type FigureGeometry } from '../../shared/figure'
 import type { FigureSpec } from '../../shared/schemas'
 import type {
   AttemptRow,
@@ -33,15 +33,33 @@ export function toQuestionTeacherDTO(row: QuestionRow): TeacherQuestionDTO {
   }
 }
 
-export function toStudentQuestionDTO(row: QuestionRow): StudentQuestionDTO {
+/**
+ * Drawing data for a figure question. Attempts with parameter ranges
+ * pass the sampled variant's givens so the figure shows exactly the
+ * numbers the student will be graded against. null for other types.
+ */
+export function figureGeometryFor(
+  row: QuestionRow,
+  variantGivens?: Record<string, number>,
+): FigureGeometry | null {
+  if (row.type !== 'figure' || !row.options_json) return null
+  const spec = JSON.parse(row.options_json) as FigureSpec
+  return buildFigureGeometry(
+    variantGivens ? { ...spec, givens: variantGivens } : spec,
+  )
+}
+
+export function toStudentQuestionDTO(
+  row: QuestionRow,
+  variantGivens?: Record<string, number>,
+): StudentQuestionDTO {
   if (row.type === 'figure' && row.options_json) {
-    const spec = JSON.parse(row.options_json) as FigureSpec
     return {
       id: row.id,
       type: row.type,
       prompt: row.prompt,
       options: null,
-      figure: buildFigureGeometry(spec),
+      figure: figureGeometryFor(row, variantGivens),
       points: row.points,
       position: row.position,
     }

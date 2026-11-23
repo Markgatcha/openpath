@@ -4,7 +4,9 @@ import { hashPassword } from './lib/auth'
 import { computeAnswer } from '../shared/figure'
 import type { FigureSpec } from '../shared/figure'
 import { computeXp } from '../shared/game'
+import { CONTENT_PACKS } from '../shared/packs'
 import type { QuestionRow, QuizRow } from '../shared/types'
+import { syncCurriculumToDb } from './routes/lessons'
 
 interface SeedQuestion {
   type: QuestionRow['type']
@@ -25,6 +27,11 @@ interface SeedQuiz {
   kind?: QuizRow['kind']
   timeLimitSec: number | null
   classroomId?: string
+  packId?: string
+  modelId?: string
+  standards?: string | string[]
+  lessonId?: string
+  srsInterleave?: boolean
   questions: SeedQuestion[]
 }
 
@@ -62,8 +69,11 @@ function addUser(
 function addQuiz(teacherId: string, quiz: SeedQuiz): string {
   const id = randomUUID()
   db.prepare(
-    `INSERT INTO quizzes (id, title, description, subject, difficulty, kind, teacher_id, classroom_id, time_limit_sec, published)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    `INSERT INTO quizzes (
+       id, title, description, subject, difficulty, kind, teacher_id, classroom_id,
+       time_limit_sec, published, pack_id, model_id, standards, lesson_id, srs_interleave
+     )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)`,
   ).run(
     id,
     quiz.title,
@@ -74,6 +84,13 @@ function addQuiz(teacherId: string, quiz: SeedQuiz): string {
     teacherId,
     quiz.classroomId ?? null,
     quiz.timeLimitSec,
+    quiz.packId ?? null,
+    quiz.modelId ?? null,
+    Array.isArray(quiz.standards)
+      ? JSON.stringify(quiz.standards)
+      : (quiz.standards ?? null),
+    quiz.lessonId ?? null,
+    quiz.srsInterleave === false ? 0 : 1,
   )
 
   quiz.questions.forEach((question, index) => {
@@ -98,6 +115,12 @@ function addQuiz(teacherId: string, quiz: SeedQuiz): string {
 
   return id
 }
+
+// Deterministic self-rating cycle for seeded answers (see addAttempt):
+// correctness shifts where in the cycle an attempt lands, so seeds
+// show well-calibrated runs plus a few lucky guesses and
+// overconfident misses for the calibration views.
+const CONFIDENCE_CYCLE = ['fairly-sure', 'guessed', 'certain', 'unsure'] as const
 
 function wrongResponseFor(question: QuestionRow): string {
   switch (question.type) {
@@ -150,9 +173,14 @@ function addAttempt(
       score += question.points
       correctCount += 1
     }
+    // Confidence self-ratings so the calibration views have dev data.
+    // The cycle is offset by correctness — right answers lean toward
+    // the confident end, wrong ones toward guessing — but it still
+    // produces deliberate lucky guesses and overconfident misses.
+    const confidence = CONFIDENCE_CYCLE[(index + (isCorrect ? 0 : 2)) % 4]
     db.prepare(
-      `INSERT INTO attempt_answers (id, attempt_id, question_id, response_json, correct, ms_taken)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO attempt_answers (id, attempt_id, question_id, response_json, correct, ms_taken, confidence)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       randomUUID(),
       attemptId,
@@ -160,6 +188,7 @@ function addAttempt(
       isCorrect ? question.correct_json : wrongResponseFor(question),
       isCorrect ? 1 : 0,
       3200 + index * 850,
+      confidence,
     )
   })
 
@@ -197,7 +226,10 @@ export function seedIfEmpty(): void {
   const userCount = (
     db.prepare('SELECT COUNT(*) as n FROM users').get() as { n: number }
   ).n
-  if (userCount > 0) return
+  if (userCount > 0) {
+    syncCurriculumToDb()
+    return
+  }
 
   const teacherId = 'demo-teacher'
   const graceId = 'demo-grace'
@@ -431,6 +463,23 @@ export function seedIfEmpty(): void {
         points: 10,
       },
       {
+        // Parameterized: b and c are redrawn per attempt (b ∈ [6,9],
+        // c ∈ [4,7]) so retakes never reuse the same numbers.
+        type: 'figure',
+        prompt:
+          'Find the length of side a. Round to the nearest tenth. The sides change every attempt!',
+        figure: {
+          template: 'triangle-sas',
+          givens: { b: 7, c: 5, angleA: 40 },
+          ranges: { b: [6, 9], c: [4, 7] },
+          ask: 'a',
+          rounding: 'tenth',
+        },
+        explanation:
+          'Law of cosines: a² = b² + c² − 2bc·cos(A) with the sides shown on your figure.',
+        points: 10,
+      },
+      {
         type: 'mcq',
         prompt:
           'You know two sides and the included angle of a triangle. Which law finds the third side?',
@@ -449,6 +498,76 @@ export function seedIfEmpty(): void {
       },
     ],
   })
+
+  // Seed each subject pack's foundational gateway quiz into the public library
+  // so students can explore all 16 curriculum domains right away in Quizzes,
+  // Flashcards, Streak Siege, and Boss Raid.
+  for (const pack of CONTENT_PACKS) {
+    if (pack.id === 'geometry-figures') continue
+    const gateway = pack.quizzes[0]
+    if (!gateway) continue
+    addQuiz(teacherId, {
+      title: gateway.title,
+      description: gateway.description,
+      subject: gateway.subject,
+      difficulty: gateway.difficulty,
+      kind: 'quiz',
+      timeLimitSec: gateway.timeLimitSec,
+      packId: pack.id,
+      modelId: gateway.modelId ?? pack.modelId,
+      standards: pack.standards,
+      lessonId: gateway.lessonId,
+      srsInterleave: gateway.srsInterleave ?? pack.srsInterleave ?? true,
+      questions: gateway.questions.map((q) => {
+        if (q.type === 'figure') {
+          return {
+            type: 'figure',
+            prompt: q.prompt,
+            figure: q.figure,
+            points: q.points,
+            explanation: q.explanation,
+          }
+        }
+        if (q.type === 'mcq') {
+          return {
+            type: 'mcq',
+            prompt: q.prompt,
+            options: q.options,
+            correct: q.correct,
+            points: q.points,
+            explanation: q.explanation,
+          }
+        }
+        if (q.type === 'truefalse') {
+          return {
+            type: 'truefalse',
+            prompt: q.prompt,
+            correct: q.correct,
+            points: q.points,
+            explanation: q.explanation,
+          }
+        }
+        if (q.type === 'fill') {
+          return {
+            type: 'fill',
+            prompt: q.prompt,
+            correct: q.correct,
+            alternatives: q.alternatives,
+            points: q.points,
+            explanation: q.explanation,
+          }
+        }
+        return {
+          type: 'order',
+          prompt: q.prompt,
+          options: q.options,
+          correct: q.correct,
+          points: q.points,
+          explanation: q.explanation,
+        }
+      }),
+    })
+  }
 
   // Grace: strong student with history across all three subjects.
   const graceXp =
@@ -592,6 +711,8 @@ export function seedIfEmpty(): void {
   db.prepare(
     'INSERT OR IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)',
   ).run(linusId, 'first_quiz')
+
+  syncCurriculumToDb()
 
   console.log(`
   🌱 Seeded demo data:

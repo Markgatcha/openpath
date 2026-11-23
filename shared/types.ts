@@ -1,7 +1,17 @@
-import type { Role, QuestionType, Difficulty, FigureSpec } from './schemas'
+import type { Role, QuestionType, Difficulty, FigureSpec, RaceMode } from './schemas'
 import type { XpProgress } from './game'
 import type { FigureGeometry } from './figure'
 import type { Cosmetics, Paint, Nameplate, QuizKind } from './economy'
+import type { SrsState } from './srs'
+import type { Confidence, ConfidenceSummary } from './confidence'
+import type {
+  GradeBand,
+  MasteryGate,
+  MasteryLevel,
+  OerLicenseCode,
+  PackLesson,
+  TrackSubjectGroup,
+} from './lessons'
 import { DEFAULT_COSMETICS } from './economy'
 import { xpProgress } from './game'
 
@@ -36,6 +46,11 @@ export interface QuizRow {
   classroom_id: string | null
   time_limit_sec: number | null
   published: number
+  pack_id?: string | null
+  model_id?: string | null
+  standards?: string | null
+  lesson_id?: string | null
+  srs_interleave?: number
   created_at: string
   updated_at: string
 }
@@ -67,6 +82,8 @@ export interface AttemptRow {
   duration_sec: number
   created_at: string
   finished_at: string | null
+  /** JSON map of questionId → sampled figure variant (see server/lib/variants.ts). */
+  variants_json: string | null
 }
 
 export interface AttemptAnswerRow {
@@ -76,6 +93,8 @@ export interface AttemptAnswerRow {
   response_json: string
   correct: number
   ms_taken: number
+  /** Optional self-rating (see shared/confidence.ts); null = untagged. */
+  confidence: string | null
   created_at: string
 }
 
@@ -154,6 +173,11 @@ export interface QuizDTO {
   questionCount: number
   teacherName: string
   classroomName: string | null
+  packId?: string | null
+  modelId?: string | null
+  standards?: string | string[]
+  lessonId?: string | null
+  srsInterleave?: boolean
   createdAt: string
   updatedAt: string
   attemptCount: number
@@ -192,6 +216,17 @@ export interface AnswerResultDTO {
   points: number
   earnedPoints: number
   combo: number
+  /**
+   * Drawing data for figure questions, built from the variant the student
+   * actually saw (parameterized figures) or the stored spec. null for
+   * every other question type.
+   */
+  figure: FigureGeometry | null
+  /**
+   * The student's confidence self-rating for this answer, when they
+   * tagged one. Drives the "knew it vs. guessed it" calibration view.
+   */
+  confidence: Confidence | null
 }
 
 export interface AttemptSummaryDTO {
@@ -209,6 +244,13 @@ export interface AttemptSummaryDTO {
   durationSec: number
   finishedAt: string | null
   createdAt: string
+}
+
+export interface AttemptReviewQuestionDTO {
+  id: string
+  type: QuestionType
+  prompt: string
+  options: string[] | null
 }
 
 export interface AttemptFinishDTO {
@@ -299,6 +341,14 @@ export interface StudentDashboardDTO {
   weeklyMinutes: { day: string; minutes: number }[]
   myRank: number | null
   assignments: AssignmentDueDTO[]
+  lessonsSummary?: {
+    tracksStarted: number
+    lessonsCompleted: number
+    totalLessons: number
+    nextLessonId?: string
+    nextLessonTitle?: string
+    masteredSkills: number
+  }
 }
 
 export interface QuizAnalyticsDTO {
@@ -320,6 +370,8 @@ export interface QuizAnalyticsDTO {
     correctCount: number
     accuracy: number
   }[]
+  /** "Knew it vs. guessed it" calibration over this quiz's tagged answers. */
+  confidence: ConfidenceSummary
   avgScore: number
   completionCount: number
 }
@@ -356,25 +408,64 @@ export interface AiQuestionDraft {
 }
 
 // ── Spaced repetition ─────────────────────────────────────────
-export type ReviewGrade = 'again' | 'hard' | 'good' | 'easy'
+export type { ReviewGrade, SrsState } from './srs'
 
 export interface SrsCardDTO {
   questionId: string
   quizId: string
   quizTitle: string
+  subject?: string
   prompt: string
   type: QuestionType
   isNew: boolean
   /** Practice-only: arrives with the queue; reveal on tap. */
   answer: string
   explanation: string
-  state: {
-    ease: number
-    intervalDays: number
-    reps: number
-    lapses: number
-    dueDate: string
-  } | null
+  /** Deck grouping key used by the interleaver (the quiz id). */
+  category: string
+  state: SrsState | null
+  /**
+   * MCQ answer options (null for every other type). Additive: older
+   * clients ignore it; the arcade uses it to build tap-to-answer rounds.
+   */
+  options?: string[] | null
+  /** Drawable SVG figure payload for figure-type SRS cards. */
+  figure?: FigureGeometry | null
+  /** False for language/vocab decks that should stay blocked by category rather than interleaved. */
+  interleave?: boolean
+  /** Linked content pack id when installed/seeded from a pack. */
+  packId?: string | null
+  /** Distinguishes quiz-backed cards from standalone lesson flashcard seeds. */
+  sourceType?: 'question' | 'lesson-flashcard'
+}
+
+/** Which queue a Streak Siege card was drawn from. */
+export type SiegePool = 'due' | 'weak' | 'new'
+
+export interface SiegeCardDTO extends SrsCardDTO {
+  pool: SiegePool
+}
+
+// ── Arcade ──
+export interface ArcadeSummaryDTO {
+  coins: number
+  earnedToday: number
+  dailyCap: number
+  currencyName: string
+  currencyIcon: string
+}
+
+export interface ArcadeRunResultDTO {
+  /** Coins actually credited (after the daily cap). */
+  coinsEarned: number
+  /** What the run was worth before the cap. */
+  coinsWorth: number
+  balance: number
+  earnedToday: number
+  dailyCap: number
+  capped: boolean
+  currencyName: string
+  currencyIcon: string
 }
 
 export interface SrsStatsDTO {
@@ -395,6 +486,7 @@ export interface AssignmentRow {
   due_date: string | null
   available_from: string | null
   max_attempts: number
+  required_lesson_id?: string | null
   created_by: string
   created_at: string
 }
@@ -411,6 +503,8 @@ export interface AssignmentDTO {
   dueDate: string | null
   availableFrom: string | null
   maxAttempts: number
+  requiredLessonId?: string | null
+  requiredLessonTitle?: string | null
   createdAt: string
   /** How many students the assignment reaches. */
   assignedCount: number
@@ -443,7 +537,153 @@ export interface AssignmentDueDTO {
   maxAttempts: number
   completed: boolean
   bestScore: number | null
+  requiredLessonId?: string | null
+  requiredLessonTitle?: string | null
+  lessonCompleted?: boolean
 }
+
+// ── Live race mode ─────────────────────────────────────────────
+// Races are ephemeral, in-memory, LAN-first room events: no coins,
+// no XP, no persisted attempts — a motivation top-up (per the
+// roadmap's honest framing of Kahoot-style play). Everything the
+// client needs travels over one WebSocket as JSON frames; REST
+// endpoints only create rooms and drive the host's controls.
+
+export type RacePhase = 'lobby' | 'question' | 'reveal' | 'over'
+
+export type RacePingTag = 'hold' | 'think-mine' | 'check-units' | 'ready'
+
+export interface RaceSquadDTO {
+  id: string
+  name: string
+  color: string
+  progress: number
+  score: number
+  memberIds: string[]
+}
+
+export interface RaceHandOptionDTO {
+  idx: number
+  text: string
+}
+
+export interface ClassroomSiegeStateDTO {
+  bossHp: number
+  maxHp: number
+  aegisShield: number
+  wave: number
+  sealsBroken: number
+  topMissedQuestionIds: string[]
+  recalibrateCooldownSec?: number
+}
+
+export interface RacePlayerDTO {
+  userId: string
+  name: string
+  avatarColor: string
+  score: number
+  correctCount: number
+  streak: number
+  /** Has this player locked in an answer for the current question? */
+  answered: boolean
+  /** How the current question went (null until it is revealed). */
+  lastCorrect: boolean | null
+  /** Points won on the most recent reveal (0 when the answer missed). */
+  lastPoints: number
+  /** Assigned squad ID in squad-sync mode. */
+  squadId?: string
+  /** Assigned squad display name in squad-sync mode. */
+  squadName?: string
+  /** Most recent non-verbal quick ping in squad-sync mode. */
+  ping?: RacePingTag | null
+}
+
+/** A question as pushed mid-race — student-safe: no correct answer. */
+export interface RaceQuestionDTO {
+  id: string
+  type: QuestionType
+  prompt: string
+  options: string[] | null
+  figure: FigureGeometry | null
+  points: number
+  index: number
+  total: number
+  /** Epoch ms the question opened; clients render their own timer. */
+  openedAt: number
+}
+
+export interface RaceRoomDTO {
+  code: string
+  quizId: string
+  quizTitle: string
+  subject: string
+  phase: RacePhase
+  questionIndex: number
+  totalQuestions: number
+  players: RacePlayerDTO[]
+  mode?: RaceMode
+  squadSize?: number
+  squads?: RaceSquadDTO[]
+  siege?: ClassroomSiegeStateDTO
+}
+
+export interface RaceRevealDTO {
+  questionId: string
+  correctAnswer: unknown
+  figure: FigureGeometry | null
+  explanation: string
+  correctCount: number
+  answeredCount: number
+}
+
+// ── Race wire protocol (JSON frames over /api/race/:code) ──────
+export type RaceClientFrame =
+  | { t: 'answer'; response: number | boolean | string | number[]; msTaken: number }
+  | { t: 'ping'; tag: RacePingTag }
+  | { t: 'squad_submit'; optionIdx: number; msTaken: number }
+
+export type RaceServerFrame =
+  | {
+      t: 'joined'
+      room: RaceRoomDTO
+      /** The current question, when the race is already running. */
+      question: RaceQuestionDTO | null
+      /** Cached reveal while the reveal phase is on screen. */
+      reveal: RaceRevealDTO | null
+      /** Cached standings once the race is over. */
+      standings: RacePlayerDTO[] | null
+      /** The connecting user's own row (host gets their pseudo-row). */
+      you: RacePlayerDTO
+      role: 'host' | 'player'
+    }
+  | { t: 'player_joined'; player: RacePlayerDTO }
+  | { t: 'player_left'; userId: string }
+  | { t: 'question'; question: RaceQuestionDTO }
+  | { t: 'answered'; userId: string; answeredCount: number }
+  | {
+      t: 'squad_question'
+      round: number
+      stem: string
+      figure?: FigureGeometry | null
+      handOptions: RaceHandOptionDTO[]
+      squads: RaceSquadDTO[]
+      squadProgress: Record<string, number>
+    }
+  | { t: 'squad_ping'; userId: string; squadId: string; tag: RacePingTag }
+  | {
+      t: 'siege_state'
+      siege: ClassroomSiegeStateDTO
+      cooldownUntilMs?: number
+      recalibrateHint?: string
+    }
+  | {
+      t: 'reveal'
+      reveal: RaceRevealDTO
+      players: RacePlayerDTO[]
+      you: RacePlayerDTO
+    }
+  | { t: 'over'; standings: RacePlayerDTO[]; you: RacePlayerDTO }
+  | { t: 'error'; message: string }
 
 // ── Classroom economy ──────────────────────────────────────────
 export interface EconomyDTO {
@@ -483,4 +723,97 @@ export interface CoinTxDTO {
   reason: string
   currencyName: string
   createdAt: string
+}
+
+// ── Lessons & Curriculum Tracks ────────────────────────────────
+export interface SkillMasteryDTO {
+  skillId: string
+  level: MasteryLevel
+  scorePct: number
+  updatedAt: string
+}
+
+export interface LessonProgressDTO {
+  lessonId: string
+  trackId: string
+  packId: string
+  completed: boolean
+  completedSteps: string[]
+  highestStepIndex: number
+  checkpointCorrectCount: number
+  checkpointTotalCount: number
+  challengeCompleted: boolean
+  masteryLevel: MasteryLevel
+  scorePct: number
+  timeSpentSec: number
+  completedAt: string | null
+  updatedAt: string
+}
+
+export interface LessonSummaryDTO {
+  id: string
+  unitId: string
+  trackId: string
+  packId: string
+  title: string
+  summary: string
+  estimatedMinutes: number
+  standards: string[]
+  prerequisiteLessonIds: string[]
+  hasVisual: boolean
+  visualKind: 'model-3d' | 'model-2d' | 'figure-2d' | 'none'
+  unlocked: boolean
+  completed: boolean
+  masteryLevel: MasteryLevel
+  stepCount: number
+}
+
+export interface TrackUnitDTO {
+  id: string
+  title: string
+  anchoringPhenomenon: string
+  capstoneQuizIndex?: number
+  masteryGate?: MasteryGate
+  lessons: LessonSummaryDTO[]
+}
+
+export interface CurriculumTrackDTO {
+  id: string
+  slug: string
+  packId: string
+  title: string
+  category: TrackSubjectGroup
+  subject: string
+  gradeBand: GradeBand
+  license: OerLicenseCode
+  sourceAttribution: string
+  prerequisiteTrackIds: string[]
+  srsInterleaveDefault: boolean
+  totalLessons: number
+  completedLessons: number
+  masteryLevel: MasteryLevel
+  units: TrackUnitDTO[]
+}
+
+export interface TrackDetailDTO {
+  track: CurriculumTrackDTO
+  relatedQuizzes: {
+    id: string
+    title: string
+    difficulty: Difficulty
+    questionCount: number
+  }[]
+}
+
+export interface LessonDetailDTO {
+  lesson: PackLesson
+  track: Omit<CurriculumTrackDTO, 'units'>
+  unit: Omit<TrackUnitDTO, 'lessons'>
+  progress: LessonProgressDTO
+  prerequisitesMet: boolean
+  prerequisiteLessons: { id: string; title: string; completed: boolean }[]
+  nextLessonId: string | null
+  prevLessonId: string | null
+  linkedQuizId: string | null
+  enrolledFlashcardCount: number
 }

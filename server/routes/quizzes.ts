@@ -18,6 +18,11 @@ import {
   type QuestionInput,
 } from '../../shared/schemas'
 import { computeAnswer, validateFigure } from '../../shared/figure'
+import {
+  parseConfidence,
+  summarizeConfidence,
+  type ConfidenceAnswer,
+} from '../../shared/confidence'
 import type {
   AttemptRow,
   ClassroomRow,
@@ -283,7 +288,7 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
 
     const questions: TeacherQuestionDTO[] | StudentQuestionDTO[] = includeAnswers
       ? questionRows.map(toQuestionTeacherDTO)
-      : questionRows.map(toStudentQuestionDTO)
+      : questionRows.map((row) => toStudentQuestionDTO(row))
 
     return { quiz: quizDTO(quiz, user.role === 'student' ? user.id : null), questions }
   })
@@ -559,6 +564,29 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
     }[]
 
     const totalScore = attemptRows.reduce((sum, row) => sum + row.score, 0)
+
+    // Confidence self-ratings across this quiz's finished attempts,
+    // grouped in SQL and expanded here so the shared summarizer sees
+    // the exact same shape as the student-facing views.
+    const confidenceRows = db
+      .prepare(
+        `SELECT ans.confidence as confidence, ans.correct as correct, COUNT(*) as n
+         FROM attempt_answers ans
+         JOIN attempts a ON a.id = ans.attempt_id
+         WHERE a.quiz_id = ? AND a.finished_at IS NOT NULL
+         GROUP BY ans.confidence, ans.correct`,
+      )
+      .all(quiz.id) as { confidence: string | null; correct: number; n: number }[]
+    const confidenceAnswers: ConfidenceAnswer[] = []
+    for (const row of confidenceRows) {
+      const level = parseConfidence(row.confidence)
+      // Untagged answers are grouped by SQL but carry no signal.
+      if (!level) continue
+      for (let i = 0; i < row.n; i += 1) {
+        confidenceAnswers.push({ confidence: level, correct: row.correct === 1 })
+      }
+    }
+
     return {
       quiz: quizDTO(quiz, teacher.id),
       attempts: attemptRows.map((row) => ({
@@ -578,6 +606,7 @@ export const quizRoutes: FastifyPluginAsync = async (app) => {
         correctCount: row.correct_count,
         accuracy: row.seen_count > 0 ? row.correct_count / row.seen_count : 0,
       })),
+      confidence: summarizeConfidence(confidenceAnswers),
       avgScore: attemptRows.length > 0 ? totalScore / attemptRows.length : 0,
       completionCount: attemptRows.length,
     }

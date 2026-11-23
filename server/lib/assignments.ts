@@ -76,6 +76,23 @@ export function assignmentRoster(row: AssignmentRow): AssignmentRosterDTO[] {
   })
 }
 
+function lessonTitleFor(lessonId: string | null | undefined): string | null {
+  if (!lessonId) return null
+  const row = db
+    .prepare('SELECT title FROM lessons WHERE id = ?')
+    .get(lessonId) as { title: string } | undefined
+  return row?.title ?? null
+}
+
+function isLessonCompleted(studentId: string, lessonId: string): boolean {
+  const row = db
+    .prepare(
+      'SELECT completed FROM lesson_progress WHERE user_id = ? AND lesson_id = ?',
+    )
+    .get(studentId, lessonId) as { completed: number } | undefined
+  return row?.completed === 1
+}
+
 export function toAssignmentDTO(row: AssignmentRow): AssignmentDTO {
   const quiz = db.prepare('SELECT title FROM quizzes WHERE id = ?').get(
     row.quiz_id,
@@ -108,6 +125,8 @@ export function toAssignmentDTO(row: AssignmentRow): AssignmentDTO {
     dueDate: row.due_date,
     availableFrom: row.available_from,
     maxAttempts: row.max_attempts,
+    requiredLessonId: row.required_lesson_id ?? null,
+    requiredLessonTitle: lessonTitleFor(row.required_lesson_id),
     createdAt: row.created_at,
     assignedCount: students.length,
     completedCount: completed,
@@ -145,7 +164,13 @@ export function dueAssignmentsFor(studentId: string): AssignmentDueDTO[] {
       row.quiz_id,
     ) as QuizRow | undefined
     const stats = attemptStatsFor(row.quiz_id, studentId)
-    const locked = row.available_from !== null && row.available_from > today
+    const requiredLessonId = row.required_lesson_id ?? null
+    const lessonCompleted = requiredLessonId
+      ? isLessonCompleted(studentId, requiredLessonId)
+      : true
+    const locked =
+      (row.available_from !== null && row.available_from > today) ||
+      !lessonCompleted
     const daysLeft =
       row.due_date === null
         ? null
@@ -168,6 +193,9 @@ export function dueAssignmentsFor(studentId: string): AssignmentDueDTO[] {
       maxAttempts: row.max_attempts,
       completed: stats.completed,
       bestScore: stats.bestScore,
+      requiredLessonId,
+      requiredLessonTitle: lessonTitleFor(requiredLessonId),
+      lessonCompleted,
     }
   })
 }
@@ -216,6 +244,19 @@ export function checkAssignmentRules(
     return {
       ok: false,
       message: `This assignment opens on ${assignment.available_from}`,
+      assignment,
+    }
+  }
+  if (
+    assignment.required_lesson_id &&
+    !isLessonCompleted(studentId, assignment.required_lesson_id)
+  ) {
+    const lessonName = lessonTitleFor(assignment.required_lesson_id)
+    return {
+      ok: false,
+      message: lessonName
+        ? `Complete lesson “${lessonName}” before attempting this assignment`
+        : 'Complete the prerequisite lesson before attempting this assignment',
       assignment,
     }
   }
