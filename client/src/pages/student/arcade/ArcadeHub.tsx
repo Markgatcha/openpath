@@ -270,7 +270,7 @@ export function ArcadeHub() {
             <Gamepad2 className="text-brand-500" /> Educational Arcade
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-            Ten replayable STEM, CS, Economics & Humanities games powered by your FSRS
+            Eleven replayable STEM, CS, Economics & Humanities games powered by your FSRS
             spaced-repetition queue and classroom economy.
           </p>
         </div>
