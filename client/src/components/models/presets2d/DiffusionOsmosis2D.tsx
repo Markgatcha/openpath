@@ -36,6 +36,8 @@ const FLOW_RATE = 0.16
 const HISTORY_SPAN_S = 40
 const HISTORY_STEP_S = 0.25
 const STEP_S = 0.5
+/** Particles move in sub-steps of this fixed length, so a run traces the same paths at every temperature and frame rate. */
+const TRAVEL_STEP_S = 1 / 120
 const SEED = 11
 const MAX_FRAMES = 120
 
@@ -54,6 +56,7 @@ interface Dot {
 /** Saved simulation state, so the viewer's step-back button can rewind. */
 interface Frame {
   clock: number
+  travel: number
   shift: number
   flow: number
   dots: number[]
@@ -353,6 +356,8 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
     let shift = 0
     let flow = 0
     let clock = 0
+    /** Particle travel time not yet spent on a whole sub-step. */
+    let travel = 0
     let sinceSample = 0
     let seededLeft = -1
     let seededRight = -1
@@ -380,7 +385,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
     }
 
     const saveFrame = () => {
-      frames.push({ clock, shift, flow, dots: solute.flatMap((d) => [d.x, d.y, d.vx, d.vy]) })
+      frames.push({ clock, travel, shift, flow, dots: solute.flatMap((d) => [d.x, d.y, d.vx, d.vy]) })
       if (frames.length > MAX_FRAMES) frames.shift()
     }
 
@@ -392,6 +397,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       shift = 0
       flow = 0
       clock = 0
+      travel = 0
       sinceSample = 0
       solute.length = 0
       for (let i = 0; i < seededLeft; i += 1) solute.push(spawn(true, 90))
@@ -506,8 +512,13 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       // Mean particle speed scales with the square root of absolute temperature.
       const speed = Math.sqrt(temp / 300)
       const waterOnly = osmosisOnly(p)
-      for (const d of solute) move(d, step * speed, SOLUTE_R, !waterOnly)
-      for (const d of water) move(d, step * speed, 1.6, true)
+      // Temperature only changes how fast the sub-steps are used up, so a hotter run is the same run played faster.
+      travel += step * speed
+      while (travel >= TRAVEL_STEP_S) {
+        travel -= TRAVEL_STEP_S
+        for (const d of solute) move(d, TRAVEL_STEP_S, SOLUTE_R, !waterOnly)
+        for (const d of water) move(d, TRAVEL_STEP_S, 1.6, true)
+      }
 
       const left = countLeft()
       const right = solute.length - left
@@ -542,6 +553,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       shift = frame.shift
       flow = frame.flow
       clock = frame.clock
+      travel = frame.travel
       sinceSample = 0
       while (history.length > 1 && history[history.length - 1].t > clock) history.pop()
     }
