@@ -1020,10 +1020,10 @@ export const ANATOMY_PHYSIOLOGY_PACK: ContentPack = {
         },
         {
           type: 'order',
-          prompt: 'Order the path of air on its way into the body:',
+          prompt: 'Order the places an oxygen molecule passes through on its way from the air into the blood:',
           options: ['Trachea', 'Bronchi', 'Alveoli', 'Blood in the capillaries'],
           correct: [0, 1, 2, 3],
-          explanation: 'Air passes down the trachea and bronchi to the alveoli, where oxygen diffuses into the blood.',
+          explanation: 'Air carries the oxygen down the trachea and bronchi to the alveoli. The air stops there; the oxygen diffuses across the thin wall into the blood.',
           points: 15,
         },
       ],
