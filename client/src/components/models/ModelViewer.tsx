@@ -265,10 +265,6 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
     const isTooSlow = createFrameMonitor(profile)
     const tick = (now: number) => {
       frame = requestAnimationFrame(tick)
-      if (!onScreen) {
-        lastDraw = 0
-        return
-      }
       if (!shouldDraw(now)) return
       const raw = Math.min(clock.getDelta(), 0.05)
       const dt = pausedRef.current ? 0 : raw
@@ -283,12 +279,17 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
         return
       }
       if (dirty > 0) dirty -= 1
-      if (lastDraw && isTooSlow(now - lastDraw) && lowerAutoTier()) return
-      lastDraw = now
+      if (!onScreen) lastDraw = 0
+      else {
+        if (lastDraw && isTooSlow(now - lastDraw) && lowerAutoTier()) return
+        lastDraw = now
+      }
       elapsed += dt
       elapsedRef.current = elapsed
       instance.update(paramsRef.current, dt, elapsed)
-      renderer.render(scene, camera)
+      // Off-screen the simulation keeps running so readouts and challenge
+      // checks next to the canvas stay current; only the draw is skipped.
+      if (onScreen) renderer.render(scene, camera)
 
       if (instance.hudPlot && hudCanvasRef.current) {
         const hudCanvas = hudCanvasRef.current
