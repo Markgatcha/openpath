@@ -36,6 +36,7 @@ const FLOW_RATE = 0.16
 const HISTORY_SPAN_S = 40
 const HISTORY_STEP_S = 0.25
 const STEP_S = 0.5
+const SEED = 11
 const MAX_FRAMES = 120
 
 const LEFT_COLOR = PALETTE_CSS.violet
@@ -342,7 +343,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
   ],
   build: (ctx, initial) => {
     const { quality } = ctx
-    let seed = 11
+    let seed = SEED
     const rand = () => {
       seed = (seed * 1664525 + 1013904223) % 4294967296
       return seed / 4294967296
@@ -384,6 +385,8 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
     }
 
     const reseed = (p: Params) => {
+      // Every run starts from the same positions and directions, so two runs differ only by their settings.
+      seed = SEED
       seededLeft = Math.round(p.soluteLeft ?? 0)
       seededRight = Math.round(p.soluteRight ?? 0)
       shift = 0
@@ -522,7 +525,8 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         history.push({ t: clock, left: conc(left, true), right: conc(right, false) })
         while (history.length > 2 && history[0].t < clock - HISTORY_SPAN_S) history.shift()
       }
-      if (clock - frames[frames.length - 1].clock >= STEP_S) saveFrame()
+      // The tolerance keeps a manual step, which sums 30 sub-steps, from landing just short.
+      if (clock - frames[frames.length - 1].clock >= STEP_S - 1e-6) saveFrame()
     }
 
     /** Step back to the last saved frame before the current instant. */
