@@ -241,7 +241,7 @@ const MAL_U1_LESSONS: PackLesson[] = [
             type: 'fill',
             prompt: 'What is the percentage increase? Give a number.',
             correct: '50',
-            alternatives: ['50%', '50 %', '50.0', '50 percent'],
+            alternatives: ['50%', '50 %', '50 percent'],
             explanation:
               '2 ÷ 4 × 100 = 50%. The post is accurate, yet "up 50%" hides that it means two more thefts. Small counts produce dramatic percentages.',
             points: 15,
@@ -1095,7 +1095,7 @@ export const MEDIA_AI_LITERACY_PACK: ContentPack = {
           type: 'fill',
           prompt: 'A town had 20 burglaries last year and 25 this year. What is the percentage increase? Give a number.',
           correct: '25',
-          alternatives: ['25%', '25 %', '25.0', '25 percent'],
+          alternatives: ['25%', '25 %', '25 percent'],
           explanation: '(25 − 20) ÷ 20 × 100 = 25%.',
           points: 15,
         },
