@@ -206,11 +206,11 @@ export const projectileMotion2dModel: Model2DDefinition = {
         correctIndex: 0,
       },
       manipulate: {
-        instruction: 'Switch gravity to the Moon and launch at 20 m/s or more so the range passes 240 m.',
+        instruction: 'Keep h = 0, switch gravity to the Moon and launch at 20 m/s or more so the range passes 240 m.',
         evaluate: (p) => {
           const m = solve(p)
           return {
-            passed: m.gravity === 1 && m.range > 240,
+            passed: m.gravity === 1 && m.v0 >= 20 && m.h === 0 && m.range > 240,
             feedback: `Range ${fmt(m.range)} m with g = ${m.g} m/s².`,
           }
         },
