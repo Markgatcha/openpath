@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ArrowRight, CheckCircle2, Flame, Play, RotateCcw, Sliders, Target, XCircle, Zap } from 'lucide-react'
 import { Button, Card, Chip } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { createFrameLimiter, useGraphicsQuality } from '@/lib/graphics'
 import { fireComboBurst, playBurstSound, playHitSound, playMissSound } from '@/lib/sound'
 import { isComboBurst } from '@shared/economy'
 import type { ArcadeRunResultDTO } from '@shared/types'
@@ -454,6 +455,7 @@ export function SimulationSandboxGame() {
     drawFrame(simProgress)
   }, [drawFrame, simProgress])
 
+  const maxFps = useGraphicsQuality().profile.maxFps
   const runSimulation = () => {
     if (simRunning) return
     setSimRunning(true)
@@ -462,9 +464,14 @@ export function SimulationSandboxGame() {
 
     const start = performance.now()
     const duration = 950
+    const shouldDraw = createFrameLimiter(maxFps)
 
     const tick = (now: number) => {
       const p = Math.min(1, (now - start) / duration)
+      if (p < 1 && !shouldDraw(now)) {
+        requestAnimationFrame(tick)
+        return
+      }
       setSimProgress(p)
       if (p < 1) {
         requestAnimationFrame(tick)

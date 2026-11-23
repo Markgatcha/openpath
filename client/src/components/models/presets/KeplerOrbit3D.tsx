@@ -33,13 +33,13 @@ function ellipsePoints(a: number, e: number, segments = 160): THREE.Vector3[] {
   return out
 }
 
-function build({ scene, palette }: SceneContext, params: Params) {
+function build({ scene, palette, quality }: SceneContext, params: Params) {
   const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(0.35, 40, 28),
+    new THREE.SphereGeometry(0.35, quality.segments(40), quality.segments(28)),
     new THREE.MeshBasicMaterial({ color: 0xfde047 }),
   )
   const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.55, 32, 20),
+    new THREE.SphereGeometry(0.55, quality.segments(32), quality.segments(20)),
     new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.25 }),
   )
   sun.add(glow)
@@ -47,7 +47,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
   scene.add(sun)
 
   const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 28, 20),
+    new THREE.SphereGeometry(0.16, quality.segments(28), quality.segments(20)),
     new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.6 }),
   )
   scene.add(planet)
@@ -65,7 +65,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
   scene.add(velocityArrow, gravityArrow)
 
   const focus2 = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 12, 8),
+    new THREE.SphereGeometry(0.06, quality.segments(12), quality.segments(8)),
     new THREE.MeshBasicMaterial({ color: palette.slate }),
   )
   scene.add(focus2)

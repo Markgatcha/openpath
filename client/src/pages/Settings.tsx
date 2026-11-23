@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   Check,
   KeyRound,
+  Gauge,
   Palette,
   RefreshCw,
   Save,
@@ -38,6 +39,8 @@ import {
   type GradientDirection,
 } from '@shared/economy'
 import type { ShopItemDTO } from '@shared/types'
+import { GraphicsQualitySelect } from '@/components/GraphicsQualitySelect'
+import { GRAPHICS_LABELS, useGraphicsQuality } from '@/lib/graphics'
 
 export function Settings() {
   const { user, setUser, logout } = useAuth()
@@ -241,6 +244,8 @@ export function Settings() {
           <RefreshCw size={15} /> Switch to {theme === 'dark' ? 'light' : 'dark'}
         </Button>
       </Card>
+
+      <GraphicsCard />
 
       {/* Purchased look */}
       {user.role === 'student' && <LookEditor />}
@@ -601,6 +606,25 @@ function LookEditor() {
           </Field>
         )
       })}
+    </Card>
+  )
+}
+
+function GraphicsCard() {
+  const { preference, tier } = useGraphicsQuality()
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-4 p-6">
+      <div className="min-w-0 flex-1">
+        <h2 className="flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <Gauge size={15} /> Graphics quality
+        </h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {GRAPHICS_LABELS[preference].hint}
+          {preference === 'auto' && ` Currently ${GRAPHICS_LABELS[tier].label}.`} Applies to 3D
+          models and games on this device only.
+        </p>
+      </div>
+      <GraphicsQualitySelect />
     </Card>
   )
 }

@@ -39,6 +39,7 @@ Great learning content is hard to make, and most platforms lock it — and your 
 - **"Due soon" homework** — assignments with due dates, availability windows, and attempt caps, right on your dashboard
 - **Coins & the reward shop** — points on homework, classwork, quizzes, and tests mint your teacher's currency; spend it on backgrounds, nameplates, name colours, and fonts
 - **Trophy hall & leaderboards** — 8 badges, global and classroom rankings, weekly and all-time windows
+- **Graphics quality you control** — Auto, Low, Medium, High, or Ultra for the 3D Model Lab and canvas games (Settings, or the gauge in any 3D viewer). Low renders at reduced resolution and 30 fps with lighter scenes for older laptops; Auto picks a level for the device and steps down if frames drop. Stored per device, never sent to the server
 
 ### 🧑‍🏫 Teachers
 - **Quiz workshop** — create, reorder, and edit questions with a focused builder (auto-saving)

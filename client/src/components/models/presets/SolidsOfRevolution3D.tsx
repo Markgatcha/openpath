@@ -40,7 +40,7 @@ function simpson(g: (x: number) => number, a: number, b: number, n = 200): numbe
   return (sum * h) / 3
 }
 
-function build({ scene, palette }: SceneContext, _params: Params) {
+function build({ scene, palette, quality }: SceneContext, _params: Params) {
   // Shift so the solid is centered on the origin (x ∈ [−L/2, L/2]).
   const offset = -L / 2
 
@@ -56,7 +56,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
   scene.add(curveLine, innerLine)
 
   const slice = new THREE.Mesh(
-    new THREE.RingGeometry(0, 1, 64),
+    new THREE.RingGeometry(0, 1, quality.segments(64)),
     new THREE.MeshStandardMaterial({
       color: palette.cyan,
       emissive: palette.cyan,
@@ -99,7 +99,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
       side: THREE.DoubleSide,
       depthWrite: false,
     })
-    const outerMesh = new THREE.Mesh(new THREE.LatheGeometry(profile(outer), 96, 0, sweep), material)
+    const outerMesh = new THREE.Mesh(new THREE.LatheGeometry(profile(outer), quality.segments(96), 0, sweep), material)
     outerMesh.rotation.z = -Math.PI / 2
     solid.add(outerMesh)
     const wire = new THREE.Mesh(
@@ -111,7 +111,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
 
     if (washer) {
       const innerMesh = new THREE.Mesh(
-        new THREE.LatheGeometry(profile(inner), 96, 0, sweep),
+        new THREE.LatheGeometry(profile(inner), quality.segments(96), 0, sweep),
         new THREE.MeshStandardMaterial({ color: palette.rose, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }),
       )
       innerMesh.rotation.z = -Math.PI / 2
@@ -173,7 +173,7 @@ function build({ scene, palette }: SceneContext, _params: Params) {
       const wantedInner = R > 0 ? r / R : 0
       if (Math.abs(ring.parameters.innerRadius - wantedInner) > 1e-3) {
         slice.geometry.dispose()
-        slice.geometry = new THREE.RingGeometry(wantedInner, 1, 64)
+        slice.geometry = new THREE.RingGeometry(wantedInner, 1, quality.segments(64))
       }
       slice.visible = p.showSlice === 1
     },

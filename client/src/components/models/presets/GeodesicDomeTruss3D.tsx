@@ -182,14 +182,14 @@ function generateGeodesicDome(freq: number): GeodesicMeshData {
   return { nodes: domeNodes, edges: domeEdges, apexIndex }
 }
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
   const root = new THREE.Group()
   scene.add(root)
   root.position.y = -1.1
 
   // Foundation ring slab
   const baseRing = new THREE.Mesh(
-    new THREE.TorusGeometry(DOME_RADIUS * 0.99, 0.08, 12, 64),
+    new THREE.TorusGeometry(DOME_RADIUS * 0.99, 0.08, quality.segments(12), quality.segments(64)),
     new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.35 }),
   )
   baseRing.rotation.x = Math.PI / 2
@@ -226,8 +226,8 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
     const hubRadius = Math.max(0.055, 0.11 - freq * 0.014)
     const strutRadius = Math.max(0.026, 0.052 - freq * 0.006)
-    const hubGeo = new THREE.SphereGeometry(hubRadius, 14, 10)
-    const strutGeo = new THREE.CylinderGeometry(strutRadius, strutRadius, 1, 10)
+    const hubGeo = new THREE.SphereGeometry(hubRadius, quality.segments(14), quality.segments(10))
+    const strutGeo = new THREE.CylinderGeometry(strutRadius, strutRadius, 1, quality.segments(10))
 
     nodeMeshes = meshData.nodes.map((n, idx) => {
       const hubMat = new THREE.MeshStandardMaterial({

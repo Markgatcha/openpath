@@ -244,9 +244,9 @@ export const seasonsAxialTilt3dModel: ModelDefinition = {
       misconceptionTag: 'seasons-without-axial-tilt',
     },
   ],
-  build: ({ scene }, initial) => {
+  build: ({ scene, quality }, initial) => {
     // Sun at origin
-    const sunGeo = new THREE.SphereGeometry(0.68, 32, 32)
+    const sunGeo = new THREE.SphereGeometry(0.68, quality.segments(32), quality.segments(32))
     const sunMat = new THREE.MeshBasicMaterial({ color: 0xfde047 })
     const sunMesh = new THREE.Mesh(sunGeo, sunMat)
     scene.add(sunMesh)
@@ -280,14 +280,14 @@ export const seasonsAxialTilt3dModel: ModelDefinition = {
 
     const earthTex = makeEarthTexture()
     const earthMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.55, 32, 24),
+      new THREE.SphereGeometry(0.55, quality.segments(32), quality.segments(24)),
       new THREE.MeshStandardMaterial({ map: earthTex, roughness: 0.72, metalness: 0.05 }),
     )
     tiltGroup.add(earthMesh)
 
     // Axis pole rod + N/S caps
     const poleRod = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.025, 0.025, 1.85, 12),
+      new THREE.CylinderGeometry(0.025, 0.025, 1.85, quality.segments(12)),
       new THREE.MeshBasicMaterial({ color: PALETTE.amber }),
     )
     tiltGroup.add(poleRod)
@@ -304,7 +304,7 @@ export const seasonsAxialTilt3dModel: ModelDefinition = {
     tiltGroup.add(latRing)
 
     // Incoming Sun beam indicator arrow pointing toward Earth's sunlit side
-    const beamGeo = new THREE.CylinderGeometry(0.11, 0.11, 2.2, 16)
+    const beamGeo = new THREE.CylinderGeometry(0.11, 0.11, 2.2, quality.segments(16))
     beamGeo.rotateZ(Math.PI / 2)
     const beamMat = new THREE.MeshBasicMaterial({
       color: 0xfef08a,
@@ -315,7 +315,7 @@ export const seasonsAxialTilt3dModel: ModelDefinition = {
     earthRoot.add(beamMesh)
 
     // Translucent Earth Umbra Shadow Cone extending strictly away from Sun
-    const umbraGeo = new THREE.ConeGeometry(0.54, 3.0, 24, 1, true)
+    const umbraGeo = new THREE.ConeGeometry(0.54, 3.0, quality.segments(24), 1, true)
     umbraGeo.rotateZ(-Math.PI / 2)
     umbraGeo.translate(1.5, 0, 0)
     const umbraMat = new THREE.MeshBasicMaterial({
@@ -335,7 +335,7 @@ export const seasonsAxialTilt3dModel: ModelDefinition = {
     })
     const moonOrbitRing = polyline(moonRingPts, PALETTE.cyan, 0.4)
     const moonMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.16, 20, 16),
+      new THREE.SphereGeometry(0.16, quality.segments(20), quality.segments(16)),
       new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.85 }),
     )
     earthRoot.add(moonOrbitRing, moonMesh)

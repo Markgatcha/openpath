@@ -39,12 +39,18 @@ function strandPoint(
   return out.set(baseX, y, baseZ)
 }
 
-function buildTubeFromSamples(pts: THREE.Vector3[], radius: number): THREE.TubeGeometry {
+function tubeFromSamples(
+  pts: THREE.Vector3[],
+  radius: number,
+  quality: SceneContext['quality'],
+): THREE.TubeGeometry {
   const curve = new THREE.CatmullRomCurve3(pts)
-  return new THREE.TubeGeometry(curve, 64, radius, 10, false)
+  return new THREE.TubeGeometry(curve, quality.segments(64), radius, quality.segments(10), false)
 }
 
-function build({ scene, palette }: SceneContext, initial: Params) {
+function build({ scene, palette, quality }: SceneContext, initial: Params) {
+  const buildTubeFromSamples = (pts: THREE.Vector3[], radius: number) =>
+    tubeFromSamples(pts, radius, quality)
   const root = new THREE.Group()
   scene.add(root)
 
@@ -88,7 +94,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   const helicase = new THREE.Group()
   helicase.position.set(0, FORK_Y, 0)
   const helicaseTorus = new THREE.Mesh(
-    new THREE.TorusGeometry(1.02, 0.24, 16, 36),
+    new THREE.TorusGeometry(1.02, 0.24, quality.segments(16), quality.segments(36)),
     new THREE.MeshPhysicalMaterial({
       color: 0x38bdf8,
       roughness: 0.25,
@@ -101,7 +107,7 @@ function build({ scene, palette }: SceneContext, initial: Params) {
   helicase.add(helicaseTorus)
   for (let k = 0; k < 6; k += 1) {
     const lobe = new THREE.Mesh(
-      new THREE.SphereGeometry(0.24, 16, 12),
+      new THREE.SphereGeometry(0.24, quality.segments(16), quality.segments(12)),
       new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.35 }),
     )
     const ang = (k / 6) * Math.PI * 2
@@ -112,18 +118,18 @@ function build({ scene, palette }: SceneContext, initial: Params) {
 
   // DNA Polymerase III holoenzyme spheres on leading and lagging templates
   const polLead = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.36, 2),
+    new THREE.IcosahedronGeometry(0.36, quality.subdivisions(2)),
     new THREE.MeshStandardMaterial({ color: palette.emerald, roughness: 0.35 }),
   )
   const polLag = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.34, 2),
+    new THREE.IcosahedronGeometry(0.34, quality.subdivisions(2)),
     new THREE.MeshStandardMaterial({ color: palette.emerald, roughness: 0.35 }),
   )
   root.add(polLead, polLag)
 
   // 5' and 3' terminal marker spheres
   const endGroup = new THREE.Group()
-  const endGeo = new THREE.SphereGeometry(0.2, 16, 12)
+  const endGeo = new THREE.SphereGeometry(0.2, quality.segments(16), quality.segments(12))
   const fivePrimeMat = new THREE.MeshStandardMaterial({ color: palette.amber, emissive: 0x78350f })
   const threePrimeMat = new THREE.MeshStandardMaterial({ color: palette.rose, emissive: 0x881337 })
   const endBottomA = new THREE.Mesh(endGeo, threePrimeMat)
@@ -145,9 +151,9 @@ function build({ scene, palette }: SceneContext, initial: Params) {
     emissive: 0x94a3b8,
     emissiveIntensity: 0.6,
   })
-  const baseCylGeo = new THREE.CylinderGeometry(0.055, 0.055, 1, 10)
+  const baseCylGeo = new THREE.CylinderGeometry(0.055, 0.055, 1, quality.segments(10))
   baseCylGeo.rotateX(Math.PI / 2)
-  const hBondGeo = new THREE.SphereGeometry(0.048, 10, 8)
+  const hBondGeo = new THREE.SphereGeometry(0.048, quality.segments(10), quality.segments(8))
 
   interface PairVisual {
     isGC: boolean

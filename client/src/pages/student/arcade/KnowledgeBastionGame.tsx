@@ -1,3 +1,4 @@
+import { createFrameLimiter, useGraphicsQuality } from '@/lib/graphics'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -166,6 +167,7 @@ export function KnowledgeBastionGame() {
   const initialSubject = searchParams.get('subject') ?? 'All'
   const { user } = useAuth()
   const reducedMotion = usePrefersReducedMotion()
+  const maxFps = useGraphicsQuality().profile.maxFps
 
   const finishRun = useFinishArcadeRun('knowledge-bastion')
   const srsBridge = useArcadeSrsBridge({ untimed: true })
@@ -1026,6 +1028,7 @@ export function KnowledgeBastionGame() {
     }
     let rafId = 0
     let lastTs = performance.now()
+    const shouldDraw = createFrameLimiter(maxFps)
     const loop = (now: number) => {
       const rawDt = Math.min(80, Math.max(0, now - lastTs))
       lastTs = now
@@ -1037,12 +1040,14 @@ export function KnowledgeBastionGame() {
           return
         }
       }
-      drawBoard()
+      // Only drawing is capped: the simulation steps every frame so scores
+      // do not depend on the graphics tier.
+      if (shouldDraw(now)) drawBoard()
       rafId = window.requestAnimationFrame(loop)
     }
     rafId = window.requestAnimationFrame(loop)
     return () => window.cancelAnimationFrame(rafId)
-  }, [drawBoard, finishWaveOutcome, simSpeed, stage, stepWaveSimulation])
+  }, [drawBoard, finishWaveOutcome, maxFps, simSpeed, stage, stepWaveSimulation])
 
   // Full keyboard navigation across charge questions and build grid
   useEffect(() => {

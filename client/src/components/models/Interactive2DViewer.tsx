@@ -1,3 +1,4 @@
+import { createFrameLimiter, useGraphicsQuality } from '@/lib/graphics'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -68,6 +69,7 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
   )
 
   const reducedMotion = usePrefersReducedMotion()
+  const { profile } = useGraphicsQuality()
   const viewWidth = model.viewWidth ?? 720
   const viewHeight = model.viewHeight ?? 460
   const initialParamsKey = config.initialParams ? JSON.stringify(config.initialParams) : ''
@@ -183,8 +185,10 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
     let lastSvgSync = lastTime
     let frame = 0
 
+    const shouldDraw = createFrameLimiter(profile.maxFps)
     const drawFrame = (now: number) => {
       frame = requestAnimationFrame(drawFrame)
+      if (!shouldDraw(now)) return
       const rawDt = Math.min((now - lastTime) / 1000, 0.05)
       lastTime = now
       const dt = pausedRef.current ? 0 : rawDt
@@ -195,7 +199,8 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
 
       const canvas = canvasRef.current
       if (canvas && instance.renderCanvas) {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2)
+        // Never below 1: canvas text and thin curves blur when upscaled.
+        const dpr = Math.min(window.devicePixelRatio || 1, Math.max(1, profile.pixelRatioCap))
         const targetW = Math.round(viewWidth * dpr)
         const targetH = Math.round(viewHeight * dpr)
         if (canvas.width !== targetW || canvas.height !== targetH) {
@@ -223,7 +228,7 @@ export function Interactive2DViewer({ model, ...directConfig }: Interactive2DVie
       instance.dispose?.()
       instanceRef.current = null
     }
-  }, [model, viewWidth, viewHeight, reducedMotion, syncStats])
+  }, [model, viewWidth, viewHeight, reducedMotion, syncStats, profile])
 
   // Periodic polling for live readouts and POE metrics.
   useEffect(() => {

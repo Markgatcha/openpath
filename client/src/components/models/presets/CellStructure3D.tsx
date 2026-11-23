@@ -9,12 +9,12 @@ import type { Hotspot, ModelDefinition, Params, SceneContext } from '../engine'
  * and instanced ribosomes that stream through the cytoplasm.
  */
 
-function build({ scene, palette }: SceneContext, params: Params) {
+function build({ scene, palette, quality }: SceneContext, params: Params) {
   const root = new THREE.Group()
   scene.add(root)
 
   // ── Membrane (vertex-animated sphere) ─────────────────────────
-  const membraneGeometry = new THREE.IcosahedronGeometry(3.2, 5)
+  const membraneGeometry = new THREE.IcosahedronGeometry(3.2, quality.subdivisions(5))
   const basePositions = (membraneGeometry.getAttribute('position') as THREE.BufferAttribute)
     .array.slice() as Float32Array
   const membraneMaterial = new THREE.MeshPhysicalMaterial({
@@ -33,7 +33,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
   const nucleus = new THREE.Group()
   nucleus.position.set(-0.3, 0.2, 0)
   const envelope = new THREE.Mesh(
-    new THREE.SphereGeometry(1.05, 48, 32),
+    new THREE.SphereGeometry(1.05, quality.segments(48), quality.segments(32)),
     new THREE.MeshStandardMaterial({
       color: palette.violet,
       transparent: true,
@@ -43,13 +43,13 @@ function build({ scene, palette }: SceneContext, params: Params) {
   )
   nucleus.add(envelope)
   const nucleolus = new THREE.Mesh(
-    new THREE.SphereGeometry(0.38, 32, 24),
+    new THREE.SphereGeometry(0.38, quality.segments(32), quality.segments(24)),
     new THREE.MeshStandardMaterial({ color: 0x7c3aed, roughness: 0.4 }),
   )
   nucleolus.position.set(0.25, 0.1, 0.2)
   nucleus.add(nucleolus)
   // Nuclear pores: small rings on a Fibonacci sphere.
-  const poreGeometry = new THREE.TorusGeometry(0.06, 0.018, 6, 12)
+  const poreGeometry = new THREE.TorusGeometry(0.06, 0.018, quality.segments(6), quality.segments(12))
   const poreMaterial = new THREE.MeshStandardMaterial({ color: palette.white })
   const pores = 36
   for (let i = 0; i < pores; i += 1) {
@@ -72,7 +72,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
     side: THREE.DoubleSide,
   })
   for (let layer = 0; layer < 3; layer += 1) {
-    const geometry = new THREE.TorusGeometry(1.35 + layer * 0.22, 0.05, 8, 96, Math.PI * 1.3)
+    const geometry = new THREE.TorusGeometry(1.35 + layer * 0.22, 0.05, quality.segments(8), quality.segments(96), Math.PI * 1.3)
     const position = geometry.getAttribute('position') as THREE.BufferAttribute
     for (let i = 0; i < position.count; i += 1) {
       const x = position.getX(i)
@@ -93,7 +93,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
   const golgiMaterial = new THREE.MeshStandardMaterial({ color: palette.amber, roughness: 0.5 })
   for (let i = 0; i < 5; i += 1) {
     const cisterna = new THREE.Mesh(
-      new THREE.TorusGeometry(0.55 - i * 0.04, 0.06, 8, 32, Math.PI * 0.9),
+      new THREE.TorusGeometry(0.55 - i * 0.04, 0.06, quality.segments(8), quality.segments(32), Math.PI * 0.9),
       golgiMaterial,
     )
     cisterna.position.y = i * 0.15
@@ -118,7 +118,7 @@ function build({ scene, palette }: SceneContext, params: Params) {
   ]
   for (const [x, y, z] of mitoSpots) {
     const mito = new THREE.Group()
-    const shell = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.7, 8, 16), mitoMaterial)
+    const shell = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.7, quality.segments(8), quality.segments(16)), mitoMaterial)
     shell.material = mitoMaterial.clone()
     ;(shell.material as THREE.MeshStandardMaterial).transparent = true
     ;(shell.material as THREE.MeshStandardMaterial).opacity = 0.75
@@ -142,16 +142,16 @@ function build({ scene, palette }: SceneContext, params: Params) {
     [2.1, -0.2, 1.4],
     [0.3, -1.4, -2.0],
   ] as [number, number, number][]) {
-    const lysosome = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 14), lysosomeMaterial)
+    const lysosome = new THREE.Mesh(new THREE.SphereGeometry(0.2, quality.segments(20), quality.segments(14)), lysosomeMaterial)
     lysosome.position.set(x, y, z)
     cytoplasm.add(lysosome)
     lysosomes.push(lysosome)
   }
 
   // Free ribosomes: one InstancedMesh, positions sampled inside the cell.
-  const ribosomeCount = 420
+  const ribosomeCount = quality.count(420)
   const ribosomes = new THREE.InstancedMesh(
-    new THREE.SphereGeometry(0.035, 6, 4),
+    new THREE.SphereGeometry(0.035, quality.segments(6), quality.segments(4)),
     new THREE.MeshStandardMaterial({ color: palette.white }),
     ribosomeCount,
   )

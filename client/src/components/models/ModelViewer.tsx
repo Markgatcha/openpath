@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ChevronLeft,
@@ -16,8 +17,16 @@ import {
 import { cn } from '@/lib/utils'
 import { isTypingTarget, usePrefersReducedMotion } from '@/lib/a11y'
 import {
+  createFrameLimiter,
+  createFrameMonitor,
+  lowerAutoTier,
+  useGraphicsQuality,
+} from '@/lib/graphics'
+import { GraphicsQualitySelect } from '@/components/GraphicsQualitySelect'
+import {
   PALETTE,
   disposeObject,
+  makeSceneQuality,
   type Hotspot,
   type ModelDefinition,
   type Params,
@@ -75,6 +84,8 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
   )
 
   const reducedMotion = usePrefersReducedMotion()
+  const { profile } = useGraphicsQuality()
+  const invalidateRef = useRef<() => void>(() => {})
   const hostRef = useRef<HTMLDivElement>(null)
   const hudCanvasRef = useRef<HTMLCanvasElement>(null)
   const pinRefs = useRef(new Map<string, HTMLButtonElement>())
@@ -146,12 +157,16 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
 
     let renderer: THREE.WebGLRenderer
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+      renderer = new THREE.WebGLRenderer({
+        antialias: profile.antialias,
+        alpha: true,
+        powerPreference: profile.tier === 'low' ? 'low-power' : 'high-performance',
+      })
     } catch {
       queueMicrotask(() => setWebglError(true))
       return
     }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, profile.pixelRatioCap))
     renderer.domElement.className = 'block h-full w-full outline-none'
     renderer.domElement.tabIndex = 0
     renderer.domElement.setAttribute('role', 'img')
@@ -165,13 +180,27 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
     const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 500)
     camera.position.set(...model.camera)
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+    let environment: THREE.WebGLRenderTarget | null = null
+    if (profile.environment) {
+      const pmrem = new THREE.PMREMGenerator(renderer)
+      const room = new RoomEnvironment()
+      environment = pmrem.fromScene(room, 0.04)
+      room.dispose()
+      pmrem.dispose()
+      scene.environment = environment.texture
+      scene.environmentIntensity = 0.45
+      renderer.toneMapping = THREE.NeutralToneMapping
+    }
+    const ambient = profile.environment ? 0.3 : profile.rimLight ? 0.55 : 0.7
+    scene.add(new THREE.AmbientLight(0xffffff, ambient))
     const key = new THREE.DirectionalLight(0xffffff, 1.6)
     key.position.set(5, 8, 6)
     scene.add(key)
-    const rim = new THREE.DirectionalLight(0x93c5fd, 0.6)
-    rim.position.set(-6, -3, -5)
-    scene.add(rim)
+    if (profile.rimLight) {
+      const rim = new THREE.DirectionalLight(0x93c5fd, 0.6)
+      rim.position.set(-6, -3, -5)
+      scene.add(rim)
+    }
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
@@ -182,7 +211,18 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
     controls.keyPanSpeed = 14
     controlsRef.current = controls
 
-    const instance = model.build({ scene, camera, palette: PALETTE }, paramsRef.current)
+    const instance = model.build(
+      { scene, camera, palette: PALETTE, quality: makeSceneQuality(profile) },
+      paramsRef.current,
+    )
+    if (!profile.transmission) {
+      scene.traverse((object) => {
+        const material = (object as THREE.Mesh).material
+        for (const item of Array.isArray(material) ? material : material ? [material] : []) {
+          if (item instanceof THREE.MeshPhysicalMaterial) item.transmission = 0
+        }
+      })
+    }
     instanceRef.current = instance
     setHotspots(instance.hotspots)
     setHasHudPlot(Boolean(instance.hudPlot))
@@ -193,6 +233,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
     const resize = () => {
       const { clientWidth, clientHeight } = host
       if (clientWidth === 0 || clientHeight === 0) return
+      invalidateRef.current()
       renderer.setSize(clientWidth, clientHeight, false)
       camera.aspect = clientWidth / clientHeight
       camera.updateProjectionMatrix()
@@ -205,15 +246,51 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
     const scratch = new THREE.Vector3()
     let elapsed = 0
     let frame = 0
-    const tick = () => {
+    // Render on demand: a paused, untouched scene draws nothing.
+    let dirty = 2
+    let drawnParams = paramsRef.current
+    let onScreen = true
+    let lastDraw = 0
+    const invalidate = () => {
+      dirty = 2
+    }
+    invalidateRef.current = invalidate
+    controls.addEventListener('change', invalidate)
+    const visibility = new IntersectionObserver((entries) => {
+      onScreen = entries[0]?.isIntersecting ?? true
+      if (onScreen) invalidate()
+    })
+    visibility.observe(host)
+    const shouldDraw = createFrameLimiter(profile.maxFps)
+    const isTooSlow = createFrameMonitor(profile)
+    const tick = (now: number) => {
       frame = requestAnimationFrame(tick)
+      if (!shouldDraw(now)) return
       const raw = Math.min(clock.getDelta(), 0.05)
       const dt = pausedRef.current ? 0 : raw
+      controls.autoRotate = autoRotateRef.current
+      controls.update(raw)
+      if (paramsRef.current !== drawnParams) {
+        drawnParams = paramsRef.current
+        invalidate()
+      }
+      if (pausedRef.current && dirty <= 0) {
+        lastDraw = 0
+        return
+      }
+      if (dirty > 0) dirty -= 1
+      if (!onScreen) lastDraw = 0
+      else {
+        if (lastDraw && isTooSlow(now - lastDraw) && lowerAutoTier()) return
+        lastDraw = now
+      }
       elapsed += dt
       elapsedRef.current = elapsed
-      controls.autoRotate = autoRotateRef.current
-      controls.update()
       instance.update(paramsRef.current, dt, elapsed)
+      // Off-screen the simulation keeps running so readouts and challenge
+      // checks next to the canvas stay current; the scene, HUD plot and pins
+      // (all inside the host) are not drawn.
+      if (!onScreen) return
       renderer.render(scene, camera)
 
       if (instance.hudPlot && hudCanvasRef.current) {
@@ -238,12 +315,15 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
         }
       }
     }
-    tick()
+    frame = requestAnimationFrame(tick)
 
     return () => {
       cancelAnimationFrame(frame)
       observer.disconnect()
+      visibility.disconnect()
+      invalidateRef.current = () => {}
       controls.dispose()
+      environment?.dispose()
       instance.dispose?.()
       disposeObject(scene)
       scene.clear()
@@ -253,7 +333,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
       controlsRef.current = null
       instanceRef.current = null
     }
-  }, [model])
+  }, [model, profile])
 
   // Readouts & challenge metrics poll (cheap, a few Hz — the canvas itself never re-renders React).
   useEffect(() => {
@@ -314,6 +394,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
       setPaused(true)
     }
     instance.step(paramsRef.current, direction)
+    invalidateRef.current()
     setParams({ ...paramsRef.current })
     if (instance.readouts) setReadouts(instance.readouts(paramsRef.current))
     if (instance.metrics) setMetrics(instance.metrics(paramsRef.current))
@@ -441,6 +522,7 @@ export function ModelViewer({ model, ...directConfig }: ModelViewerProps) {
             <ToolbarButton label="Reset camera" onClick={resetView}>
               <RotateCcw size={15} />
             </ToolbarButton>
+            <GraphicsQualitySelect variant="overlay" />
           </div>
 
           {hasHudPlot && (
