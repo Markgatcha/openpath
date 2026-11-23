@@ -786,12 +786,12 @@ const RH_SITUATION: PackLesson = {
         type: 'mcq',
         prompt: 'A charity advert shows a shivering dog and says, "He has no one. Will you turn away?" Which appeal dominates?',
         options: [
-          'Pathos',
           'Logos',
+          'Pathos',
           'Ethos',
           'Exigence',
         ],
-        correct: 0,
+        correct: 1,
         explanation: 'The image and the question aim at sympathy and guilt, not at evidence or credibility.',
         points: 10,
       },
@@ -905,12 +905,12 @@ const RH_FALLACIES: PackLesson = {
         type: 'mcq',
         prompt: '"You can’t trust his view on taxes. He didn’t even finish university." Which fallacy is this?',
         options: [
-          'Ad hominem',
           'Straw man',
           'False dilemma',
+          'Ad hominem',
           'Slippery slope',
         ],
-        correct: 0,
+        correct: 2,
         explanation: 'It attacks the speaker’s background and never addresses what he said about taxes.',
         points: 10,
       },
@@ -1115,4 +1115,447 @@ export const ENGLISH_RHETORIC_TRACK: CurriculumTrack = {
   prerequisiteTrackIds: [],
   srsInterleaveDefault: true,
   units: RH_UNITS,
+}
+
+// ── Conversational Spanish ─────────────────────────────────────
+
+const ES_BASICS: PackLesson = {
+  id: 'es-u1-l1',
+  unitId: 'es-u1-everyday',
+  title: 'Greetings, Ser & Estar, and the Present Tense',
+  summary: 'Say hello, choose between the two Spanish verbs for "to be", talk about what you like and order in a café.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: [],
+  steps: [
+    {
+      id: 'es-u1-l1-s1',
+      kind: 'narrative',
+      title: 'Two Verbs for "To Be"',
+      bodyMarkdown:
+        'Spanish has two verbs where English has one.\n\n**Ser** describes what something *is*: identity, origin, profession, character, time and date.\n\n- *Soy estudiante.* (I am a student.)\n- *Ella es de México.* (She is from Mexico.)\n- *Son las tres.* (It is three o’clock.)\n\n**Estar** describes how or where something *is right now*: location, mood, health and temporary states.\n\n- *Estoy cansado.* (I am tired.)\n- *Madrid está en España.* (Madrid is in Spain.)\n- *La tienda está cerrada.* (The shop is closed.)\n\nPresent-tense forms:\n\n- **ser:** soy, eres, es, somos, sois, son\n- **estar:** estoy, estás, está, estamos, estáis, están',
+      callout: {
+        tone: 'key-idea',
+        text: 'Ser says what something is. Estar says how or where it is. Location always takes estar, even when it is permanent.',
+      },
+    },
+    {
+      id: 'es-u1-l1-s2',
+      kind: 'checkpoint',
+      title: 'Ser or Estar?',
+      question: {
+        type: 'mcq',
+        prompt: 'Choose the correct verb: "Mi hermana ______ médica."',
+        options: [
+          'es',
+          'está',
+          'son',
+          'estoy',
+        ],
+        correct: 0,
+        explanation: 'A profession is part of identity, so it takes ser: "Mi hermana es médica."',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u1-l1-s3',
+      kind: 'narrative',
+      title: 'Gustar and Tener',
+      bodyMarkdown:
+        '**Gustar** does not work like "to like". It means "to be pleasing to", so the thing you like is the subject and decides the verb ending.\n\n- *Me gust**a** el libro.* (The book pleases me: I like the book.)\n- *Me gust**an** los libros.* (The books please me: I like the books.)\n\nThe pronoun shows who likes it: *me* (I), *te* (you), *le* (he, she), *nos* (we), *les* (they).\n\n**Tener** (to have) is irregular in the *yo* form: **tengo**. Spanish uses it for age, where English uses "to be".\n\n- *Tengo quince años.* (I am fifteen; literally, "I have fifteen years".)',
+    },
+    {
+      id: 'es-u1-l1-s4',
+      kind: 'checkpoint',
+      title: 'Saying What You Like',
+      question: {
+        type: 'mcq',
+        prompt: 'How do you say "I like the songs"?',
+        options: [
+          'Me gusta las canciones.',
+          'Yo gusto las canciones.',
+          'Me gustan la canción.',
+          'Me gustan las canciones.',
+        ],
+        correct: 3,
+        explanation: '"Las canciones" is plural, so the verb is "gustan".',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u1-l1-s5',
+      kind: 'worked-example',
+      title: 'Ordering in a Café',
+      problemMarkdown: 'Follow a short, polite exchange between a customer and a waiter.',
+      steps: [
+        {
+          label: 'Greet',
+          expressionOrAction: '"Buenos días." "Buenos días, ¿qué desea?"',
+          whyNote: 'Good morning. Good morning, what would you like?',
+        },
+        {
+          label: 'Order',
+          expressionOrAction: '"Quisiera un café con leche, por favor."',
+          whyNote: 'I would like a coffee with milk, please. "Quisiera" is more polite than "quiero" (I want).',
+        },
+        {
+          label: 'Pay',
+          expressionOrAction: '"¿Cuánto es?" "Son dos euros."',
+          whyNote: 'How much is it? It is two euros. Prices take ser.',
+        },
+        {
+          label: 'Leave',
+          expressionOrAction: '"Gracias, hasta luego." "De nada, adiós."',
+          whyNote: 'Thank you, see you later. You are welcome, goodbye.',
+        },
+      ],
+    },
+    {
+      id: 'es-u1-l1-s6',
+      kind: 'checkpoint',
+      title: 'Give Your Age',
+      question: {
+        type: 'fill',
+        prompt: 'Complete with the correct form of tener: "Yo ______ catorce años."',
+        correct: 'tengo',
+        alternatives: [],
+        explanation: 'Age uses tener, and its yo form is irregular: tengo.',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u1-l1-s7',
+      kind: 'synthesis',
+      title: 'First Conversations',
+      takeaways: [
+        'Ser is for identity, origin, profession and time. Estar is for location and temporary states.',
+        'With gustar, the thing liked decides the ending: me gusta el libro, me gustan los libros.',
+        'Tener is irregular in the yo form (tengo) and is used for age.',
+      ],
+      nextQuizIndex: 0,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'es-u1-l1-fc1',
+      front: 'When do you use estar instead of ser?',
+      back: 'For location and for temporary states such as mood or health.',
+      explanation: '"Estoy cansado." "Madrid está en España."',
+      interleave: true,
+    },
+    {
+      id: 'es-u1-l1-fc2',
+      front: 'Me gusta or me gustan: "______ los libros"?',
+      back: 'Me gustan los libros.',
+      explanation: 'The verb agrees with the thing liked, which is plural.',
+      interleave: true,
+    },
+    {
+      id: 'es-u1-l1-fc3',
+      front: 'How do you say "I am sixteen" in Spanish?',
+      back: 'Tengo dieciséis años.',
+      explanation: 'Spanish uses tener (to have) for age.',
+      interleave: true,
+    },
+  ],
+}
+
+const ES_PAST: PackLesson = {
+  id: 'es-u2-l1',
+  unitId: 'es-u2-past',
+  title: 'Telling Stories: Preterite & Imperfect',
+  summary: 'Choose between the two Spanish past tenses to set a scene and say what happened, and sort out por and para.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: ['es-u1-l1'],
+  steps: [
+    {
+      id: 'es-u2-l1-s1',
+      kind: 'narrative',
+      title: 'Two Past Tenses',
+      bodyMarkdown:
+        'Spanish splits the past in two.\n\nThe **preterite** reports completed actions: single events with a clear beginning and end.\n\n- *Ayer **comí** paella.* (Yesterday I ate paella.)\n- *El tren **llegó** a las ocho.* (The train arrived at eight.)\n\nThe **imperfect** describes the background: habits, ongoing actions, descriptions, age, time and feelings.\n\n- *De niño, **jugaba** en el parque.* (As a child, I used to play in the park.)\n- ***Hacía** frío y **llovía**.* (It was cold and it was raining.)\n\nSignal words help. *Ayer*, *anoche*, *una vez* and *de repente* point to the preterite. *Siempre*, *cada día*, *mientras* and *de niño* point to the imperfect.',
+      callout: {
+        tone: 'key-idea',
+        text: 'The imperfect paints the scene. The preterite says what happened in it.',
+      },
+    },
+    {
+      id: 'es-u2-l1-s2',
+      kind: 'worked-example',
+      title: 'An Interrupted Action',
+      problemMarkdown: 'Translate: "While I was cooking, my friend arrived."',
+      steps: [
+        {
+          label: 'Find the background action',
+          expressionOrAction: '"I was cooking" → cocinaba (imperfect)',
+          whyNote: 'It was in progress, with no stated end. "Mientras" usually signals the imperfect.',
+        },
+        {
+          label: 'Find the interrupting event',
+          expressionOrAction: '"my friend arrived" → llegó (preterite)',
+          whyNote: 'It happened once, at a single moment, and is complete.',
+        },
+        {
+          label: 'Combine',
+          expressionOrAction: 'Mientras cocinaba, llegó mi amigo.',
+          whyNote: 'Ongoing action in the imperfect, interruption in the preterite.',
+        },
+      ],
+    },
+    {
+      id: 'es-u2-l1-s3',
+      kind: 'checkpoint',
+      title: 'Pick the Tenses',
+      question: {
+        type: 'mcq',
+        prompt: 'Choose the best pair: "Cuando yo ______ (dormir), el perro ______ (ladrar) de repente."',
+        options: [
+          'dormí / ladraba',
+          'dormía / ladró',
+          'dormía / ladraba',
+          'dormí / ladró',
+        ],
+        correct: 1,
+        explanation: 'Sleeping was in progress (imperfect); the sudden bark interrupted it (preterite).',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u2-l1-s4',
+      kind: 'narrative',
+      title: 'Irregular Preterites, Por and Para',
+      bodyMarkdown:
+        'Some common verbs are irregular in the preterite. **Ir** (to go) and **ser** (to be) share one set of forms:\n\n- fui, fuiste, fue, fuimos, fuisteis, fueron\n\n*Ayer **fuimos** al cine.* (Yesterday we went to the cinema.) Context tells you which verb is meant.\n\n**Por** and **para** both often translate as "for".\n\n- **Para** looks forward to a goal: a recipient, a purpose, a destination or a deadline. *Este libro es **para** ti.* *Estudio **para** aprender.*\n- **Por** looks back at a cause or along a path: a reason, an exchange, a duration or movement through. *Gracias **por** tu ayuda.* *Pagué diez euros **por** el libro.* *Caminamos **por** el parque.*',
+    },
+    {
+      id: 'es-u2-l1-s5',
+      kind: 'checkpoint',
+      title: 'Por or Para?',
+      question: {
+        type: 'mcq',
+        prompt: 'Complete: "Salimos mañana ______ Barcelona."',
+        options: [
+          'para',
+          'por',
+          'de',
+          'en',
+        ],
+        correct: 0,
+        explanation: 'Barcelona is the destination, so the sentence takes para.',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u2-l1-s6',
+      kind: 'checkpoint',
+      title: 'Preterite of Ir',
+      question: {
+        type: 'fill',
+        prompt: 'Complete with the preterite of ir: "Ayer nosotros ______ a la playa."',
+        correct: 'fuimos',
+        alternatives: [],
+        explanation: 'The nosotros preterite of ir is fuimos.',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u2-l1-s7',
+      kind: 'synthesis',
+      title: 'Talking About the Past',
+      takeaways: [
+        'Preterite: completed events. Imperfect: habits, descriptions and actions in progress.',
+        'An interrupted action is imperfect; the interruption is preterite.',
+        'Ir and ser share the preterite forms fui, fuiste, fue, fuimos, fuisteis, fueron.',
+        'Para points to a goal or recipient; por gives a cause, exchange, duration or route.',
+      ],
+      nextQuizIndex: 1,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'es-u2-l1-fc1',
+      front: 'Which past tense describes habits and background?',
+      back: 'The imperfect.',
+      explanation: '"De niño, jugaba en el parque."',
+      interleave: true,
+    },
+    {
+      id: 'es-u2-l1-fc2',
+      front: 'What is the ellos preterite form of ir?',
+      back: 'Fueron.',
+      explanation: 'Ser has the same preterite forms.',
+      interleave: true,
+    },
+    {
+      id: 'es-u2-l1-fc3',
+      front: 'Por or para for the person who will receive something?',
+      back: 'Para.',
+      explanation: '"Este regalo es para mi abuela."',
+      interleave: true,
+    },
+  ],
+}
+
+const ES_SUBJUNCTIVE: PackLesson = {
+  id: 'es-u3-l1',
+  unitId: 'es-u3-subjunctive',
+  title: 'The Subjunctive: Wishes, Doubts & Conditions',
+  summary: 'Learn when Spanish switches to the subjunctive, how to form it, and how to talk about what would happen if.',
+  estimatedMinutes: 10,
+  standards: [],
+  prerequisiteLessonIds: ['es-u2-l1'],
+  steps: [
+    {
+      id: 'es-u3-l1-s1',
+      kind: 'narrative',
+      title: 'A Mood, Not a Tense',
+      bodyMarkdown:
+        'The verb forms you have met so far are **indicative**: they state facts. The **subjunctive** is used for things that are wished, doubted, felt or not yet real.\n\nIt usually appears after **que**, when the first part of the sentence has one subject and the second part has another:\n\n- *Quiero **que vengas**.* (I want you to come.)\n- but: *Quiero **venir**.* (I want to come: same subject, so use the infinitive.)\n\nThe triggers are often remembered as **WEIRDO**:\n\n- **W**ishes: *querer que, esperar que*\n- **E**motions: *alegrarse de que, temer que*\n- **I**mpersonal expressions: *es importante que, es posible que*\n- **R**ecommendations: *recomendar que, sugerir que*\n- **D**oubt and denial: *dudar que, no creer que*\n- **O**jalá: *ojalá que* (I hope, if only)',
+      callout: {
+        tone: 'key-idea',
+        text: 'Certainty takes the indicative: "Creo que viene." Doubt takes the subjunctive: "No creo que venga."',
+      },
+    },
+    {
+      id: 'es-u3-l1-s2',
+      kind: 'narrative',
+      title: 'Forming the Present Subjunctive',
+      bodyMarkdown:
+        '1. Start with the **yo** form of the present tense: *hablo, como, tengo*.\n2. Drop the **-o**.\n3. Add the "opposite" endings.\n\n- **-ar** verbs take **e**: hable, hables, hable, hablemos, habléis, hablen\n- **-er** and **-ir** verbs take **a**: coma, comas, coma, comamos, comáis, coman\n\nBecause the stem comes from the *yo* form, *tengo* gives **tenga** and *hago* gives **haga**.\n\nA few verbs are fully irregular and must be learned: **ser → sea**, **ir → vaya**, **saber → sepa**, **haber → haya**, **estar → esté**, **dar → dé**.',
+    },
+    {
+      id: 'es-u3-l1-s3',
+      kind: 'checkpoint',
+      title: 'Form It',
+      question: {
+        type: 'fill',
+        prompt: 'Complete with the present subjunctive of tener: "Espero que ella ______ tiempo mañana."',
+        correct: 'tenga',
+        alternatives: [],
+        explanation: 'The yo form is tengo; drop the -o and add -a: tenga.',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u3-l1-s4',
+      kind: 'checkpoint',
+      title: 'Indicative or Subjunctive?',
+      question: {
+        type: 'mcq',
+        prompt: 'Which sentence is correct?',
+        options: [
+          'Dudo que Juan sabe la respuesta.',
+          'Creo que Juan sepa la respuesta.',
+          'Dudo que Juan sepa la respuesta.',
+          'Es verdad que Juan sepa la respuesta.',
+        ],
+        correct: 2,
+        explanation: 'Doubt triggers the subjunctive (sepa). "Creo que" and "es verdad que" express certainty and take the indicative (sabe).',
+        points: 10,
+      },
+    },
+    {
+      id: 'es-u3-l1-s5',
+      kind: 'narrative',
+      title: 'Connectors and "If" Sentences',
+      bodyMarkdown:
+        'Some conjunctions **always** take the subjunctive, because the action they introduce has not happened:\n\n- *a menos que* (unless), *antes de que* (before), *para que* (so that), *sin que* (without), *con tal de que* (provided that), *en caso de que* (in case)\n\n*No salgo **a menos que haga** sol.* (I am not going out unless it is sunny.)\n\nTo talk about an unlikely or imaginary condition, use **si + imperfect subjunctive**, then the **conditional**:\n\n- *Si **tuviera** dinero, **viajaría** por el mundo.* (If I had money, I would travel the world.)\n\nFor a real possibility, use the present indicative after *si*, never the present subjunctive: *Si **tengo** tiempo, te llamo.*',
+    },
+    {
+      id: 'es-u3-l1-s6',
+      kind: 'checkpoint',
+      title: 'Build the Hypothetical',
+      question: {
+        type: 'order',
+        prompt: 'Put the words in order to say "If I were rich, I would buy a house":',
+        options: ['Si', 'fuera rico,', 'compraría', 'una casa.'],
+        correct: [0, 1, 2, 3],
+        explanation: 'Si + imperfect subjunctive (fuera), then the conditional (compraría).',
+        points: 15,
+      },
+    },
+    {
+      id: 'es-u3-l1-s7',
+      kind: 'synthesis',
+      title: 'Beyond Plain Facts',
+      takeaways: [
+        'Use the subjunctive after que when the main clause expresses a wish, emotion, recommendation or doubt about a different subject.',
+        'Form it from the yo stem with opposite endings: hable, coma, tenga. Irregulars include sea, vaya and sepa.',
+        'A menos que, antes de que, para que and sin que always take the subjunctive.',
+        'Hypotheticals: si + imperfect subjunctive, then the conditional.',
+      ],
+      nextQuizIndex: 2,
+      flashcardEnroll: { autoEnroll: true, interleave: true },
+    },
+  ],
+  flashcardSeeds: [
+    {
+      id: 'es-u3-l1-fc1',
+      front: 'What does WEIRDO stand for?',
+      back: 'Wishes, Emotions, Impersonal expressions, Recommendations, Doubt, Ojalá.',
+      explanation: 'The main triggers of the subjunctive.',
+      interleave: true,
+    },
+    {
+      id: 'es-u3-l1-fc2',
+      front: 'What is the present subjunctive yo form of saber?',
+      back: 'Sepa.',
+      explanation: 'It is irregular: "No creo que yo lo sepa."',
+      interleave: true,
+    },
+    {
+      id: 'es-u3-l1-fc3',
+      front: 'Which tenses form a hypothetical "if" sentence?',
+      back: 'Si + imperfect subjunctive, then the conditional.',
+      explanation: '"Si tuviera dinero, viajaría."',
+      interleave: true,
+    },
+  ],
+}
+
+const ES_UNITS: TrackUnit[] = [
+  {
+    id: 'es-u1-everyday',
+    title: 'Everyday Spanish',
+    anchoringPhenomenon: 'English says "I am tired" and "I am a student" with one verb. Spanish needs two different ones.',
+    capstoneQuizIndex: 0,
+    masteryGate: GATE,
+    lessons: [ES_BASICS],
+  },
+  {
+    id: 'es-u2-past',
+    title: 'Talking About the Past',
+    anchoringPhenomenon: '"I ate" and "I used to eat" are different verb forms in Spanish, and a story needs both.',
+    capstoneQuizIndex: 1,
+    masteryGate: GATE,
+    lessons: [ES_PAST],
+  },
+  {
+    id: 'es-u3-subjunctive',
+    title: 'The Subjunctive',
+    anchoringPhenomenon: 'Change "I think he is coming" to "I doubt he is coming" and the Spanish verb changes form.',
+    capstoneQuizIndex: 2,
+    masteryGate: GATE,
+    lessons: [ES_SUBJUNCTIVE],
+  },
+]
+
+export const SPANISH_UNITS = ES_UNITS
+
+export const SPANISH_TRACK: CurriculumTrack = {
+  id: 'track-conversational-spanish',
+  slug: 'conversational-spanish',
+  packId: 'conversational-spanish',
+  title: 'Spanish: Conversational Fluency & Grammar',
+  category: 'Languages',
+  subject: 'Spanish',
+  gradeBand: 'HS',
+  license: 'MIT',
+  sourceAttribution: ATTRIBUTION,
+  prerequisiteTrackIds: [],
+  srsInterleaveDefault: true,
+  units: ES_UNITS,
 }

@@ -2,6 +2,8 @@ import type { ContentPack } from './types'
 import {
   ENGLISH_RHETORIC_TRACK,
   ENGLISH_RHETORIC_UNITS,
+  SPANISH_TRACK,
+  SPANISH_UNITS,
   US_CIVICS_TRACK,
   US_CIVICS_UNITS,
   WORLD_HISTORY_TRACK,
@@ -521,6 +523,8 @@ export const HUMANITIES_PACKS: ContentPack[] = [
     sourceAttribution: 'OpenPath Original (MIT)',
     srsInterleave: false,
     gradeBand: 'HS',
+    track: SPANISH_TRACK,
+    units: SPANISH_UNITS,
     quizzes: [
       {
         title: 'Greetings, Ser vs. Estar & Present Tense',
