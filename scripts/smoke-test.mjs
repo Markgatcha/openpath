@@ -1010,7 +1010,7 @@ async function main() {
   console.log('\nContent packs flow:')
   const packs = await api('/packs', { token: teacherToken })
   const geometryPack = packs.data.packs?.find((pack) => pack.id === 'geometry-figures')
-  check('pack registry serves 22 curriculum packs', packs.data.packs?.length === 22, `got=${packs.data.packs?.length}`)
+  check('pack registry serves 32 curriculum packs', packs.data.packs?.length === 32, `got=${packs.data.packs?.length}`)
   check('pack registry includes geometry-figures with 3D model link', Boolean(geometryPack?.modelId))
   check(
     'geometry pack advertises three tiered quizzes',
@@ -1445,9 +1445,41 @@ async function main() {
   console.log('\nGuided Lessons & Co-op Race flow:')
   const tracksRes = await api('/tracks', { token: studentToken })
   check(
-    'tracks endpoint serves 16 curriculum tracks',
-    tracksRes.status === 200 && tracksRes.data.tracks?.length === 16,
+    'tracks endpoint serves 32 curriculum tracks',
+    tracksRes.status === 200 && tracksRes.data.tracks?.length === 32,
     `got=${tracksRes.data.tracks?.length}`,
+  )
+  for (const [slug, lessonCount] of [
+    ['physics-foundations', 7],
+    ['media-ai-literacy', 6],
+    ['general-chemistry-core', 6],
+    ['environmental-science-climate', 6],
+    ['anatomy-physiology', 7],
+    ['human-geography', 6],
+    ['corporate-finance', 3],
+    ['data-analytics', 3],
+    ['world-history-civilizations', 3],
+    ['us-civics-constitution', 3],
+    ['english-rhetoric-composition', 3],
+    ['conversational-spanish', 3],
+    ['middle-school-science', 6],
+    ['probability-statistics', 5],
+    ['french-starter', 3],
+    ['german-starter', 3],
+    ['mandarin-starter', 3],
+  ]) {
+    const track = tracksRes.data.tracks?.find((t) => t.slug === slug)
+    const lessons = track?.units?.flatMap((u) => u.lessons ?? []) ?? []
+    check(`track ${slug} serves ${lessonCount} lessons`, lessons.length === lessonCount, `got=${lessons.length}`)
+  }
+  const allLessonIds = (tracksRes.data.tracks ?? []).flatMap((t) =>
+    (t.units ?? []).flatMap((u) => (u.lessons ?? []).map((l) => l.id)),
+  )
+  const repeatedLessonIds = [...new Set(allLessonIds.filter((id, i) => allLessonIds.indexOf(id) !== i))]
+  check(
+    'lesson ids are unique across all tracks',
+    allLessonIds.length > 0 && repeatedLessonIds.length === 0,
+    `repeated=${repeatedLessonIds.join(',')}`,
   )
   const firstLessonId = tracksRes.data.tracks?.[0]?.units?.[0]?.lessons?.[0]?.id
   const lessonRes = await api(`/lessons/${firstLessonId}`, { token: studentToken })
