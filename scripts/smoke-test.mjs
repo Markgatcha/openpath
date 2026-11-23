@@ -1417,6 +1417,7 @@ async function main() {
     'diagram-scout',
     'cloze-workbench',
     'knowledge-bastion',
+    'orbit-pilot',
   ]) {
     const runRes = await api('/arcade/runs', {
       method: 'POST',

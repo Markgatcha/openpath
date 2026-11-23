@@ -14,6 +14,7 @@ import {
   GitCommitHorizontal,
   Grid2x2,
   Play,
+  Rocket,
   Scale,
   Shield,
   Sliders,
@@ -114,6 +115,20 @@ const ARCADE_GAMES: ArcadeGameCardDef[] = [
     icon: Castle,
     emoji: '🏰',
     accent: 'from-indigo-500/20 to-rose-500/10',
+  },
+  {
+    mode: 'orbit-pilot',
+    route: '/student/arcade/orbit-pilot',
+    title: 'Orbit Pilot',
+    tagline: '3D Orbital Mechanics Flight Missions',
+    description:
+      'Fly a probe around a planet in 3D. Fire the engine with or against your direction of travel to raise, lower and circularise your orbit, and reach the target band before the fuel runs out.',
+    difficulty: 'Precision',
+    pacing: 'Timed',
+    badgeColor: 'brand',
+    icon: Rocket,
+    emoji: '🛰️',
+    accent: 'from-sky-500/20 to-violet-500/10',
   },
   {
     mode: 'streak-siege',

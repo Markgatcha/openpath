@@ -47,6 +47,7 @@ const CertaintyVaultGame = lazy(() => import('@/pages/student/arcade/CertaintyVa
 const DiagramScoutGame = lazy(() => import('@/pages/student/arcade/DiagramScoutGame'))
 const ClozeWorkbenchGame = lazy(() => import('@/pages/student/arcade/ClozeWorkbenchGame'))
 const KnowledgeBastionGame = lazy(() => import('@/pages/student/arcade/KnowledgeBastionGame'))
+const OrbitPilotGame = lazy(() => import('@/pages/student/arcade/OrbitPilotGame'))
 const Lessons = lazy(() => import('@/pages/student/Lessons'))
 const LessonPlayer = lazy(() => import('@/pages/student/LessonPlayer'))
 
@@ -144,6 +145,7 @@ export default function App() {
             <Route path="/student/arcade/scout" element={<DiagramScoutGame />} />
             <Route path="/student/arcade/cloze" element={<ClozeWorkbenchGame />} />
             <Route path="/student/arcade/bastion" element={<KnowledgeBastionGame />} />
+            <Route path="/student/arcade/orbit-pilot" element={<OrbitPilotGame />} />
             <Route path="/student/lab" element={<ModelLab />} />
             <Route path="/student/lab/:modelId" element={<ModelLab />} />
             <Route path="/student/shop" element={<Shop />} />

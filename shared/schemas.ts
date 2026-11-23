@@ -375,6 +375,7 @@ export const ARCADE_MODES = [
   'diagram-scout',
   'cloze-workbench',
   'knowledge-bastion',
+  'orbit-pilot',
 ] as const
 export const ArcadeModeSchema = z.enum(ARCADE_MODES)
 export type ArcadeMode = z.infer<typeof ArcadeModeSchema>
