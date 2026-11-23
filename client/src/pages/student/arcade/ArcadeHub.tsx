@@ -422,9 +422,15 @@ export function ArcadeHub() {
           <div className="flex items-center gap-1.5">
             {(
               [
-                { id: 'all', label: 'All (10)' },
-                { id: 'untimed', label: 'Untimed / Strategic (7)' },
-                { id: 'timed', label: 'Timed (3)' },
+                { id: 'all', label: `All (${ARCADE_GAMES.length})` },
+                {
+                  id: 'untimed',
+                  label: `Untimed / Strategic (${ARCADE_GAMES.filter((g) => g.pacing === 'Untimed / Strategic').length})`,
+                },
+                {
+                  id: 'timed',
+                  label: `Timed (${ARCADE_GAMES.filter((g) => g.pacing === 'Timed').length})`,
+                },
               ] as const
             ).map((opt) => (
               <button
