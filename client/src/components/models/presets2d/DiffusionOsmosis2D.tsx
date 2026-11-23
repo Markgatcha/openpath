@@ -35,6 +35,8 @@ const OSMOTIC_GAIN = 4
 const FLOW_RATE = 0.16
 const HISTORY_SPAN_S = 40
 const HISTORY_STEP_S = 0.25
+const STEP_S = 0.5
+const MAX_FRAMES = 120
 
 const LEFT_COLOR = PALETTE_CSS.violet
 const RIGHT_COLOR = PALETTE_CSS.amber
@@ -46,6 +48,14 @@ interface Dot {
   y: number
   vx: number
   vy: number
+}
+
+/** Saved simulation state, so the viewer's step-back button can rewind. */
+interface Frame {
+  clock: number
+  shift: number
+  flow: number
+  dots: number[]
 }
 
 interface Sample {
@@ -108,6 +118,7 @@ function drawPanel(
   s: Snapshot,
   clock: number,
   history: Sample[],
+  waterOnly: boolean,
   rich: boolean,
   glow: boolean,
 ) {
@@ -150,10 +161,20 @@ function drawPanel(
   })
 
   const gap = Math.abs(s.leftConc - s.rightConc)
-  const settled = Math.abs(s.waterFlow) < 1
-  const state =
-    gap < 3 ? 'Concentrations equal' : settled ? 'Held apart by the level difference' : 'Water is moving'
-  label(ctx, state, left, 132, gap < 3 || settled ? PALETTE_CSS.emerald : WATER_COLOR, 'left', 11)
+  const flowing = Math.abs(s.waterFlow) >= 1
+  let state = 'Concentrations equal'
+  let steady = true
+  if (!waterOnly) {
+    // Counts fluctuate at equilibrium, so allow the same margin the challenge uses.
+    steady = !flowing && Math.abs(s.left - s.right) <= 8
+    state = steady ? 'Mixed: crossings balance' : 'Solute is diffusing'
+  } else if (flowing) {
+    steady = false
+    state = 'Water is moving'
+  } else if (gap >= 3) {
+    state = 'Held apart by the level difference'
+  }
+  label(ctx, state, left, 132, steady ? PALETTE_CSS.emerald : WATER_COLOR, 'left', 11)
 
   const tEnd = Math.max(clock, HISTORY_SPAN_S)
   const box: PlotBox = {
@@ -337,6 +358,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
     const solute: Dot[] = []
     let history: Sample[] = []
     const water: Dot[] = []
+    let frames: Frame[] = []
     const waterCount = quality.count(90)
 
     const surfaceY = (left: boolean) => TANK_BOTTOM - BASE_DEPTH - (left ? shift : -shift)
@@ -356,6 +378,11 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       }
     }
 
+    const saveFrame = () => {
+      frames.push({ clock, shift, flow, dots: solute.flatMap((d) => [d.x, d.y, d.vx, d.vy]) })
+      if (frames.length > MAX_FRAMES) frames.shift()
+    }
+
     const reseed = (p: Params) => {
       seededLeft = Math.round(p.soluteLeft ?? 0)
       seededRight = Math.round(p.soluteRight ?? 0)
@@ -369,8 +396,17 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       history = [{ t: 0, left: seededLeft, right: seededRight }]
       water.length = 0
       for (let i = 0; i < waterCount; i += 1) water.push(spawn(i % 2 === 0, 34))
+      frames = []
+      saveFrame()
     }
     reseed(initial)
+
+    /** The viewer does not call `update` while paused, so every entry point checks the solute sliders. */
+    const sync = (p: Params) => {
+      if (Math.round(p.soluteLeft ?? 0) !== seededLeft || Math.round(p.soluteRight ?? 0) !== seededRight) {
+        reseed(p)
+      }
+    }
 
     /** Move one particle; `crosses` says whether it may pass through a membrane pore. */
     const move = (d: Dot, dt: number, radius: number, crosses: boolean) => {
@@ -461,40 +497,72 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
       },
     ]
 
+    const advance = (p: Params, step: number) => {
+      if (step <= 0) return
+      const temp = p.tempK ?? 300
+      // Mean particle speed scales with the square root of absolute temperature.
+      const speed = Math.sqrt(temp / 300)
+      const waterOnly = osmosisOnly(p)
+      for (const d of solute) move(d, step * speed, SOLUTE_R, !waterOnly)
+      for (const d of water) move(d, step * speed, 1.6, true)
+
+      const left = countLeft()
+      const right = solute.length - left
+      // A membrane the solute passes through cannot hold an osmotic difference.
+      const pull = waterOnly ? OSMOTIC_GAIN * (conc(left, true) - conc(right, false)) : 0
+      flow = FLOW_RATE * (temp / 300) * (pull - 2 * shift)
+      const next = Math.max(-MAX_SHIFT, Math.min(MAX_SHIFT, shift + flow * step))
+      if (next === shift || Math.abs(next) === MAX_SHIFT) flow = 0
+      shift = next
+
+      clock += step
+      sinceSample += step
+      if (sinceSample >= HISTORY_STEP_S) {
+        sinceSample = 0
+        history.push({ t: clock, left: conc(left, true), right: conc(right, false) })
+        while (history.length > 2 && history[0].t < clock - HISTORY_SPAN_S) history.shift()
+      }
+      if (clock - frames[frames.length - 1].clock >= STEP_S) saveFrame()
+    }
+
+    /** Step back to the last saved frame before the current instant. */
+    const rewind = () => {
+      while (frames.length > 1 && frames[frames.length - 1].clock >= clock - 1e-6) frames.pop()
+      const frame = frames[frames.length - 1]
+      solute.forEach((d, i) => {
+        d.x = frame.dots[i * 4]
+        d.y = frame.dots[i * 4 + 1]
+        d.vx = frame.dots[i * 4 + 2]
+        d.vy = frame.dots[i * 4 + 3]
+      })
+      shift = frame.shift
+      flow = frame.flow
+      clock = frame.clock
+      sinceSample = 0
+      while (history.length > 1 && history[history.length - 1].t > clock) history.pop()
+    }
+
     return {
       hotspots,
       reset: (p) => reseed(p),
+      actions: [{ id: 'restart', label: 'Restart run' }],
       update: (p, dt) => {
-        if (Math.round(p.soluteLeft ?? 0) !== seededLeft || Math.round(p.soluteRight ?? 0) !== seededRight) {
+        sync(p)
+        advance(p, Math.min(dt, 0.05))
+      },
+      step: (p, direction, actionId) => {
+        sync(p)
+        if (actionId === 'restart') {
+          // Unlike Reset, this keeps the current sliders, so a run can be repeated at a new temperature.
           reseed(p)
-        }
-        const step = Math.min(dt, 0.05)
-        if (step <= 0) return
-        const temp = p.tempK ?? 300
-        // Mean particle speed scales with the square root of absolute temperature.
-        const speed = Math.sqrt(temp / 300)
-        const waterOnly = osmosisOnly(p)
-        for (const d of solute) move(d, step * speed, SOLUTE_R, !waterOnly)
-        for (const d of water) move(d, step * speed, 1.6, true)
-
-        const left = countLeft()
-        const right = solute.length - left
-        // A membrane the solute passes through cannot hold an osmotic difference.
-        const pull = waterOnly ? OSMOTIC_GAIN * (conc(left, true) - conc(right, false)) : 0
-        flow = FLOW_RATE * (temp / 300) * (pull - 2 * shift)
-        const next = Math.max(-MAX_SHIFT, Math.min(MAX_SHIFT, shift + flow * step))
-        if (next === shift || Math.abs(next) === MAX_SHIFT) flow = 0
-        shift = next
-
-        clock += step
-        sinceSample += step
-        if (sinceSample >= HISTORY_STEP_S) {
-          sinceSample = 0
-          history.push({ t: clock, left: conc(left, true), right: conc(right, false) })
-          while (history.length > 2 && history[0].t < clock - HISTORY_SPAN_S) history.shift()
+        } else if (direction === 1) {
+          for (let i = 0; i < 30; i += 1) advance(p, STEP_S / 30)
+        } else {
+          rewind()
         }
       },
       renderCanvas: (c, p, elapsed, reducedMotion) => {
+        sync(p)
         const s = snapshot(p)
         const waterOnly = osmosisOnly(p)
         const yL = surfaceY(true)
@@ -681,9 +749,10 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         label(c, 'start level', TANK_L - 10, TANK_BOTTOM - BASE_DEPTH - 5, PALETTE_CSS.slate, 'left', 9)
         label(c, `${fmt(s.tempK)} K`, MEM_X, VIEW_H - 16, PALETTE_CSS.slate)
 
-        drawPanel(c, s, clock, history, quality.rich, quality.glow)
+        drawPanel(c, s, clock, history, waterOnly, quality.rich, quality.glow)
       },
       readouts: (p) => {
+        sync(p)
         const s = snapshot(p)
         const direction = Math.abs(s.waterFlow) < 1 ? 'none' : s.waterFlow > 0 ? 'toward the left' : 'toward the right'
         return [
@@ -695,6 +764,7 @@ export const diffusionOsmosis2dModel: Model2DDefinition = {
         ]
       },
       metrics: (p) => {
+        sync(p)
         const s = snapshot(p)
         return {
           leftCount: s.left,
