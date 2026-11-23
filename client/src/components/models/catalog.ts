@@ -327,6 +327,18 @@ export const LAB_MODELS: LabModel[] = [
     renderer: '2d',
     Component: lazy(() => import('./presets2d/FsrsMemoryDecay2D')),
   },
+  {
+    id: 'projectile-motion-2d',
+    title: 'Projectile Motion: Range, Apex & Components',
+    subject: 'Physics',
+    icon: '🎯',
+    blurb:
+      'Aim a launcher on Earth, the Moon, Mars or Jupiter and see constant horizontal velocity and falling vertical velocity trace a parabola.',
+    packId: 'physics-foundations',
+    standards: 'AP Physics 1 Unit 1 · NGSS HS-PS2-1 · IGCSE Physics 1.2',
+    renderer: '2d',
+    Component: lazy(() => import('./presets2d/ProjectileMotion2D')),
+  },
 ]
 
 export function findLabModel(id: string | undefined): LabModel | undefined {

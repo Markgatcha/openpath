@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { scaleCount, type GraphicsProfile } from '@/lib/graphics'
 import {
   PALETTE,
   PALETTE_CSS,
@@ -56,10 +57,34 @@ export interface Action2D {
   label: string
 }
 
+/**
+ * Cosmetic detail for the active graphics tier. Scale decoration with it
+ * (glow, trails, backdrop particles), never a quantity students read off.
+ */
+export interface Scene2DQuality {
+  profile: GraphicsProfile
+  /** Scaled count for decorative particles. */
+  count: (base: number) => number
+  /** Soft shadow-blur glows; off on Low and Medium. */
+  glow: boolean
+  /** Gradient fills and motion trails; off on Low. */
+  rich: boolean
+}
+
+export function makeScene2DQuality(profile: GraphicsProfile): Scene2DQuality {
+  return {
+    profile,
+    count: (base) => scaleCount(profile, base),
+    glow: profile.environment,
+    rich: profile.rimLight,
+  }
+}
+
 export interface Scene2DContext {
   viewWidth: number
   viewHeight: number
   palette: typeof PALETTE_CSS
+  quality: Scene2DQuality
 }
 
 export interface Scene2DInstance {
