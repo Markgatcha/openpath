@@ -346,14 +346,14 @@ function wrongResponse(
       const accepted = new Set(
         [question.correct as string, ...question.alternatives].map(normalizeText),
       )
-      const candidates = [
-        texture?.kind === 'fill' ? texture.wrongText : null,
-        ...CANNED_WRONG_FILL,
-      ]
-      for (const candidate of candidates) {
-        if (candidate && !accepted.has(normalizeText(candidate))) return candidate
+      if (texture?.kind === 'fill' && !accepted.has(normalizeText(texture.wrongText))) {
+        return texture.wrongText
       }
-      return 'not sure'
+      // Sample among the canned misses so repeated misses vary.
+      const usable = CANNED_WRONG_FILL.filter((c) => !accepted.has(normalizeText(c)))
+      return usable.length
+        ? usable[Math.floor(rng() * usable.length)]
+        : 'not sure'
     }
     case 'order':
       return scrambledOrder(question.correct as number[], 1 - effectiveMastery, rng)
