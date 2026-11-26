@@ -218,6 +218,7 @@ interface HarnessQuiz {
   title: string
   subject: string
   difficulty: string
+  timeLimitSec: number | null
   questions: HarnessQuestion[]
 }
 
@@ -232,6 +233,7 @@ async function loadContent(api: Api, teacherToken: string): Promise<HarnessQuiz[
       title: quiz.title,
       subject: quiz.subject,
       difficulty: quiz.difficulty,
+      timeLimitSec: quiz.timeLimitSec ?? null,
       questions: detail.data.questions,
     })
   }
@@ -450,7 +452,12 @@ async function runAttempt(
   // immediately after each answer — so mastery updates BEFORE the next
   // question is decided.
   let correctCount = 0
+  // Timed quizzes expire mid-attempt in the real client; the student
+  // stops wherever the countdown runs out and unanswered questions score 0.
+  const limitMs = quiz.timeLimitSec ? quiz.timeLimitSec * 1000 : null
+  let elapsedMs = 0
   for (const sq of studentQuestions) {
+    if (limitMs !== null && elapsedMs >= limitMs) break
     const question = byId.get(sq.id)!
     const optionCount =
       sq.type === 'mcq' || sq.type === 'order'
@@ -488,6 +495,7 @@ async function runAttempt(
     })
     const serverCorrect = answered.data.correct === true
     if (serverCorrect) correctCount += 1
+    elapsedMs += decision.msTaken
 
     // The model's sampled outcome and the server's grading should agree;
     // a mismatch means the oracle key drifted (definitely worth logging).
