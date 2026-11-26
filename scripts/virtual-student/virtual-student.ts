@@ -28,6 +28,7 @@
  * happens through the real feedback loop: graded correctness plus the
  * explanation the server returns.
  */
+import { randomUUID } from 'node:crypto'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
@@ -397,28 +398,14 @@ async function runAttempt(
   }[]
   const byId = new Map(quiz.questions.map((q) => [q.id, q]))
 
-  // Pass 1: decide correctness per question.
-  const decisions = studentQuestions.map((sq) => {
-    const question = byId.get(sq.id)!
-    const optionCount =
-      sq.type === 'mcq' || sq.type === 'order'
-        ? (sq.options?.length ?? 2)
-        : 0
-    const decision = student.learner.decide(
-      quiz.subject,
-      quiz.difficulty,
-      sq.type,
-      optionCount,
-      day,
-    )
-    return { sq, question, decision }
-  })
-
-  // LLM texture: one batched call for this quiz's wrong mcq/fill answers.
+  // LLM texture prefetch: one batched call covering every mcq/fill
+  // question in the quiz. Misconceptions are persona-level, so this is
+  // independent of what any individual student ends up sampling — and it
+  // keeps correctness decisions free to interleave with grading below.
   if (llmConfig && !textureCache.has('__disabled__')) {
     const needed: TextureQuestion[] = []
-    for (const { question, decision } of decisions) {
-      if (decision.correct) continue
+    for (const sq of studentQuestions) {
+      const question = byId.get(sq.id)!
       const cacheKey = `${student.persona.key}:${question.id}`
       if (textureCache.has(cacheKey)) continue
       if (question.type === 'mcq') {
@@ -458,9 +445,25 @@ async function runAttempt(
   }
   const textureDisabled = textureCache.has('__disabled__')
 
-  // Pass 2: submit answers through the real grading pipeline.
+  // Submit answers through the real grading pipeline, in order. Like a
+  // real student, the virtual student sees correctness + explanation
+  // immediately after each answer — so mastery updates BEFORE the next
+  // question is decided.
   let correctCount = 0
-  for (const { sq, question, decision } of decisions) {
+  for (const sq of studentQuestions) {
+    const question = byId.get(sq.id)!
+    const optionCount =
+      sq.type === 'mcq' || sq.type === 'order'
+        ? (sq.options?.length ?? 2)
+        : 0
+    const decision = student.learner.decide(
+      quiz.subject,
+      quiz.difficulty,
+      sq.type,
+      optionCount,
+      day,
+    )
+
     const cacheKey = `${student.persona.key}:${question.id}`
     const texture = textureDisabled ? undefined : textureCache.get(cacheKey)
     const response = decision.correct
@@ -535,7 +538,7 @@ async function runAttempt(
     method: 'POST',
     token: student.token,
   })
-  return correctCount / decisions.length
+  return correctCount / studentQuestions.length
 }
 
 async function simulateStudent(
@@ -639,10 +642,18 @@ async function main(): Promise<void> {
   // misconceptions cluster, and it keeps LLM cost flat in --per-persona.
   const textureCache = new Map<string, TextureResult>()
 
+  // Every invocation gets its own accounts: random emails/passwords mean
+  // a caller who can reach the API cannot impersonate the synthetic
+  // students (or even guess their addresses), and rerunning with the same
+  // seed never reuses accounts whose assignment attempt caps are already
+  // spent. The seeded RNG still drives every learning decision, so reports
+  // reproduce across runs for non-parameterized content. For a completely
+  // clean slate, wipe the server's data/ directory instead.
+  const runNonce = randomUUID().slice(0, 8)
   for (const persona of PERSONAS) {
     for (let i = 0; i < opts.perPersona; i += 1) {
-      const email = `virtual-${persona.key}-${i}-s${opts.seed}@openpath.dev`
-      const password = `virtual-${opts.seed}-${i}`
+      const email = `virtual-${persona.key}-${i}-s${opts.seed}-${runNonce}@openpath.dev`
+      const password = randomUUID()
       const token = await registerOrLogin(
         api,
         email,

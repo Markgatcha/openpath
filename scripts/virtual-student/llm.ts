@@ -38,25 +38,37 @@ interface LlmConfig {
   apiKey: string
 }
 
-/** Resolve config from env exactly like server/env.ts does. */
+/**
+ * Resolve config from env, mirroring server/env.ts. Texture requests
+ * carry private classroom prompts and answer keys, so an explicit
+ * AI_PROVIDER=local is honored strictly, and when nothing is explicit a
+ * configured local endpoint wins over a stray OpenRouter key: a
+ * deployment running a local model chose privacy.
+ */
 export function resolveLlmConfig(): LlmConfig | null {
+  const provider = (process.env.AI_PROVIDER ?? '').toLowerCase()
   const key = process.env.OPENROUTER_API_KEY ?? ''
-  if (key) {
-    return {
-      baseUrl: 'https://openrouter.ai/api/v1',
-      model: process.env.OPENROUTER_MODEL ?? 'deepseek/deepseek-chat',
-      apiKey: key,
-    }
-  }
-  const localBase = process.env.LOCAL_AI_BASE_URL
-  if (localBase) {
-    return {
-      baseUrl: localBase,
-      model: process.env.LOCAL_AI_MODEL ?? 'qwen3:8b',
-      apiKey: '',
-    }
-  }
-  return null
+  const localBase = process.env.LOCAL_AI_BASE_URL ?? ''
+
+  const openrouter: LlmConfig | null = key
+    ? {
+        baseUrl: 'https://openrouter.ai/api/v1',
+        model: process.env.OPENROUTER_MODEL ?? 'deepseek/deepseek-chat',
+        apiKey: key,
+      }
+    : null
+  const local: LlmConfig | null =
+    localBase || provider === 'local'
+      ? {
+          baseUrl: localBase || 'http://localhost:11434/v1',
+          model: process.env.LOCAL_AI_MODEL ?? 'qwen3:8b',
+          apiKey: '',
+        }
+      : null
+
+  if (provider === 'openrouter') return openrouter ?? local
+  if (provider === 'local') return local
+  return local ?? openrouter
 }
 
 async function chatCompletion(
