@@ -27,6 +27,7 @@
     "lint": "oxlint --type-aware",
     "test:api": "node scripts/smoke-test.mjs",
     "test:features": "node scripts/verify-features.mjs",
+    "sim:student": "node --import tsx scripts/virtual-student/virtual-student.ts",
     "check-updates": "node scripts/check-updates.mjs",
     "sidecar": "node scripts/build-sidecar.mjs",
     "tauri": "tauri",

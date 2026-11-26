@@ -32,3 +32,6 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# virtual-student harness output
+scripts/virtual-student/out/
