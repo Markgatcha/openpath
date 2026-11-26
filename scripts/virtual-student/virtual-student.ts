@@ -417,10 +417,11 @@ async function runAttempt(
   }[]
   const byId = new Map(quiz.questions.map((q) => [q.id, q]))
 
-  // LLM texture prefetch: one batched call covering every mcq/fill
-  // question in the quiz. Misconceptions are persona-level, so this is
-  // independent of what any individual student ends up sampling — and it
-  // keeps correctness decisions free to interleave with grading below.
+  // LLM texture prefetch: batched calls covering every mcq/fill question
+  // in the quiz, chunked so replies fit the completion token cap.
+  // Misconceptions are persona-level, so this is independent of what any
+  // individual student ends up sampling — and it keeps correctness
+  // decisions free to interleave with grading below.
   if (llmConfig && !textureCache.has('__disabled__')) {
     const needed: TextureQuestion[] = []
     for (const sq of studentQuestions) {
