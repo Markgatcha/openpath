@@ -523,7 +523,10 @@ async function runAttempt(
       )
     }
 
-    const readExplanation = student.learner.readsExplanation(serverCorrect)
+    // Students can only read an explanation the question actually has.
+    const readExplanation =
+      question.explanation.trim().length > 0 &&
+      student.learner.readsExplanation(serverCorrect)
     student.learner.learnFromFeedback(
       quiz.subject,
       serverCorrect,
