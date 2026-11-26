@@ -290,7 +290,7 @@ pnpm sim:student                  # needs a running server; options documented i
 
 Caveats:
 
-- **It writes real rows.** Synthetic attempts appear in teacher analytics and assignment rosters. Run it against a dev database; for a clean slate afterwards, stop the server and delete `data/`.
+- **It writes real rows.** Synthetic attempts appear in teacher analytics and assignment rosters, and nothing reverts them. Run the server with a disposable database — `DATABASE_PATH=/tmp/openpath-sim.db pnpm dev` — and delete that file afterwards. Never point simulations at a database holding quizzes or classrooms you care about.
 - **Determinism is best-effort.** The seeded RNG drives every learning decision, so non-parameterized content reproduces exactly for a given seed; parameterized figure keys depend on server-generated attempt IDs and vary between runs.
 - Each invocation creates fresh accounts with random credentials, so rerunning never collides with spent assignment attempt caps.
 
