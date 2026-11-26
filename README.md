@@ -280,6 +280,20 @@ pnpm test:api      # end-to-end smoke test (needs a running server)
 
 The smoke test exercises the full loop — teacher forges a quiz, student plays it to a perfect score, parent sees the progress — plus auth guards and role enforcement. CI runs typecheck, lint, and build on every push.
 
+### 🎓 Virtual students (content difficulty simulation)
+
+```bash
+pnpm sim:student                  # needs a running server; options documented in the script header
+```
+
+`scripts/virtual-student` registers synthetic students — strong / average / struggling personas calibrated to published learning science (BKT knowledge tracing, FSRS-family forgetting curves, EdNet-scale response times) — and plays every published quiz through the real attempts API across simulated days. It writes a difficulty report to `scripts/virtual-student/out/`: per-quiz learning curves, hardest questions, content flags (`stuck` / `challenging but learnable` / `too easy` / `confidence trap`), and MCQ distractor analysis. Set `OPENROUTER_API_KEY` or `LOCAL_AI_BASE_URL` for LLM-generated wrong-answer texture; without either, wrong answers are uniform statistical picks.
+
+Caveats:
+
+- **It writes real rows.** Synthetic attempts appear in teacher analytics and assignment rosters, and nothing reverts them. Run the server with a disposable database — `DATABASE_PATH=/tmp/openpath-sim.db pnpm dev` — and delete that file afterwards. Never point simulations at a database holding quizzes or classrooms you care about.
+- **Determinism is best-effort.** The seeded RNG drives every learning decision, so non-parameterized content reproduces exactly for a given seed; parameterized figure keys depend on server-generated attempt IDs and vary between runs.
+- Each invocation creates fresh accounts with random credentials, so rerunning never collides with spent assignment attempt caps.
+
 ## 🐳 Docker
 
 ```bash
