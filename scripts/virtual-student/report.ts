@@ -101,11 +101,13 @@ export function aggregate(records: AnswerRecord[]): {
       : 0
 
     const flags: string[] = []
-    // Learnability claims need retake evidence: with no second attempt,
-    // "final" is just the first attempt re-read.
-    if (maxAttempt >= 2 && firstErrorRate >= 0.4 && finalErrorRate >= 0.4) {
+    // Learnability claims need both first-attempt and retake evidence:
+    // a question nobody reached until a retake has an empty `firsts`,
+    // which would otherwise read as 100% wrong.
+    const hasLearningEvidence = maxAttempt >= 2 && firsts.length > 0
+    if (hasLearningEvidence && firstErrorRate >= 0.4 && finalErrorRate >= 0.4) {
       flags.push('stuck — students miss it even after feedback; explanation may not be landing')
-    } else if (maxAttempt >= 2 && firstErrorRate >= 0.4 && finalErrorRate < 0.25) {
+    } else if (hasLearningEvidence && firstErrorRate >= 0.4 && finalErrorRate < 0.25) {
       flags.push('challenging but learnable — exactly where good content sits')
     } else if (firstErrorRate < 0.1) {
       flags.push('too easy — little learning value')
@@ -167,12 +169,17 @@ export function aggregate(records: AnswerRecord[]): {
       (perStudent) => perStudent.has(first) && perStudent.has(last),
     )
     const cohort = attempts.length > 1 ? paired : [...attemptsByStudent.values()]
+    // Timed-out attempts submit fewer answers; unanswered questions count
+    // as incorrect, otherwise abandoning a quiz would inflate accuracy.
+    const questionCount = new Set(rs.map((r) => r.questionId)).size
     const accuracyOf = (n: number) =>
-      mean(
-        cohort.flatMap((perStudent) =>
-          (perStudent.get(n) ?? []).map((r) => (r.correct ? 1 : 0)),
-        ),
-      )
+      cohort.reduce(
+        (sum, perStudent) =>
+          sum +
+          (perStudent.get(n) ?? []).filter((r) => r.correct).length /
+            questionCount,
+        0,
+      ) / cohort.length
 
     const firstAccuracy = accuracyOf(first)
     const finalAccuracy = accuracyOf(last)
