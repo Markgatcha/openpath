@@ -56,6 +56,8 @@ export interface QuizPersonaStat {
   firstAccuracy: number
   finalAccuracy: number
   attempts: number
+  /** Students present in both the first and final attempts. */
+  pairedStudents: number
   /** Accuracy drop between best early attempt and spaced retake. */
   forgettingDrop: number
   avgMs: number
@@ -99,9 +101,11 @@ export function aggregate(records: AnswerRecord[]): {
       : 0
 
     const flags: string[] = []
-    if (firstErrorRate >= 0.4 && finalErrorRate >= 0.4) {
+    // Learnability claims need retake evidence: with no second attempt,
+    // "final" is just the first attempt re-read.
+    if (maxAttempt >= 2 && firstErrorRate >= 0.4 && finalErrorRate >= 0.4) {
       flags.push('stuck — students miss it even after feedback; explanation may not be landing')
-    } else if (firstErrorRate >= 0.4 && finalErrorRate < 0.25) {
+    } else if (maxAttempt >= 2 && firstErrorRate >= 0.4 && finalErrorRate < 0.25) {
       flags.push('challenging but learnable — exactly where good content sits')
     } else if (firstErrorRate < 0.1) {
       flags.push('too easy — little learning value')
@@ -138,19 +142,44 @@ export function aggregate(records: AnswerRecord[]): {
 
   const quizPersonaStats: QuizPersonaStat[] = []
   for (const [, rs] of byQuizPersona) {
-    const byAttempt = new Map<number, AnswerRecord[]>()
+    // Which students sat which attempt number.
+    const attemptsByStudent = new Map<string, Map<number, AnswerRecord[]>>()
     for (const r of rs) {
-      const list = byAttempt.get(r.attemptNumber)
+      let perStudent = attemptsByStudent.get(r.studentId)
+      if (!perStudent) {
+        perStudent = new Map()
+        attemptsByStudent.set(r.studentId, perStudent)
+      }
+      const list = perStudent.get(r.attemptNumber)
       if (list) list.push(r)
-      else byAttempt.set(r.attemptNumber, [r])
+      else perStudent.set(r.attemptNumber, [r])
     }
-    const attempts = [...byAttempt.keys()].sort((a, b) => a - b)
-    const accuracyOf = (n: number) =>
-      mean((byAttempt.get(n) ?? []).map((r) => (r.correct ? 1 : 0)))
+    const attempts = [
+      ...new Set(rs.map((r) => r.attemptNumber)),
+    ].sort((a, b) => a - b)
+    const first = attempts[0]
+    const last = attempts[attempts.length - 1]
 
-    const firstAccuracy = accuracyOf(attempts[0])
-    const finalAccuracy = accuracyOf(attempts[attempts.length - 1])
-    const bestEarly = Math.max(...attempts.slice(0, -1).map(accuracyOf))
+    // Paired cohort: only students present at BOTH ends count toward
+    // first-vs-final, otherwise the comparison measures dropout (weaker
+    // students retake more) instead of learning.
+    const paired = [...attemptsByStudent.values()].filter(
+      (perStudent) => perStudent.has(first) && perStudent.has(last),
+    )
+    const cohort = attempts.length > 1 ? paired : [...attemptsByStudent.values()]
+    const accuracyOf = (n: number) =>
+      mean(
+        cohort.flatMap((perStudent) =>
+          (perStudent.get(n) ?? []).map((r) => (r.correct ? 1 : 0)),
+        ),
+      )
+
+    const firstAccuracy = accuracyOf(first)
+    const finalAccuracy = accuracyOf(last)
+    const bestEarly =
+      attempts.length > 1
+        ? Math.max(...attempts.slice(0, -1).map(accuracyOf))
+        : firstAccuracy
     const forgettingDrop =
       attempts.length > 1 ? Math.max(0, bestEarly - finalAccuracy) : 0
 
@@ -163,6 +192,7 @@ export function aggregate(records: AnswerRecord[]): {
       firstAccuracy,
       finalAccuracy,
       attempts: attempts.length,
+      pairedStudents: cohort.length,
       forgettingDrop,
       avgMs: mean(rs.map((r) => r.msTaken)),
     })
@@ -221,10 +251,16 @@ export function renderMarkdown(
   for (const s of sorted) {
     lines.push(
       `| ${s.quizTitle} | ${s.subject} | ${s.difficulty} | ${s.persona} | ` +
-        `${pct(s.firstAccuracy)} | ${pct(s.finalAccuracy)} | ${pct(s.forgettingDrop)} | ` +
+        `${pct(s.firstAccuracy)} | ${pct(s.finalAccuracy)} (n=${s.pairedStudents}) | ${pct(s.forgettingDrop)} | ` +
         `${(s.avgMs / 1000).toFixed(1)}s |`,
     )
   }
+  lines.push('')
+  lines.push(
+    '_First/final accuracies use the paired cohort — students who sat both ' +
+      'the first and the final attempt — so the comparison measures learning, ' +
+      'not dropout._',
+  )
   lines.push('')
 
   // ── Hardest questions ────────────────────────────────────────
