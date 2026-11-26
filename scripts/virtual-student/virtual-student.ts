@@ -39,6 +39,7 @@ import {
   toleranceFor,
   type FigureSpec,
 } from '../../shared/figure.ts'
+import { normalizeText } from '../../server/lib/grading.ts'
 import {
   mulberry32,
   PERSONAS,
@@ -209,6 +210,7 @@ interface HarnessQuestion {
   options: string[] | null
   figure: FigureSpec | null
   correct: number | boolean | string | number[]
+  alternatives: string[]
   points: number
   explanation: string
 }
@@ -234,7 +236,10 @@ async function loadContent(api: Api, teacherToken: string): Promise<HarnessQuiz[
       subject: quiz.subject,
       difficulty: quiz.difficulty,
       timeLimitSec: quiz.timeLimitSec ?? null,
-      questions: detail.data.questions,
+      questions: (detail.data.questions as HarnessQuestion[]).map((q) => ({
+        ...q,
+        alternatives: q.alternatives ?? [],
+      })),
     })
   }
   return quizzes
@@ -276,6 +281,11 @@ function scrambledOrder(correct: number[], intensity: number, rng: Rng): number[
 /** Wrong figure responses: realistic numeric slips, outside tolerance. */
 function wrongFigureValue(key: number, spec: FigureSpec, rng: Rng): number {
   const tolerance = toleranceFor(spec.rounding)
+  const roundedKey = roundValue(key, spec.rounding)
+  // A miss must survive the grader AFTER the student-style rounding to
+  // 3 decimals — tiny keys can otherwise round right back onto the key.
+  const collides = (value: number) =>
+    Math.abs(value - key) <= tolerance || Math.abs(value - roundedKey) <= tolerance
   for (let tries = 0; tries < 8; tries += 1) {
     const mode = rng()
     let value: number
@@ -290,13 +300,8 @@ function wrongFigureValue(key: number, spec: FigureSpec, rng: Rng): number {
       // Unit/rounding confusion: truncate instead of round, or shift magnitude.
       value = rng() < 0.5 ? Math.trunc(key * 10) / 10 : key * 10
     }
-    const rounded = roundValue(key, spec.rounding)
-    if (
-      Math.abs(value - key) > tolerance &&
-      Math.abs(value - rounded) > tolerance
-    ) {
-      return Math.round(value * 1000) / 1000
-    }
+    const rounded = Math.round(value * 1000) / 1000
+    if (!collides(rounded)) return rounded
   }
   return Math.round((key + 3 * tolerance + 1) * 1000) / 1000
 }
@@ -335,9 +340,21 @@ function wrongResponse(
     }
     case 'truefalse':
       return !(question.correct as boolean)
-    case 'fill':
-      if (texture?.kind === 'fill') return texture.wrongText
-      return CANNED_WRONG_FILL[Math.floor(rng() * CANNED_WRONG_FILL.length)]
+    case 'fill': {
+      // The grader accepts case/punctuation variants and alternatives,
+      // so a "wrong" answer must be verified against the whole key set.
+      const accepted = new Set(
+        [question.correct as string, ...question.alternatives].map(normalizeText),
+      )
+      const candidates = [
+        texture?.kind === 'fill' ? texture.wrongText : null,
+        ...CANNED_WRONG_FILL,
+      ]
+      for (const candidate of candidates) {
+        if (candidate && !accepted.has(normalizeText(candidate))) return candidate
+      }
+      return 'not sure'
+    }
     case 'order':
       return scrambledOrder(question.correct as number[], 1 - effectiveMastery, rng)
     default:
