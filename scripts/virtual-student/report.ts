@@ -348,8 +348,9 @@ export function renderMarkdown(
       'explanation-reading after a miss raise mastery with diminishing returns.',
   )
   lines.push(
-    '- Everything is driven by a seeded RNG, so a run with the same seed and ' +
-      'content reproduces exactly (LLM texture aside).',
+    '- Every learning decision is driven by a seeded RNG, so non-parameterized ' +
+      'content reproduces exactly for a given seed. Parameterized figure keys ' +
+      'depend on server-generated attempt IDs and vary between runs (LLM texture aside).',
   )
   lines.push('')
 
