@@ -444,14 +444,20 @@ async function runAttempt(
       }
     }
     if (needed.length > 0) {
+      // Chunk the batch: replies are capped at 900 tokens, and a quiz-sized
+      // batch would truncate mid-JSON, leaving questions uncached and
+      // re-requested on every later attempt.
+      const BATCH_SIZE = 8
       try {
-        const texture = await chooseWrongAnswers(
-          llmConfig,
-          student.persona.llmProfile,
-          needed,
-        )
-        for (const [questionId, result] of texture) {
-          textureCache.set(`${student.persona.key}:${questionId}`, result)
+        for (let i = 0; i < needed.length; i += BATCH_SIZE) {
+          const texture = await chooseWrongAnswers(
+            llmConfig,
+            student.persona.llmProfile,
+            needed.slice(i, i + BATCH_SIZE),
+          )
+          for (const [questionId, result] of texture) {
+            textureCache.set(`${student.persona.key}:${questionId}`, result)
+          }
         }
       } catch (error) {
         console.warn(
